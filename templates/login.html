@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - EPI Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #11998e;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e8f5e9;
+            border: 1px solid #11998e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .info-box h4 {
+            color: #11998e;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #2c3e50;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .spinner {
+            display: none;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner::after {
+            content: "";
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="logo">💉</div>
+        <h1>EPI Dashboard</h1>
+        <p class="subtitle">Child Immunization Analytics - Uganda HMIS</p>
+
+        <div class="error-msg" id="errorMsg"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">DHIS2 Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your DHIS2 username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn" id="loginBtn">
+                Login to Dashboard
+                <span class="spinner" id="spinner"></span>
+            </button>
+        </form>
+
+        <div class="info-box">
+            <h4>🔐 Secure Login</h4>
+            <p>Use your official DHIS2 HMIS credentials. Your login grants access based on your assigned organization
+                units and user rights in the system.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('loginBtn');
+            const spinner = document.getElementById('spinner');
+            const errorMsg = document.getElementById('errorMsg');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = '/';
+                } else {
+                    errorMsg.textContent = data.error || 'Login failed';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.textContent = 'Connection error. Please try again.';
+                errorMsg.style.display = 'block';
+            }
+
+            btn.disabled = false;
+            spinner.style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>

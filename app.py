@@ -1,22 +1,18 @@
-from flask import Flask, jsonify, request, render_template, send_file
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from flask_cors import CORS
 import requests
 from requests.auth import HTTPBasicAuth
 import os
 from dotenv import load_dotenv
 import json
-import io
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'epi-dashboard-secret-key-2024')
 CORS(app)
 
-DHIS2_CONFIG = {
-    'base_url': 'https://hmis.health.go.ug/api',
-    'username': os.getenv('DHIS2_USERNAME', 'biostat.pader'),
-    'password': os.getenv('DHIS2_PASSWORD', 'Gulu@2025')
-}
+DHIS2_BASE_URL = 'https://hmis.health.go.ug/api'
 
 # UBOS Population Data (Annual figures)
 UBOS_POPULATION = {
@@ -59,7 +55,7 @@ UBOS_POPULATION = {
     "YUMBE": 945100, "ZOMBO": 312621
 }
 
-# Target population percentages by vaccine type
+# Target population percentages
 TARGET_PERCENTAGES = {
     "BCG": 4.85, "OPV0": 4.85, "HEPB_BIRTH": 4.85,
     "OPV1": 4.3, "OPV2": 4.3, "OPV3": 4.3,
@@ -68,15 +64,11 @@ TARGET_PERCENTAGES = {
     "ROTA1": 4.3, "ROTA2": 4.3, "ROTA3": 4.3,
     "IPV1": 4.3, "IPV2": 4.3,
     "MALARIA1": 4.3, "MALARIA2": 4.3, "MALARIA3": 4.3, "MALARIA4": 4.3,
-    "MR1": 4.3, "MR2": 4.3,
-    "YELLOW_FEVER": 4.3,
+    "MR1": 4.3, "MR2": 4.3, "YELLOW_FEVER": 4.3,
     "FULLY_IMMUNIZED_1YR": 4.3, "FULLY_IMMUNIZED_2YR": 4.3,
-    "LLINS": 4.3,
-    "PAB": 4.85,
-    "DEFAULT": 4.3
+    "LLINS": 4.3, "PAB": 4.85, "DEFAULT": 4.3
 }
 
-# Data element code to target percentage mapping
 CODE_TO_TARGET = {
     "105-CL01": "BCG", "105-CL02": "HEPB_BIRTH", "105-CL03": "PAB",
     "105-CL04": "OPV0", "105-CL05": "OPV1", "105-CL06": "OPV2", "105-CL07": "OPV3",
@@ -90,7 +82,6 @@ CODE_TO_TARGET = {
     "105-CL26": "MALARIA4", "105-CL27": "MR2", "105-CL28": "FULLY_IMMUNIZED_2YR"
 }
 
-# Dropout rate configurations
 DROPOUT_CONFIGS = [
     {"name": "DPT1→DPT3", "first": "105-CL10", "last": "105-CL12"},
     {"name": "Polio1→Polio3", "first": "105-CL05", "last": "105-CL07"},
@@ -103,44 +94,16 @@ DROPOUT_CONFIGS = [
     {"name": "Malaria1→Malaria4", "first": "105-CL19", "last": "105-CL26"},
 ]
 
-class DHIS2Client:
-    def __init__(self):
-        self.base_url = DHIS2_CONFIG['base_url']
-        self.auth = HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password'])
-    
-    def get_user_info(self):
-        try:
-            response = requests.get(f"{self.base_url}/me", auth=self.auth, 
-                params={'fields': 'id,displayName,organisationUnits[id,displayName,level]'}, timeout=30)
-            return response.json() if response.status_code == 200 else {'error': f'Status {response.status_code}'}
-        except Exception as e:
-            return {'error': str(e)}
-    
-    def generate_monthly_periods(self, start, end):
-        periods = []
-        start_year, start_month = int(start[:4]), int(start[4:6])
-        end_year, end_month = int(end[:4]), int(end[4:6])
-        y, m = start_year, start_month
-        while y < end_year or (y == end_year and m <= end_month):
-            periods.append(f"{y}{m:02d}")
-            m += 1
-            if m > 12: m, y = 1, y + 1
-        return ";".join(periods)
-    
-    def get_analytics(self, data_elements, org_unit, periods):
-        try:
-            dx_dimension = ";".join(data_elements) if isinstance(data_elements, list) else data_elements
-            params = [('dimension', f'dx:{dx_dimension}'), ('dimension', f'pe:{periods}'),
-                      ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
-            response = requests.get(f"{self.base_url}/analytics", auth=self.auth, params=params, timeout=60)
-            return response.json() if response.status_code == 200 else {'error': f'Status {response.status_code}'}
-        except Exception as e:
-            return {'error': str(e)}
+def get_auth():
+    """Get auth from session"""
+    if 'username' in session and 'password' in session:
+        return HTTPBasicAuth(session['username'], session['password'])
+    return None
 
-dhis2 = DHIS2Client()
+def is_logged_in():
+    return 'username' in session and 'password' in session
 
 def get_period_divisor(period_type):
-    """Get divisor for UBOS population based on period type"""
     if period_type in ['THIS_MONTH', 'LAST_MONTH'] or (len(period_type) == 6 and period_type.isdigit()):
         return 12
     elif 'QUARTER' in period_type or (len(period_type) == 6 and 'Q' in period_type):
@@ -148,42 +111,31 @@ def get_period_divisor(period_type):
     return 1
 
 def calculate_coverage(doses, population, target_pct, divisor=1):
-    """Calculate coverage percentage"""
     if population <= 0 or target_pct <= 0:
         return 0
     target_pop = (population * target_pct / 100) / divisor
     return round((doses / target_pop) * 100, 1) if target_pop > 0 else 0
 
 def get_coverage_color(coverage):
-    """Get color based on coverage threshold"""
-    if coverage >= 95:
-        return "green"
-    elif coverage >= 70:
-        return "yellow"
+    if coverage >= 95: return "green"
+    elif coverage >= 70: return "yellow"
     return "red"
 
 def calculate_dropout(first_dose, last_dose):
-    """Calculate dropout rate"""
-    if first_dose <= 0:
-        return 0
+    if first_dose <= 0: return 0
     return round(((first_dose - last_dose) / first_dose) * 100, 1)
 
 def detect_outliers_zscore(values, threshold=2):
-    """Detect outliers using Z-score method"""
-    if len(values) < 3:
-        return []
+    if len(values) < 3: return []
     import statistics
     mean = statistics.mean(values)
     std = statistics.stdev(values) if len(values) > 1 else 0
-    if std == 0:
-        return []
+    if std == 0: return []
     return [{"index": i, "value": v, "zscore": round((v - mean) / std, 2)} 
             for i, v in enumerate(values) if abs((v - mean) / std) > threshold]
 
 def simple_forecast(values, periods_ahead=3):
-    """Simple linear regression forecast"""
-    if len(values) < 2:
-        return []
+    if len(values) < 2: return []
     n = len(values)
     x_mean = (n - 1) / 2
     y_mean = sum(values) / n
@@ -193,84 +145,157 @@ def simple_forecast(values, periods_ahead=3):
     intercept = y_mean - slope * x_mean
     return [round(slope * (n + i) + intercept, 0) for i in range(periods_ahead)]
 
+def generate_monthly_periods(start, end):
+    periods = []
+    start_year, start_month = int(start[:4]), int(start[4:6])
+    end_year, end_month = int(end[:4]), int(end[4:6])
+    y, m = start_year, start_month
+    while y < end_year or (y == end_year and m <= end_month):
+        periods.append(f"{y}{m:02d}")
+        m += 1
+        if m > 12: m, y = 1, y + 1
+    return ";".join(periods)
+
 # Routes
 @app.route('/')
 def index():
+    if not is_logged_in():
+        return redirect(url_for('login'))
     return render_template('dashboard.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        data = request.get_json() if request.is_json else request.form
+        username = data.get('username', '')
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'success': False, 'error': 'Username and password required'})
+        
+        # Test credentials against DHIS2
+        try:
+            response = requests.get(
+                f"{DHIS2_BASE_URL}/me",
+                auth=HTTPBasicAuth(username, password),
+                params={'fields': 'id,displayName'},
+                timeout=15
+            )
+            if response.status_code == 200:
+                user_data = response.json()
+                session['username'] = username
+                session['password'] = password
+                session['display_name'] = user_data.get('displayName', username)
+                return jsonify({'success': True, 'displayName': session['display_name']})
+            else:
+                return jsonify({'success': False, 'error': 'Invalid credentials'})
+        except requests.exceptions.Timeout:
+            return jsonify({'success': False, 'error': 'Connection timeout - try again'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/api/check-auth')
+def check_auth():
+    if is_logged_in():
+        return jsonify({'authenticated': True, 'displayName': session.get('display_name', 'User')})
+    return jsonify({'authenticated': False})
 
 @app.route('/api/user-info')
 def get_user_info():
-    return jsonify(dhis2.get_user_info())
+    if not is_logged_in():
+        return jsonify({'error': 'Not authenticated'})
+    return jsonify({'displayName': session.get('display_name', 'User')})
 
 @app.route('/api/org-units')
 def get_org_units():
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
     parent_id = request.args.get('parent')
     try:
         if parent_id:
-            response = requests.get(f"{DHIS2_CONFIG['base_url']}/organisationUnits/{parent_id}",
-                auth=HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password']),
-                params={'fields': 'id,displayName,children[id,displayName,level,childCount]'}, timeout=30)
+            response = requests.get(f"{DHIS2_BASE_URL}/organisationUnits/{parent_id}",
+                auth=auth, params={'fields': 'id,displayName,children[id,displayName,level,childCount]'}, timeout=30)
         else:
-            response = requests.get(f"{DHIS2_CONFIG['base_url']}/organisationUnits",
-                auth=HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password']),
-                params={'level': 1, 'fields': 'id,displayName,level,childCount', 'paging': 'false'}, timeout=30)
+            response = requests.get(f"{DHIS2_BASE_URL}/organisationUnits",
+                auth=auth, params={'level': 1, 'fields': 'id,displayName,level,childCount', 'paging': 'false'}, timeout=30)
         return jsonify(response.json()) if response.status_code == 200 else jsonify({'error': f'Status {response.status_code}'})
     except Exception as e:
         return jsonify({'error': str(e)})
 
 @app.route('/api/districts')
 def get_districts():
-    """Get all districts with UBOS population"""
     return jsonify(UBOS_POPULATION)
 
 @app.route('/api/search-data-elements')
 def search_data_elements():
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
     pattern = request.args.get('pattern', '105-CL')
     try:
-        response = requests.get(f"{DHIS2_CONFIG['base_url']}/dataElements",
-            auth=HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password']),
-            params={'filter': f'code:like:{pattern}', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
+        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth, params={'filter': f'code:like:{pattern}', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
         return jsonify(response.json()) if response.status_code == 200 else jsonify({'error': f'Status {response.status_code}'})
     except Exception as e:
         return jsonify({'error': str(e)})
 
 @app.route('/api/raw-data')
 def get_raw_data():
-    """Get raw data elements from DHIS2"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
     period = request.args.get('period', 'LAST_12_MONTHS')
     indicators = request.args.get('indicators', '')
     
     if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
         start, end = period.split('-')
-        periods = dhis2.generate_monthly_periods(start, end)
+        periods = generate_monthly_periods(start, end)
     else:
         periods = period
     
     try:
-        response = requests.get(f"{DHIS2_CONFIG['base_url']}/dataElements",
-            auth=HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password']),
-            params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName', 'paging': 'false'}, timeout=30)
+        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth, params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName', 'paging': 'false'}, timeout=30)
         
         if response.status_code == 200:
             elements = response.json().get('dataElements', [])
             if indicators:
-                indicator_list = [i.strip() for i in indicators.split(',') if i.strip()]
-                ids = indicator_list
+                ids = [i.strip() for i in indicators.split(',') if i.strip()]
             else:
                 ids = [e['id'] for e in elements]
             
             if ids:
-                data = dhis2.get_analytics(ids, org_unit, periods)
-                data['dataElementMeta'] = {e['id']: e for e in elements}
-                return jsonify(data)
+                dx_dimension = ";".join(ids)
+                params = [('dimension', f'dx:{dx_dimension}'), ('dimension', f'pe:{periods}'),
+                          ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
+                data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=60)
+                if data_response.status_code == 200:
+                    data = data_response.json()
+                    data['dataElementMeta'] = {e['id']: e for e in elements}
+                    return jsonify(data)
+                return jsonify({'error': f'Analytics error: {data_response.status_code}'})
         return jsonify({'error': 'No data elements found'})
     except Exception as e:
         return jsonify({'error': str(e)})
 
 @app.route('/api/analytics-data')
 def get_analytics_data():
-    """Get analytics with coverage calculations"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
     district_name = request.args.get('districtName', '').upper()
     period = request.args.get('period', 'LAST_12_MONTHS')
@@ -280,26 +305,29 @@ def get_analytics_data():
     
     if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
         start, end = period.split('-')
-        periods = dhis2.generate_monthly_periods(start, end)
-        # Count months for multi-month periods
+        periods = generate_monthly_periods(start, end)
         period_count = len(periods.split(';'))
         divisor = 12 / period_count if period_count < 12 else 1
     else:
         periods = period
     
     try:
-        response = requests.get(f"{DHIS2_CONFIG['base_url']}/dataElements",
-            auth=HTTPBasicAuth(DHIS2_CONFIG['username'], DHIS2_CONFIG['password']),
-            params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
+        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth, params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
         
         if response.status_code == 200:
             elements = response.json().get('dataElements', [])
             ids = [e['id'] for e in elements]
             code_map = {e['id']: e['code'] for e in elements}
             
-            data = dhis2.get_analytics(ids, org_unit, periods)
+            dx_dimension = ";".join(ids)
+            params = [('dimension', f'dx:{dx_dimension}'), ('dimension', f'pe:{periods}'),
+                      ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
+            data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=60)
             
-            if 'rows' in data:
+            if data_response.status_code == 200:
+                data = data_response.json()
+                
                 analytics_result = {
                     'population': population,
                     'divisor': divisor,
@@ -308,25 +336,19 @@ def get_analytics_data():
                     'raw': data
                 }
                 
-                # Find column indices
                 headers = data.get('headers', [])
                 dx_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'dx'), 0)
                 val_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'value'), -1)
-                if val_idx == -1:
-                    val_idx = len(headers) - 1  # Last column is usually value
+                if val_idx == -1: val_idx = len(headers) - 1
                 
-                # Aggregate by indicator
                 indicator_totals = {}
                 for row in data.get('rows', []):
                     dx_id = row[dx_idx] if len(row) > dx_idx else ''
                     try:
                         value = int(float(row[val_idx])) if len(row) > val_idx else 0
-                    except (ValueError, TypeError):
-                        value = 0
-                    if dx_id:
-                        indicator_totals[dx_id] = indicator_totals.get(dx_id, 0) + value
+                    except: value = 0
+                    if dx_id: indicator_totals[dx_id] = indicator_totals.get(dx_id, 0) + value
                 
-                # Calculate coverage for each indicator
                 for dx_id, total in indicator_totals.items():
                     code = code_map.get(dx_id, '')
                     target_key = CODE_TO_TARGET.get(code, 'DEFAULT')
@@ -334,16 +356,12 @@ def get_analytics_data():
                     coverage = calculate_coverage(total, population, target_pct, divisor)
                     
                     analytics_result['indicators'].append({
-                        'id': dx_id,
-                        'code': code,
+                        'id': dx_id, 'code': code,
                         'name': data.get('metaData', {}).get('items', {}).get(dx_id, {}).get('name', code),
-                        'doses': total,
-                        'target_population': round((population * target_pct / 100) / divisor),
-                        'coverage': coverage,
-                        'color': get_coverage_color(coverage)
+                        'doses': total, 'target_population': round((population * target_pct / 100) / divisor),
+                        'coverage': coverage, 'color': get_coverage_color(coverage)
                     })
                 
-                # Calculate dropout rates
                 for config in DROPOUT_CONFIGS:
                     first_id = next((e['id'] for e in elements if e['code'] == config['first']), None)
                     last_id = next((e['id'] for e in elements if e['code'] == config['last']), None)
@@ -352,21 +370,23 @@ def get_analytics_data():
                         last_doses = indicator_totals.get(last_id, 0)
                         dropout = calculate_dropout(first_doses, last_doses)
                         analytics_result['dropouts'].append({
-                            'name': config['name'],
-                            'first_doses': first_doses,
-                            'last_doses': last_doses,
-                            'dropout_rate': dropout,
+                            'name': config['name'], 'first_doses': first_doses,
+                            'last_doses': last_doses, 'dropout_rate': dropout,
                             'color': 'red' if dropout >= 10 else 'green'
                         })
                 
                 return jsonify(analytics_result)
+            return jsonify({'error': f'Analytics error: {data_response.status_code}'})
         return jsonify({'error': 'Failed to fetch data'})
     except Exception as e:
         return jsonify({'error': str(e)})
 
 @app.route('/api/trend-analysis')
 def trend_analysis():
-    """Get trend data with outliers and forecast"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
     indicator_id = request.args.get('indicator', '')
     period = request.args.get('period', 'LAST_12_MONTHS')
@@ -376,40 +396,37 @@ def trend_analysis():
     
     if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
         start, end = period.split('-')
-        periods = dhis2.generate_monthly_periods(start, end)
+        periods = generate_monthly_periods(start, end)
     else:
         periods = period
     
-    data = dhis2.get_analytics([indicator_id], org_unit, periods)
-    
-    if 'rows' in data:
-        time_series = []
-        for row in data.get('rows', []):
-            time_series.append({'period': row[1], 'value': int(row[2]) if len(row) > 2 else 0})
+    try:
+        params = [('dimension', f'dx:{indicator_id}'), ('dimension', f'pe:{periods}'),
+                  ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
+        response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=60)
         
-        time_series.sort(key=lambda x: x['period'])
-        values = [t['value'] for t in time_series]
-        
-        result = {
-            'data': time_series,
-            'outliers': detect_outliers_zscore(values),
-            'forecast': simple_forecast(values),
-            'stats': {
-                'mean': round(sum(values) / len(values), 1) if values else 0,
-                'min': min(values) if values else 0,
-                'max': max(values) if values else 0,
-            }
-        }
-        return jsonify(result)
-    return jsonify({'error': 'No data'})
-
-@app.route('/api/dropout-configs')
-def get_dropout_configs():
-    return jsonify(DROPOUT_CONFIGS)
-
-@app.route('/api/target-percentages')
-def get_target_percentages():
-    return jsonify(TARGET_PERCENTAGES)
+        if response.status_code == 200:
+            data = response.json()
+            time_series = []
+            for row in data.get('rows', []):
+                time_series.append({'period': row[1], 'value': int(float(row[2])) if len(row) > 2 else 0})
+            
+            time_series.sort(key=lambda x: x['period'])
+            values = [t['value'] for t in time_series]
+            
+            return jsonify({
+                'data': time_series,
+                'outliers': detect_outliers_zscore(values),
+                'forecast': simple_forecast(values),
+                'stats': {
+                    'mean': round(sum(values) / len(values), 1) if values else 0,
+                    'min': min(values) if values else 0,
+                    'max': max(values) if values else 0,
+                }
+            })
+        return jsonify({'error': f'Error: {response.status_code}'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

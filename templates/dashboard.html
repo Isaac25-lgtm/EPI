@@ -594,7 +594,12 @@
             <button class="nav-tab active" onclick="switchSection('raw')">📊 Raw Data</button>
             <button class="nav-tab" onclick="switchSection('analytics')">📈 Analytics</button>
         </div>
-        <span class="user-badge" id="userBadge">Loading...</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="user-badge" id="userBadge">Loading...</span>
+            <a href="/logout"
+                style="background: rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 12px;">🚪
+                Logout</a>
+        </div>
     </nav>
 
     <div class="container">
