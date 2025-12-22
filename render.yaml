@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: epi-dashboard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DHIS2_USERNAME
+        sync: false
+      - key: DHIS2_PASSWORD
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.0
