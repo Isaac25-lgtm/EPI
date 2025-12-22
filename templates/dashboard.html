@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Child Immunization Dashboard - Uganda HMIS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .nav {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav h1 {
+            color: white;
+            font-size: 22px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 5px;
+        }
+
+        .nav-tab {
+            padding: 10px 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #11998e;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Filters Section */
+        .filters-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .filters-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-bottom: 2px solid #11998e;
+            padding-bottom: 8px;
+        }
+
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-group label {
+            font-size: 11px;
+            color: #7f8c8d;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: #11998e;
+            outline: none;
+        }
+
+        .filter-group select:disabled {
+            background: #f5f5f5;
+        }
+
+        .selected-info {
+            background: #e8f5e9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .selected-info span {
+            font-size: 13px;
+            color: #2c3e50;
+        }
+
+        .selected-info .highlight {
+            background: #11998e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #11998e;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0d7a70;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .btn-secondary:hover {
+            background: #bdc3c7;
+        }
+
+        .btn-download {
+            background: #3498db;
+            color: white;
+            font-size: 11px;
+            padding: 6px 12px;
+        }
+
+        .btn-download:hover {
+            background: #2980b9;
+        }
+
+        /* Section Toggle */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border-top: 4px solid #11998e;
+        }
+
+        .stat-card h4 {
+            color: #7f8c8d;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-card .sub {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-top: 5px;
+        }
+
+        /* Coverage Cards */
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .coverage-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #ccc;
+        }
+
+        .coverage-card.green {
+            border-left-color: #27ae60;
+        }
+
+        .coverage-card.yellow {
+            border-left-color: #f39c12;
+        }
+
+        .coverage-card.red {
+            border-left-color: #e74c3c;
+        }
+
+        .coverage-card h4 {
+            font-size: 12px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .coverage-card .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .coverage-card .metric {
+            text-align: center;
+        }
+
+        .coverage-card .metric .label {
+            font-size: 10px;
+            color: #7f8c8d;
+        }
+
+        .coverage-card .metric .val {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .coverage-card .metric .val.green {
+            color: #27ae60;
+        }
+
+        .coverage-card .metric .val.yellow {
+            color: #f39c12;
+        }
+
+        .coverage-card .metric .val.red {
+            color: #e74c3c;
+        }
+
+        /* Dropout Cards */
+        .dropout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dropout-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropout-card .info h4 {
+            font-size: 13px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .dropout-card .info p {
+            font-size: 11px;
+            color: #7f8c8d;
+        }
+
+        .dropout-card .rate {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+
+        .dropout-card .rate.green {
+            background: #d4edda;
+            color: #27ae60;
+        }
+
+        .dropout-card .rate.red {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+
+        /* Charts */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-card.full {
+            grid-column: 1 / -1;
+        }
+
+        .chart-card h3 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Tables */
+        .table-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .table-card h3 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge.green {
+            background: #d4edda;
+            color: #27ae60;
+        }
+
+        .badge.yellow {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge.red {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+
+        /* Indicator Selection */
+        .indicator-selector {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .indicator-selector h4 {
+            font-size: 12px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .indicator-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 6px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .indicator-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .indicator-checkbox:hover {
+            background: #e8f5e9;
+        }
+
+        .indicator-checkbox input {
+            accent-color: #11998e;
+        }
+
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            padding: 5px 12px;
+            background: #e8f5e9;
+            border: 1px solid #11998e;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .quick-btn:hover {
+            background: #c8e6c9;
+        }
+
+        /* Loading & Error */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        /* Analytics Trend */
+        .trend-analysis {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .outlier-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .outlier-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .forecast-list {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .forecast-item {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .nav-tabs {
+                width: 100%;
+            }
+
+            .nav-tab {
+                flex: 1;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <h1>💉 Child Immunization Dashboard</h1>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchSection('raw')">📊 Raw Data</button>
+            <button class="nav-tab" onclick="switchSection('analytics')">📈 Analytics</button>
+        </div>
+        <span class="user-badge" id="userBadge">Loading...</span>
+    </nav>
+
+    <div class="container">
+        <!-- Filters -->
+        <div class="filters-card">
+            <h3>🔍 Filters</h3>
+            <div class="filters-row">
+                <div class="filter-group"><label>Level 1 - Country</label><select id="level1"
+                        onchange="loadChildren(1)">
+                        <option>Loading...</option>
+                    </select></div>
+                <div class="filter-group"><label>Level 2 - Region</label><select id="level2" onchange="loadChildren(2)"
+                        disabled>
+                        <option>--</option>
+                    </select></div>
+                <div class="filter-group"><label>Level 3 - District</label><select id="level3"
+                        onchange="loadChildren(3)" disabled>
+                        <option>--</option>
+                    </select></div>
+                <div class="filter-group" id="level4Group"><label>Level 4</label><select id="level4"
+                        onchange="loadChildren(4)" disabled>
+                        <option>--</option>
+                    </select></div>
+                <div class="filter-group" id="level5Group"><label>Level 5</label><select id="level5"
+                        onchange="loadChildren(5)" disabled>
+                        <option>--</option>
+                    </select></div>
+                <div class="filter-group" id="level6Group"><label>Level 6 - Facility</label><select id="level6"
+                        onchange="selectFinalLevel(6)" disabled>
+                        <option>--</option>
+                    </select></div>
+            </div>
+            <div class="filters-row">
+                <div class="filter-group"><label>Period Type</label><select id="periodType"
+                        onchange="togglePeriodInputs()">
+                        <option value="relative">Relative</option>
+                        <option value="month">Month</option>
+                        <option value="quarter">Quarter</option>
+                        <option value="year">Year</option>
+                        <option value="custom">Custom</option>
+                    </select></div>
+                <div class="filter-group" id="relativePeriodGroup"><label>Period</label><select id="relativePeriod">
+                        <optgroup label="Months">
+                            <option value="LAST_12_MONTHS" selected>Last 12 Months</option>
+                            <option value="LAST_6_MONTHS">Last 6 Months</option>
+                            <option value="LAST_3_MONTHS">Last 3 Months</option>
+                            <option value="LAST_MONTH">Last Month</option>
+                        </optgroup>
+                        <optgroup label="Quarters">
+                            <option value="LAST_4_QUARTERS">Last 4 Quarters</option>
+                            <option value="THIS_QUARTER">This Quarter</option>
+                            <option value="LAST_QUARTER">Last Quarter</option>
+                        </optgroup>
+                        <optgroup label="Years">
+                            <option value="THIS_YEAR">This Year</option>
+                            <option value="LAST_YEAR">Last Year</option>
+                        </optgroup>
+                    </select></div>
+                <div class="filter-group" id="yearGroup" style="display:none;"><label>Year</label><select
+                        id="yearSelect"></select></div>
+                <div class="filter-group" id="monthYearGroup" style="display:none;"><label>Year</label><select
+                        id="monthYear"></select></div>
+                <div class="filter-group" id="monthGroup" style="display:none;"><label>Month</label><select
+                        id="monthSelect">
+                        <option value="01">Jan</option>
+                        <option value="02">Feb</option>
+                        <option value="03">Mar</option>
+                        <option value="04">Apr</option>
+                        <option value="05">May</option>
+                        <option value="06">Jun</option>
+                        <option value="07">Jul</option>
+                        <option value="08">Aug</option>
+                        <option value="09">Sep</option>
+                        <option value="10">Oct</option>
+                        <option value="11">Nov</option>
+                        <option value="12">Dec</option>
+                    </select></div>
+                <div class="filter-group" id="quarterYearGroup" style="display:none;"><label>Year</label><select
+                        id="quarterYear"></select></div>
+                <div class="filter-group" id="quarterGroup" style="display:none;"><label>Quarter</label><select
+                        id="quarterSelect">
+                        <option value="Q1">Q1</option>
+                        <option value="Q2">Q2</option>
+                        <option value="Q3">Q3</option>
+                        <option value="Q4">Q4</option>
+                    </select></div>
+                <div class="filter-group" id="customStartGroup" style="display:none;"><label>Start</label><input
+                        id="startPeriod" placeholder="202401"></div>
+                <div class="filter-group" id="customEndGroup" style="display:none;"><label>End</label><input
+                        id="endPeriod" placeholder="202412"></div>
+            </div>
+            <div class="selected-info">
+                <span>📍 <strong>Org Unit:</strong> <span class="highlight" id="selectedOrg">Uganda</span></span>
+                <span>📅 <strong>Period:</strong> <span class="highlight" id="selectedPeriod">Last 12
+                        Months</span></span>
+                <span id="populationInfo" style="display:none;">👥 <strong>UBOS Population:</strong> <span
+                        class="highlight" id="ubosPopulation">-</span></span>
+                <button class="btn btn-primary" onclick="loadData()">📊 Load Data</button>
+            </div>
+        </div>
+
+        <div id="errorMessage" class="error" style="display:none;"></div>
+        <div id="loadingSpinner" class="loading" style="display:none;">⏳ Loading data from DHIS2...</div>
+
+        <!-- RAW DATA SECTION -->
+        <div id="rawSection" class="section active">
+            <div class="indicator-selector">
+                <h4>💉 Select Indicators</h4>
+                <div class="quick-btns">
+                    <button class="quick-btn" onclick="selectAllIndicators()">Select All</button>
+                    <button class="quick-btn" onclick="clearAllIndicators()">Clear All</button>
+                    <button class="quick-btn" onclick="selectPolio()">Polio Series</button>
+                    <button class="quick-btn" onclick="selectDPT()">DPT/Penta Series</button>
+                    <button class="quick-btn" onclick="selectMalaria()">Malaria Series</button>
+                    <button class="quick-btn" onclick="selectPCV()">PCV Series</button>
+                </div>
+                <div class="indicator-checkboxes" id="indicatorGrid">Loading indicators...</div>
+            </div>
+
+            <div class="cards-grid" id="summaryCards"></div>
+
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>📈 Trend Over Time <button class="btn btn-download" onclick="downloadChart('trendChart')">📥
+                            PNG</button></h3><canvas id="trendChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📊 Latest Period Comparison <button class="btn btn-download"
+                            onclick="downloadChart('barChart')">📥 PNG</button></h3><canvas id="barChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-card" id="rawTableCard">
+                <h3>📋 Raw Data Table <button class="btn btn-download" onclick="downloadTableAsPDF('rawTable')">📥
+                        PDF</button> <button class="btn btn-download" onclick="downloadTableAsImage('rawTableCard')">📥
+                        PNG</button></h3>
+                <table id="rawTable">
+                    <thead>
+                        <tr id="rawTableHeader">
+                            <th>Period</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rawTableBody">
+                        <tr>
+                            <td>Load data to view</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ANALYTICS SECTION -->
+        <div id="analyticsSection" class="section">
+            <div class="cards-grid" id="analyticsStats"></div>
+
+            <div class="table-card" id="coverageTableCard">
+                <h3>📊 Coverage Performance <button class="btn btn-download"
+                        onclick="downloadTableAsPDF('coverageTable')">📥 PDF</button> <button class="btn btn-download"
+                        onclick="downloadTableAsImage('coverageTableCard')">📥 PNG</button></h3>
+                <table id="coverageTable">
+                    <thead>
+                        <tr>
+                            <th>Indicator</th>
+                            <th>Doses Given</th>
+                            <th>Target Pop</th>
+                            <th>Coverage %</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coverageTableBody">
+                        <tr>
+                            <td colspan="5">Load data to view coverage</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="coverage-grid" id="coverageCards"></div>
+
+            <div class="table-card" id="dropoutTableCard">
+                <h3>📉 Dropout Rates <button class="btn btn-download" onclick="downloadTableAsPDF('dropoutTable')">📥
+                        PDF</button></h3>
+                <table id="dropoutTable">
+                    <thead>
+                        <tr>
+                            <th>Dropout Type</th>
+                            <th>First Dose</th>
+                            <th>Last Dose</th>
+                            <th>Dropout Rate</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dropoutTableBody">
+                        <tr>
+                            <td colspan="5">Load data to view dropouts</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dropout-grid" id="dropoutCards"></div>
+
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>🎯 Coverage by Indicator <button class="btn btn-download"
+                            onclick="downloadChart('coverageChart')">📥 PNG</button></h3><canvas
+                        id="coverageChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📉 Dropout Rates <button class="btn btn-download" onclick="downloadChart('dropoutChart')">📥
+                            PNG</button></h3><canvas id="dropoutChart"></canvas>
+                </div>
+            </div>
+
+            <div class="trend-analysis">
+                <h3>🔮 Trend Analysis & Forecasting</h3>
+                <div class="filters-row" style="margin-top:15px;">
+                    <div class="filter-group"><label>Select Indicator</label><select id="trendIndicator"
+                            onchange="loadTrendAnalysis()">
+                            <option value="">-- Select --</option>
+                        </select></div>
+                </div>
+                <div id="trendResults" style="margin-top:15px;"></div>
+                <div class="charts-section" style="margin-top:15px;">
+                    <div class="chart-card full">
+                        <h3>📈 Trend with Forecast <button class="btn btn-download"
+                                onclick="downloadChart('forecastChart')">📥 PNG</button></h3><canvas
+                            id="forecastChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedOrgUnit = { id: 'akV6429SUqu', name: 'Uganda', level: 1 };
+        let selectedDistrict = '';
+        let dataElements = [];
+        let selectedIndicators = new Set();
+        let currentSection = 'raw';
+        let charts = {};
+        let ubosPopulation = {};
+        const COLORS = ['#11998e', '#38ef7d', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c', '#2ecc71', '#e67e22', '#34495e'];
+
+        // Initialize
+        window.onload = async () => {
+            initYearDropdowns();
+            await loadUserInfo();
+            await loadDistricts();
+            await initOrgUnits();
+            await loadDataElements();
+        };
+
+        function initYearDropdowns() {
+            const year = new Date().getFullYear();
+            ['yearSelect', 'monthYear', 'quarterYear'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.innerHTML = ''; for (let y = year; y >= 2015; y--) el.innerHTML += `<option value="${y}">${y}</option>`; }
+            });
+        }
+
+        async function loadUserInfo() {
+            try { const r = await fetch('/api/user-info'); const d = await r.json(); if (d?.displayName) document.getElementById('userBadge').textContent = `👤 ${d.displayName}`; } catch (e) { }
+        }
+
+        async function loadDistricts() {
+            try { const r = await fetch('/api/districts'); ubosPopulation = await r.json(); } catch (e) { console.error(e); }
+        }
+
+        async function loadDataElements() {
+            try {
+                const r = await fetch('/api/search-data-elements?pattern=105-CL');
+                const d = await r.json();
+                dataElements = (d.dataElements || []).sort((a, b) => a.code.localeCompare(b.code));
+                renderIndicatorGrid();
+                populateTrendIndicators();
+            } catch (e) { document.getElementById('indicatorGrid').innerHTML = 'Error loading'; }
+        }
+
+        function renderIndicatorGrid() {
+            const grid = document.getElementById('indicatorGrid');
+            grid.innerHTML = dataElements.map(de => `<label class="indicator-checkbox"><input type="checkbox" value="${de.id}" ${selectedIndicators.has(de.id) ? 'checked' : ''} onchange="toggleIndicator('${de.id}')"><span>${de.code}: ${de.shortName || de.displayName}</span></label>`).join('');
+        }
+
+        function populateTrendIndicators() {
+            const sel = document.getElementById('trendIndicator');
+            sel.innerHTML = '<option value="">-- Select Indicator --</option>' + dataElements.map(de => `<option value="${de.id}">${de.code}: ${de.shortName || de.displayName}</option>`).join('');
+        }
+
+        function toggleIndicator(id) { if (selectedIndicators.has(id)) selectedIndicators.delete(id); else selectedIndicators.add(id); renderIndicatorGrid(); }
+        function selectAllIndicators() { dataElements.forEach(de => selectedIndicators.add(de.id)); renderIndicatorGrid(); }
+        function clearAllIndicators() { selectedIndicators.clear(); renderIndicatorGrid(); }
+        function selectPolio() { clearAllIndicators(); dataElements.filter(de => ['105-CL04', '105-CL05', '105-CL06', '105-CL07', '105-CL08', '105-CL09'].includes(de.code)).forEach(de => selectedIndicators.add(de.id)); renderIndicatorGrid(); }
+        function selectDPT() { clearAllIndicators(); dataElements.filter(de => ['105-CL10', '105-CL11', '105-CL12'].includes(de.code)).forEach(de => selectedIndicators.add(de.id)); renderIndicatorGrid(); }
+        function selectMalaria() { clearAllIndicators(); dataElements.filter(de => ['105-CL19', '105-CL20', '105-CL21', '105-CL26'].includes(de.code)).forEach(de => selectedIndicators.add(de.id)); renderIndicatorGrid(); }
+        function selectPCV() { clearAllIndicators(); dataElements.filter(de => ['105-CL13', '105-CL14', '105-CL15'].includes(de.code)).forEach(de => selectedIndicators.add(de.id)); renderIndicatorGrid(); }
+
+        function switchSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.nav-tab:nth-child(${section === 'raw' ? 1 : 2})`).classList.add('active');
+            document.getElementById('rawSection').classList.toggle('active', section === 'raw');
+            document.getElementById('analyticsSection').classList.toggle('active', section === 'analytics');
+
+            // Show/hide lower org levels for analytics (district level max)
+            const isAnalytics = section === 'analytics';
+            ['level4Group', 'level5Group', 'level6Group'].forEach(id => {
+                document.getElementById(id).style.display = isAnalytics ? 'none' : 'flex';
+            });
+            document.getElementById('populationInfo').style.display = isAnalytics && selectedDistrict ? 'inline' : 'none';
+        }
+
+        async function initOrgUnits() {
+            const sel = document.getElementById('level1');
+            try {
+                const r = await fetch('/api/org-units');
+                const d = await r.json();
+                const units = d.organisationUnits || [];
+                sel.innerHTML = '<option value="">-- Select --</option>' + units.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
+                const uganda = units.find(u => u.displayName.includes('Uganda') || u.displayName.includes('MOH'));
+                if (uganda) { sel.value = uganda.id; loadChildren(1); }
+            } catch (e) { sel.innerHTML = '<option>Error</option>'; }
+        }
+
+        async function loadChildren(level) {
+            const sel = document.getElementById(`level${level}`);
+            const parentId = sel.value;
+            const parentName = sel.options[sel.selectedIndex]?.dataset?.name || sel.options[sel.selectedIndex]?.text || '';
+
+            if (parentId) {
+                selectedOrgUnit = { id: parentId, name: parentName, level: level };
+                document.getElementById('selectedOrg').textContent = parentName;
+
+                // Check if this is a district (level 3)
+                if (level === 3) {
+                    selectedDistrict = parentName.toUpperCase().replace(' DISTRICT', '').trim();
+                    const pop = ubosPopulation[selectedDistrict] || 0;
+                    document.getElementById('ubosPopulation').textContent = pop.toLocaleString();
+                    document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
+                }
+            }
+
+            // Clear lower levels
+            const maxLevel = currentSection === 'analytics' ? 3 : 6;
+            for (let i = level + 1; i <= 6; i++) {
+                const s = document.getElementById(`level${i}`);
+                s.innerHTML = '<option>--</option>'; s.disabled = true;
+            }
+
+            if (!parentId || level >= maxLevel) return;
+
+            const nextLevel = level + 1;
+            const nextSel = document.getElementById(`level${nextLevel}`);
+            nextSel.innerHTML = '<option>Loading...</option>'; nextSel.disabled = false;
+
+            try {
+                const r = await fetch(`/api/org-units?parent=${parentId}`);
+                const d = await r.json();
+                const children = (d.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                if (!children.length) { nextSel.innerHTML = '<option>No sub-units</option>'; nextSel.disabled = true; return; }
+                nextSel.innerHTML = `<option value="">-- ${children.length} options --</option>` + children.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
+            } catch (e) { nextSel.innerHTML = '<option>Error</option>'; }
+        }
+
+        function selectFinalLevel(level) {
+            const sel = document.getElementById(`level${level}`);
+            if (sel.value) {
+                selectedOrgUnit = { id: sel.value, name: sel.options[sel.selectedIndex].dataset.name || sel.options[sel.selectedIndex].text, level: level };
+                document.getElementById('selectedOrg').textContent = selectedOrgUnit.name;
+            }
+        }
+
+        function togglePeriodInputs() {
+            const type = document.getElementById('periodType').value;
+            ['relativePeriodGroup', 'yearGroup', 'monthYearGroup', 'monthGroup', 'quarterYearGroup', 'quarterGroup', 'customStartGroup', 'customEndGroup'].forEach(id => document.getElementById(id).style.display = 'none');
+            if (type === 'relative') document.getElementById('relativePeriodGroup').style.display = 'flex';
+            else if (type === 'year') document.getElementById('yearGroup').style.display = 'flex';
+            else if (type === 'month') { document.getElementById('monthYearGroup').style.display = 'flex'; document.getElementById('monthGroup').style.display = 'flex'; }
+            else if (type === 'quarter') { document.getElementById('quarterYearGroup').style.display = 'flex'; document.getElementById('quarterGroup').style.display = 'flex'; }
+            else if (type === 'custom') { document.getElementById('customStartGroup').style.display = 'flex'; document.getElementById('customEndGroup').style.display = 'flex'; }
+        }
+
+        function getSelectedPeriod() {
+            const type = document.getElementById('periodType').value;
+            if (type === 'relative') return document.getElementById('relativePeriod').value;
+            if (type === 'month') return `${document.getElementById('monthYear').value}${document.getElementById('monthSelect').value}`;
+            if (type === 'quarter') return `${document.getElementById('quarterYear').value}${document.getElementById('quarterSelect').value}`;
+            if (type === 'year') { const y = document.getElementById('yearSelect').value; return `${y}01-${y}12`; }
+            if (type === 'custom') return `${document.getElementById('startPeriod').value}-${document.getElementById('endPeriod').value}`;
+        }
+
+        async function loadData() {
+            const period = getSelectedPeriod();
+            document.getElementById('selectedPeriod').textContent = period;
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                if (currentSection === 'raw') {
+                    await loadRawData(period);
+                } else {
+                    await loadAnalyticsData(period);
+                }
+            } catch (e) {
+                showError(e.message);
+            }
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        async function loadRawData(period) {
+            const indicators = selectedIndicators.size > 0 ? Array.from(selectedIndicators).join(',') : '';
+            const r = await fetch(`/api/raw-data?orgUnit=${selectedOrgUnit.id}&period=${period}&indicators=${indicators}`);
+            const data = await r.json();
+            if (data.error) { showError(data.error); return; }
+            processRawData(data);
+        }
+
+        async function loadAnalyticsData(period) {
+            const r = await fetch(`/api/analytics-data?orgUnit=${selectedOrgUnit.id}&period=${period}&districtName=${encodeURIComponent(selectedDistrict)}`);
+            const data = await r.json();
+            if (data.error) { showError(data.error); return; }
+            processAnalyticsData(data);
+        }
+
+        function processRawData(data) {
+            const rows = data.rows || [];
+            if (!rows.length) { showError('No data available'); return; }
+
+            const headers = data.headers || [], meta = data.metaData || {};
+            const dxIdx = headers.findIndex(h => h.name === 'dx'), peIdx = headers.findIndex(h => h.name === 'pe'), valIdx = headers.findIndex(h => h.name === 'value');
+
+            const indicatorData = {};
+            rows.forEach(row => {
+                const id = row[dxIdx], pe = row[peIdx], val = parseInt(row[valIdx]) || 0;
+                if (!indicatorData[id]) indicatorData[id] = [];
+                indicatorData[id].push({ period: pe, value: val });
+            });
+            Object.values(indicatorData).forEach(arr => arr.sort((a, b) => a.period.localeCompare(b.period)));
+
+            updateSummaryCards(indicatorData, meta);
+            updateRawCharts(indicatorData, meta);
+            updateRawTable(indicatorData, meta);
+        }
+
+        function processAnalyticsData(data) {
+            const indicators = data.indicators || [];
+            const dropouts = data.dropouts || [];
+            const pop = data.population || 0;
+
+            // Stats cards
+            const totalDoses = indicators.reduce((s, i) => s + i.doses, 0);
+            const avgCoverage = indicators.length ? Math.round(indicators.reduce((s, i) => s + i.coverage, 0) / indicators.length) : 0;
+            const greenCount = indicators.filter(i => i.color === 'green').length;
+            const redCount = indicators.filter(i => i.color === 'red').length;
+
+            document.getElementById('analyticsStats').innerHTML = `
+                <div class="stat-card"><h4>Total Doses</h4><div class="value">${totalDoses.toLocaleString()}</div><div class="sub">All indicators</div></div>
+                <div class="stat-card"><h4>Avg Coverage</h4><div class="value" style="color:${avgCoverage >= 95 ? '#27ae60' : avgCoverage >= 70 ? '#f39c12' : '#e74c3c'}">${avgCoverage}%</div><div class="sub">Across indicators</div></div>
+                <div class="stat-card"><h4>🟢 On Target</h4><div class="value" style="color:#27ae60">${greenCount}</div><div class="sub">≥95% coverage</div></div>
+                <div class="stat-card"><h4>🔴 Below Target</h4><div class="value" style="color:#e74c3c">${redCount}</div><div class="sub"><70% coverage</div></div>
+                <div class="stat-card"><h4>UBOS Population</h4><div class="value">${pop.toLocaleString()}</div><div class="sub">${selectedDistrict || 'Selected area'}</div></div>
+            `;
+
+            // Coverage table & cards
+            document.getElementById('coverageTableBody').innerHTML = indicators.map(i => `
+                <tr><td>${i.name}</td><td>${i.doses.toLocaleString()}</td><td>${i.target_population.toLocaleString()}</td>
+                <td><strong>${i.coverage}%</strong></td><td><span class="badge ${i.color}">${i.coverage >= 95 ? '✓ Target Met' : i.coverage >= 70 ? '⚠ Moderate' : '✗ Low'}</span></td></tr>
+            `).join('');
+
+            document.getElementById('coverageCards').innerHTML = indicators.slice(0, 12).map(i => `
+                <div class="coverage-card ${i.color}"><h4>${i.name}</h4>
+                <div class="metrics"><div class="metric"><div class="label">Doses</div><div class="val">${i.doses.toLocaleString()}</div></div>
+                <div class="metric"><div class="label">Target</div><div class="val">${i.target_population.toLocaleString()}</div></div>
+                <div class="metric"><div class="label">Coverage</div><div class="val ${i.color}">${i.coverage}%</div></div></div></div>
+            `).join('');
+
+            // Dropout table & cards
+            document.getElementById('dropoutTableBody').innerHTML = dropouts.map(d => `
+                <tr><td>${d.name}</td><td>${d.first_doses.toLocaleString()}</td><td>${d.last_doses.toLocaleString()}</td>
+                <td><strong>${d.dropout_rate}%</strong></td><td><span class="badge ${d.color}">${d.dropout_rate < 10 ? '✓ Good' : '✗ High'}</span></td></tr>
+            `).join('');
+
+            document.getElementById('dropoutCards').innerHTML = dropouts.map(d => `
+                <div class="dropout-card"><div class="info"><h4>${d.name}</h4><p>${d.first_doses.toLocaleString()} → ${d.last_doses.toLocaleString()}</p></div>
+                <div class="rate ${d.color}">${d.dropout_rate}%</div></div>
+            `).join('');
+
+            // Charts
+            updateAnalyticsCharts(indicators, dropouts);
+        }
+
+        function updateSummaryCards(data, meta) {
+            const total = Object.values(data).reduce((s, arr) => s + arr.reduce((ss, i) => ss + i.value, 0), 0);
+            const count = Object.keys(data).length;
+            document.getElementById('summaryCards').innerHTML = `
+                <div class="stat-card"><h4>Total Doses</h4><div class="value">${total.toLocaleString()}</div></div>
+                <div class="stat-card"><h4>Indicators</h4><div class="value">${count}</div></div>
+            `;
+        }
+
+        function updateRawCharts(data, meta) {
+            const periods = [...new Set(Object.values(data).flatMap(d => d.map(i => i.period)))].sort();
+            const ids = Object.keys(data).slice(0, 10);
+
+            if (charts.trend) charts.trend.destroy();
+            charts.trend = new Chart(document.getElementById('trendChart'), {
+                type: 'line', data: {
+                    labels: periods.map(formatPeriod),
+                    datasets: ids.map((id, i) => ({ label: (meta.items?.[id]?.name || id).substring(0, 25), data: periods.map(p => data[id]?.find(d => d.period === p)?.value || 0), borderColor: COLORS[i % COLORS.length], tension: 0.4, fill: false }))
+                }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
+            });
+
+            if (charts.bar) charts.bar.destroy();
+            const lastP = periods[periods.length - 1];
+            charts.bar = new Chart(document.getElementById('barChart'), {
+                type: 'bar', data: {
+                    labels: ids.map(id => (meta.items?.[id]?.name || id).substring(0, 20)),
+                    datasets: [{ data: ids.map(id => data[id]?.find(d => d.period === lastP)?.value || 0), backgroundColor: ids.map((_, i) => COLORS[i % COLORS.length]) }]
+                }, options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function updateRawTable(data, meta) {
+            const periods = [...new Set(Object.values(data).flatMap(d => d.map(i => i.period)))].sort();
+            const ids = Object.keys(data);
+            document.getElementById('rawTableHeader').innerHTML = '<th>Period</th>' + ids.map(id => `<th>${(meta.items?.[id]?.name || id).substring(0, 25)}</th>`).join('');
+            document.getElementById('rawTableBody').innerHTML = periods.map(p => `<tr><td>${formatPeriod(p)}</td>${ids.map(id => `<td>${(data[id]?.find(d => d.period === p)?.value || 0).toLocaleString()}</td>`).join('')}</tr>`).join('');
+        }
+
+        function updateAnalyticsCharts(indicators, dropouts) {
+            if (charts.coverage) charts.coverage.destroy();
+            charts.coverage = new Chart(document.getElementById('coverageChart'), {
+                type: 'bar', data: {
+                    labels: indicators.slice(0, 15).map(i => i.code),
+                    datasets: [{ label: 'Coverage %', data: indicators.slice(0, 15).map(i => i.coverage), backgroundColor: indicators.slice(0, 15).map(i => i.color === 'green' ? '#27ae60' : i.color === 'yellow' ? '#f39c12' : '#e74c3c') }]
+                }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { max: 120, ticks: { callback: v => v + '%' } } } }
+            });
+
+            if (charts.dropout) charts.dropout.destroy();
+            charts.dropout = new Chart(document.getElementById('dropoutChart'), {
+                type: 'bar', data: {
+                    labels: dropouts.map(d => d.name),
+                    datasets: [{ label: 'Dropout %', data: dropouts.map(d => d.dropout_rate), backgroundColor: dropouts.map(d => d.color === 'green' ? '#27ae60' : '#e74c3c') }]
+                }, options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        async function loadTrendAnalysis() {
+            const indicatorId = document.getElementById('trendIndicator').value;
+            if (!indicatorId) return;
+
+            const period = getSelectedPeriod();
+            const r = await fetch(`/api/trend-analysis?orgUnit=${selectedOrgUnit.id}&period=${period}&indicator=${indicatorId}`);
+            const data = await r.json();
+
+            if (data.error) { document.getElementById('trendResults').innerHTML = `<div class="error">${data.error}</div>`; return; }
+
+            const stats = data.stats || {};
+            const outliers = data.outliers || [];
+            const forecast = data.forecast || [];
+
+            document.getElementById('trendResults').innerHTML = `
+                <div class="cards-grid">
+                    <div class="stat-card"><h4>Mean</h4><div class="value">${stats.mean?.toLocaleString()}</div></div>
+                    <div class="stat-card"><h4>Min</h4><div class="value">${stats.min?.toLocaleString()}</div></div>
+                    <div class="stat-card"><h4>Max</h4><div class="value">${stats.max?.toLocaleString()}</div></div>
+                </div>
+                ${outliers.length ? `<div style="margin-top:15px;"><strong>⚠️ Outliers Detected:</strong><div class="outlier-list">${outliers.map(o => `<span class="outlier-badge">Period ${o.index + 1}: ${o.value} (Z=${o.zscore})</span>`).join('')}</div></div>` : ''}
+                ${forecast.length ? `<div style="margin-top:15px;"><strong>📈 Forecast (Next 3 periods):</strong><div class="forecast-list">${forecast.map((f, i) => `<span class="forecast-item">+${i + 1}: ${f.toLocaleString()}</span>`).join('')}</div></div>` : ''}
+            `;
+
+            // Forecast chart
+            const ts = data.data || [];
+            const labels = ts.map(t => formatPeriod(t.period)).concat(forecast.map((_, i) => `Forecast +${i + 1}`));
+            const values = ts.map(t => t.value).concat(forecast);
+            const colors = ts.map(() => '#11998e').concat(forecast.map(() => '#3498db'));
+
+            if (charts.forecast) charts.forecast.destroy();
+            charts.forecast = new Chart(document.getElementById('forecastChart'), {
+                type: 'line', data: {
+                    labels,
+                    datasets: [{
+                        label: 'Value', data: values, borderColor: '#11998e', backgroundColor: 'rgba(17,153,142,0.1)', fill: true, tension: 0.4,
+                        segment: { borderColor: ctx => ctx.p1DataIndex >= ts.length ? '#3498db' : '#11998e', borderDash: ctx => ctx.p1DataIndex >= ts.length ? [5, 5] : [] }
+                    }]
+                }, options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function formatPeriod(p) { const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return p?.length === 6 ? `${m[parseInt(p.substring(4, 6)) - 1]} ${p.substring(0, 4)}` : p; }
+        function showError(msg) { const e = document.getElementById('errorMessage'); e.textContent = '⚠️ ' + msg; e.style.display = 'block'; }
+
+        // Download functions
+        function downloadChart(chartId) {
+            const canvas = document.getElementById(chartId);
+            const link = document.createElement('a');
+            link.download = `${chartId}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        async function downloadTableAsImage(elementId) {
+            const element = document.getElementById(elementId);
+            const canvas = await html2canvas(element);
+            const link = document.createElement('a');
+            link.download = `${elementId}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        async function downloadTableAsPDF(tableId) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tr');
+            let y = 20;
+
+            doc.setFontSize(16);
+            doc.text(`${tableId} - ${selectedOrgUnit.name} - ${getSelectedPeriod()}`, 10, 10);
+            doc.setFontSize(10);
+
+            rows.forEach((row, idx) => {
+                const cells = row.querySelectorAll('th, td');
+                let x = 10;
+                cells.forEach(cell => {
+                    doc.text(cell.textContent.substring(0, 25), x, y);
+                    x += 40;
+                });
+                y += 7;
+                if (y > 280) { doc.addPage(); y = 20; }
+            });
+
+            doc.save(`${tableId}_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+    </script>
+</body>
+
+</html>
