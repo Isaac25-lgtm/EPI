@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Child Immunization Dashboard - Uganda HMIS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -732,8 +733,9 @@
             </div>
 
             <div class="table-card" id="rawTableCard">
-                <h3>📋 Raw Data Table <button class="btn btn-download" onclick="downloadRawDataExcel()">📥
-                        Excel</button></h3>
+                <h3>📋 Raw Data Table <button class="btn btn-download" onclick="downloadTableAsPDF('rawTable')">📥
+                        PDF</button> <button class="btn btn-download" onclick="downloadTableAsImage('rawTableCard')">📥
+                        PNG</button></h3>
                 <table id="rawTable">
                     <thead>
                         <tr id="rawTableHeader">
@@ -754,8 +756,9 @@
             <div class="cards-grid" id="analyticsStats"></div>
 
             <div class="table-card" id="coverageTableCard">
-                <h3>📊 Coverage Performance <button class="btn btn-download" onclick="downloadCoverageExcel()">📥
-                        Excel</button></h3>
+                <h3>📊 Coverage Performance <button class="btn btn-download"
+                        onclick="downloadTableAsPDF('coverageTable')">📥 PDF</button> <button class="btn btn-download"
+                        onclick="downloadTableAsImage('coverageTableCard')">📥 PNG</button></h3>
                 <table id="coverageTable">
                     <thead>
                         <tr>
@@ -777,8 +780,8 @@
             <div class="coverage-grid" id="coverageCards"></div>
 
             <div class="table-card" id="dropoutTableCard">
-                <h3>📉 Dropout Rates <button class="btn btn-download" onclick="downloadDropoutExcel()">📥 Excel</button>
-                </h3>
+                <h3>📉 Dropout Rates <button class="btn btn-download" onclick="downloadTableAsPDF('dropoutTable')">📥
+                        PDF</button></h3>
                 <table id="dropoutTable">
                     <thead>
                         <tr>
@@ -1060,10 +1063,6 @@
             const dropouts = data.dropouts || [];
             const pop = data.population || 0;
 
-            // Store for Excel export
-            lastCoverageData = indicators;
-            lastDropoutData = dropouts;
-
             // Stats cards
             const totalDoses = indicators.reduce((s, i) => s + i.doses, 0);
             const avgCoverage = indicators.length ? Math.round(indicators.reduce((s, i) => s + i.coverage, 0) / indicators.length) : 0;
@@ -1207,11 +1206,7 @@
         function formatPeriod(p) { const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return p?.length === 6 ? `${m[parseInt(p.substring(4, 6)) - 1]} ${p.substring(0, 4)}` : p; }
         function showError(msg) { const e = document.getElementById('errorMessage'); e.textContent = '⚠️ ' + msg; e.style.display = 'block'; }
 
-        // Download functions - Excel with color coding
-        let lastCoverageData = [];
-        let lastDropoutData = [];
-        let lastRawData = { headers: [], rows: [] };
-
+        // Download functions
         function downloadChart(chartId) {
             const canvas = document.getElementById(chartId);
             const link = document.createElement('a');
@@ -1220,94 +1215,38 @@
             link.click();
         }
 
-        function downloadCoverageExcel() {
-            if (!lastCoverageData.length) { alert('No coverage data loaded'); return; }
-
-            const wb = XLSX.utils.book_new();
-            const wsData = [
-                ['EPI Dashboard - Coverage Performance'],
-                [`Organization: ${selectedOrgUnit.name}`, `Period: ${getSelectedPeriod()}`, `UBOS Population: ${document.getElementById('ubosPopulation')?.textContent || 'N/A'}`],
-                [],
-                ['Indicator', 'Code', 'Doses Given', 'Target Population', 'Coverage %', 'Status']
-            ];
-
-            lastCoverageData.forEach(ind => {
-                wsData.push([
-                    ind.name,
-                    ind.code,
-                    ind.doses,
-                    ind.target_population,
-                    ind.coverage,
-                    ind.coverage >= 95 ? '✓ Target Met' : ind.coverage >= 70 ? '⚠ Moderate' : '✗ Low'
-                ]);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-            // Set column widths
-            ws['!cols'] = [{ wch: 40 }, { wch: 12 }, { wch: 15 }, { wch: 18 }, { wch: 12 }, { wch: 15 }];
-
-            // Add color coding using cell styles (note: requires xlsx-style for full color support)
-            // Basic approach - add formatting hints in status column
-
-            XLSX.utils.book_append_sheet(wb, ws, 'Coverage');
-            XLSX.writeFile(wb, `Coverage_${selectedOrgUnit.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        async function downloadTableAsImage(elementId) {
+            const element = document.getElementById(elementId);
+            const canvas = await html2canvas(element);
+            const link = document.createElement('a');
+            link.download = `${elementId}_${new Date().toISOString().split('T')[0]}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
-        function downloadDropoutExcel() {
-            if (!lastDropoutData.length) { alert('No dropout data loaded'); return; }
+        async function downloadTableAsPDF(tableId) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tr');
+            let y = 20;
 
-            const wb = XLSX.utils.book_new();
-            const wsData = [
-                ['EPI Dashboard - Dropout Rates'],
-                [`Organization: ${selectedOrgUnit.name}`, `Period: ${getSelectedPeriod()}`],
-                [],
-                ['Dropout Type', 'First Dose', 'Last Dose', 'Dropout Rate %', 'Status']
-            ];
+            doc.setFontSize(16);
+            doc.text(`${tableId} - ${selectedOrgUnit.name} - ${getSelectedPeriod()}`, 10, 10);
+            doc.setFontSize(10);
 
-            lastDropoutData.forEach(d => {
-                wsData.push([
-                    d.name,
-                    d.first_doses,
-                    d.last_doses,
-                    d.dropout_rate,
-                    d.dropout_rate < 10 ? '✓ Good (<10%)' : '✗ High (≥10%)'
-                ]);
+            rows.forEach((row, idx) => {
+                const cells = row.querySelectorAll('th, td');
+                let x = 10;
+                cells.forEach(cell => {
+                    doc.text(cell.textContent.substring(0, 25), x, y);
+                    x += 40;
+                });
+                y += 7;
+                if (y > 280) { doc.addPage(); y = 20; }
             });
 
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 }];
-
-            XLSX.utils.book_append_sheet(wb, ws, 'Dropouts');
-            XLSX.writeFile(wb, `Dropouts_${selectedOrgUnit.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        function downloadRawDataExcel() {
-            const table = document.getElementById('rawTable');
-            if (!table || table.rows.length <= 1) { alert('No raw data loaded'); return; }
-
-            const wb = XLSX.utils.book_new();
-            const wsData = [
-                ['EPI Dashboard - Raw Data'],
-                [`Organization: ${selectedOrgUnit.name}`, `Period: ${getSelectedPeriod()}`],
-                []
-            ];
-
-            // Get headers
-            const headers = [];
-            table.querySelectorAll('thead th').forEach(th => headers.push(th.textContent));
-            wsData.push(headers);
-
-            // Get data rows
-            table.querySelectorAll('tbody tr').forEach(tr => {
-                const row = [];
-                tr.querySelectorAll('td').forEach(td => row.push(td.textContent));
-                if (row.length > 0) wsData.push(row);
-            });
-
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            XLSX.utils.book_append_sheet(wb, ws, 'Raw Data');
-            XLSX.writeFile(wb, `RawData_${selectedOrgUnit.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            doc.save(`${tableId}_${new Date().toISOString().split('T')[0]}.pdf`);
         }
     </script>
 </body>
