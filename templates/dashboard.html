@@ -842,10 +842,14 @@
         // Initialize
         window.onload = async () => {
             initYearDropdowns();
-            await loadUserInfo();
-            await loadDistricts();
-            await initOrgUnits();
-            await loadDataElements();
+            // Load user info in background (non-blocking)
+            loadUserInfo();
+            // Load other data in parallel
+            await Promise.all([
+                loadDistricts(),
+                initOrgUnits(),
+                loadDataElements()
+            ]);
         };
 
         function initYearDropdowns() {
@@ -857,7 +861,17 @@
         }
 
         async function loadUserInfo() {
-            try { const r = await fetch('/api/user-info'); const d = await r.json(); if (d?.displayName) document.getElementById('userBadge').textContent = `👤 ${d.displayName}`; } catch (e) { }
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+                const r = await fetch('/api/user-info', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const d = await r.json();
+                if (d?.displayName) document.getElementById('userBadge').textContent = `👤 ${d.displayName}`;
+                else document.getElementById('userBadge').textContent = '👤 User';
+            } catch (e) {
+                document.getElementById('userBadge').textContent = '👤 User';
+            }
         }
 
         async function loadDistricts() {
