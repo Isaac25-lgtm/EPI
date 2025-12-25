@@ -125,14 +125,24 @@ def calculate_dropout(first_dose, last_dose):
     if first_dose <= 0: return 0
     return round(((first_dose - last_dose) / first_dose) * 100, 1)
 
-def detect_outliers_zscore(values, threshold=2):
+def detect_outliers_zscore(values, periods=None, threshold=2):
     if len(values) < 3: return []
     import statistics
+    ICHD_MONTHS = ['04', '10']  # ICHD campaigns in April and October
     mean = statistics.mean(values)
     std = statistics.stdev(values) if len(values) > 1 else 0
     if std == 0: return []
-    return [{"index": i, "value": v, "zscore": round((v - mean) / std, 2)} 
-            for i, v in enumerate(values) if abs((v - mean) / std) > threshold]
+    outliers = []
+    for i, v in enumerate(values):
+        zscore = (v - mean) / std
+        is_ichd = False
+        if periods and i < len(periods):
+            month = str(periods[i])[4:6] if len(str(periods[i])) >= 6 else ''
+            is_ichd = month in ICHD_MONTHS
+        eff_threshold = threshold + 1 if is_ichd else threshold  # Higher threshold for ICHD months
+        if abs(zscore) > eff_threshold:
+            outliers.append({"index": i, "value": v, "zscore": round(zscore, 2), "is_ichd": is_ichd})
+    return outliers
 
 def simple_forecast(values, periods_ahead=3):
     if len(values) < 2: return []
@@ -389,7 +399,7 @@ def trend_analysis():
     
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
     indicator_id = request.args.get('indicator', '')
-    period = request.args.get('period', 'LAST_12_MONTHS')
+    period = request.args.get('period', 'LAST_24_MONTHS')  # 24 months for full seasonal view
     
     if not indicator_id:
         return jsonify({'error': 'Indicator required'})
@@ -409,14 +419,18 @@ def trend_analysis():
             data = response.json()
             time_series = []
             for row in data.get('rows', []):
-                time_series.append({'period': row[1], 'value': int(float(row[2])) if len(row) > 2 else 0})
+                try:
+                    val = row[-1]  # Value is typically the last column
+                    time_series.append({'period': row[1], 'value': int(float(val)) if val else 0})
+                except (ValueError, IndexError):
+                    continue
             
             time_series.sort(key=lambda x: x['period'])
             values = [t['value'] for t in time_series]
             
             return jsonify({
                 'data': time_series,
-                'outliers': detect_outliers_zscore(values),
+                'outliers': detect_outliers_zscore(values, periods=[t['period'] for t in time_series]),
                 'forecast': simple_forecast(values),
                 'stats': {
                     'mean': round(sum(values) / len(values), 1) if values else 0,
