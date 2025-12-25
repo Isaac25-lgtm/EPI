@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Child Immunization Dashboard - Uganda HMIS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -449,6 +451,50 @@
             color: #e74c3c;
         }
 
+        /* Color-coded table cells */
+        .coverage-cell {
+            font-weight: bold;
+            text-align: center;
+            border-radius: 4px;
+            padding: 8px 12px !important;
+        }
+
+        .coverage-cell.green {
+            background: #27ae60 !important;
+            color: white;
+        }
+
+        .coverage-cell.yellow {
+            background: #f39c12 !important;
+            color: white;
+        }
+
+        .coverage-cell.red {
+            background: #e74c3c !important;
+            color: white;
+        }
+
+        #coverageTable {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #coverageTable th {
+            background: #2c3e50;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        #coverageTable td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        #coverageTable tbody tr:hover {
+            background: #f8f9fa;
+        }
+
         /* Indicator Selection */
         .indicator-selector {
             background: #f8f9fa;
@@ -756,28 +802,44 @@
             <div class="cards-grid" id="analyticsStats"></div>
 
             <div class="table-card" id="coverageTableCard">
-                <h3>📊 Coverage Performance <button class="btn btn-download"
-                        onclick="downloadTableAsPDF('coverageTable')">📥 PDF</button> <button class="btn btn-download"
-                        onclick="downloadTableAsImage('coverageTableCard')">📥 PNG</button></h3>
+                <h3>📊 Coverage Performance
+                    <span style="margin-left: 10px;">
+                        <button class="btn btn-download" onclick="downloadCoverageExcel()"
+                            style="background: #217346;">📥 Excel</button>
+                        <button class="btn btn-download" onclick="downloadTableAsPDF('coverageTable')">📥 PDF</button>
+                        <button class="btn btn-download" onclick="downloadTableAsImage('coverageTableCard')">📥
+                            PNG</button>
+                    </span>
+                </h3>
+                <div style="margin: 10px 0; font-size: 12px;">
+                    <span
+                        style="display: inline-block; padding: 4px 12px; background: #27ae60; color: white; border-radius: 4px; margin-right: 10px;">🟢
+                        ≥95% On Target</span>
+                    <span
+                        style="display: inline-block; padding: 4px 12px; background: #f39c12; color: white; border-radius: 4px; margin-right: 10px;">🟡
+                        70-94.9% Moderate</span>
+                    <span
+                        style="display: inline-block; padding: 4px 12px; background: #e74c3c; color: white; border-radius: 4px;">🔴
+                        <70% Low</span>
+                </div>
                 <table id="coverageTable">
                     <thead>
                         <tr>
-                            <th>Indicator</th>
-                            <th>Doses Given</th>
-                            <th>Target Pop</th>
-                            <th>Coverage %</th>
-                            <th>Status</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 30%;">Antigen / Indicator</th>
+                            <th style="width: 12%;">Doses Given</th>
+                            <th style="width: 13%;">Target Pop</th>
+                            <th style="width: 12%;">Coverage %</th>
+                            <th style="width: 28%;">Disease Prevented / Schedule</th>
                         </tr>
                     </thead>
                     <tbody id="coverageTableBody">
                         <tr>
-                            <td colspan="5">Load data to view coverage</td>
+                            <td colspan="6">Load data to view coverage</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-
-            <div class="coverage-grid" id="coverageCards"></div>
 
             <div class="table-card" id="dropoutTableCard">
                 <h3>📉 Dropout Rates <button class="btn btn-download" onclick="downloadTableAsPDF('dropoutTable')">📥
@@ -822,12 +884,68 @@
                             <option value="">-- Select --</option>
                         </select></div>
                 </div>
+
+                <!-- Outliers Section -->
+                <div id="outliersSection"
+                    style="display:none; margin-top:15px; background:#fff3cd; padding:15px; border-radius:8px; border-left:4px solid #f39c12;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="color:#856404; margin:0;">⚠️ Outliers Detected in Historical Data</h4>
+                        <button class="btn btn-download" onclick="downloadOutliers()" style="background:#f39c12;">📥
+                            Download Outliers</button>
+                    </div>
+                    <p style="font-size:12px; color:#856404; margin-bottom:10px;">These data points deviate
+                        significantly from the trend (Z-score > 2). April/October (ICHD campaign months) use a higher
+                        threshold to account for expected spikes.</p>
+                    <div id="outliersTable"></div>
+                </div>
+
+                <!-- Forecast Options -->
+                <div id="forecastOptions"
+                    style="display:none; margin-top:15px; background:#e3f2fd; padding:15px; border-radius:8px;">
+                    <h4 style="color:#1565c0; margin-bottom:10px;">📈 Forecasting Options</h4>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="radio" name="forecastType" value="with" checked onchange="updateForecast()">
+                            <span>Forecast with all data</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="radio" name="forecastType" value="without" onchange="updateForecast()">
+                            <span>Forecast without outliers (cleaner trend)</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div id="trendResults" style="margin-top:15px;"></div>
                 <div class="charts-section" style="margin-top:15px;">
                     <div class="chart-card full">
-                        <h3>📈 Trend with Forecast <button class="btn btn-download"
-                                onclick="downloadChart('forecastChart')">📥 PNG</button></h3><canvas
-                            id="forecastChart"></canvas>
+                        <h3>📈 Trend with Forecast (24 Months) <button class="btn btn-download"
+                                onclick="downloadChart('forecastChart')">📥 PNG</button></h3>
+                        <canvas id="forecastChart"></canvas>
+                        <div id="chartLegend"
+                            style="margin-top:15px; padding:12px; background:#f8f9fa; border-radius:6px; font-size:12px;">
+                            <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span
+                                        style="width:12px; height:12px; background:#11998e; border-radius:50%; display:inline-block;"></span>
+                                    <span>Historical Data</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span
+                                        style="width:12px; height:12px; background:#e74c3c; border-radius:50%; display:inline-block;"></span>
+                                    <span>Outliers (data quality concerns)</span>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span
+                                        style="width:12px; height:12px; background:#3498db; border-radius:50%; display:inline-block;"></span>
+                                    <span>Forecast (dashed line)</span>
+                                </div>
+                            </div>
+                            <div style="margin-top:10px; color:#666; font-style:italic;">
+                                ℹ️ <strong>Note:</strong> April and October are ICHD (Integrated Child Health Day)
+                                campaign months.
+                                Higher values in these months are expected and use a higher outlier threshold.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -835,6 +953,9 @@
     </div>
 
     <script>
+        // Register Chart.js datalabels plugin
+        Chart.register(ChartDataLabels);
+
         let selectedOrgUnit = { id: 'akV6429SUqu', name: 'Uganda', level: 1 };
         let selectedDistrict = '';
         let dataElements = [];
@@ -843,6 +964,46 @@
         let charts = {};
         let ubosPopulation = {};
         const COLORS = ['#11998e', '#38ef7d', '#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c', '#2ecc71', '#e67e22', '#34495e'];
+
+        // Antigen information: disease prevented and vaccination schedule
+        const ANTIGEN_INFO = {
+            '105-CL01': { disease: 'Tuberculosis (TB)', schedule: 'At birth' },
+            '105-CL02': { disease: 'Hepatitis B', schedule: 'Within 24 hours of birth' },
+            '105-CL03': { disease: 'Tetanus (Protection at Birth)', schedule: 'During pregnancy' },
+            '105-CL04': { disease: 'Poliomyelitis', schedule: 'At birth (OPV0)' },
+            '105-CL05': { disease: 'Poliomyelitis', schedule: '6 weeks (OPV1)' },
+            '105-CL06': { disease: 'Poliomyelitis', schedule: '10 weeks (OPV2)' },
+            '105-CL07': { disease: 'Poliomyelitis', schedule: '14 weeks (OPV3)' },
+            '105-CL08': { disease: 'Poliomyelitis', schedule: '14 weeks (IPV1)' },
+            '105-CL09': { disease: 'Poliomyelitis', schedule: '9 months (IPV2)' },
+            '105-CL10': { disease: 'Diphtheria, Pertussis, Tetanus, Hep B, Hib', schedule: '6 weeks (Penta 1)' },
+            '105-CL11': { disease: 'Diphtheria, Pertussis, Tetanus, Hep B, Hib', schedule: '10 weeks (Penta 2)' },
+            '105-CL12': { disease: 'Diphtheria, Pertussis, Tetanus, Hep B, Hib', schedule: '14 weeks (Penta 3)' },
+            '105-CL13': { disease: 'Pneumococcal disease', schedule: '6 weeks (PCV1)' },
+            '105-CL14': { disease: 'Pneumococcal disease', schedule: '10 weeks (PCV2)' },
+            '105-CL15': { disease: 'Pneumococcal disease', schedule: '14 weeks (PCV3)' },
+            '105-CL16': { disease: 'Rotavirus diarrhea', schedule: '6 weeks (Rota 1)' },
+            '105-CL17': { disease: 'Rotavirus diarrhea', schedule: '10 weeks (Rota 2)' },
+            '105-CL18': { disease: 'Rotavirus diarrhea', schedule: '14 weeks (Rota 3)' },
+            '105-CL19': { disease: 'Malaria', schedule: '6 months (RTS,S/Malaria 1)' },
+            '105-CL20': { disease: 'Malaria', schedule: '7 months (RTS,S/Malaria 2)' },
+            '105-CL21': { disease: 'Malaria', schedule: '9 months (RTS,S/Malaria 3)' },
+            '105-CL22': { disease: 'Yellow Fever', schedule: '9 months' },
+            '105-CL23': { disease: 'Measles, Rubella', schedule: '9 months (MR1)' },
+            '105-CL24': { disease: 'Fully Immunized Child', schedule: 'By 1 year of age' },
+            '105-CL25': { disease: 'Malaria prevention', schedule: 'LLINs distribution' },
+            '105-CL26': { disease: 'Malaria', schedule: '24 months (RTS,S/Malaria 4)' },
+            '105-CL27': { disease: 'Measles, Rubella', schedule: '18 months (MR2)' },
+            '105-CL28': { disease: 'Fully Immunized Child', schedule: 'By 2 years of age' }
+        };
+
+        function getAntigenInfo(code) {
+            const info = ANTIGEN_INFO[code];
+            if (info) {
+                return `${info.disease} | ${info.schedule}`;
+            }
+            return 'Immunization';
+        }
 
         // Initialize
         window.onload = async () => {
@@ -1077,18 +1238,20 @@
                 <div class="stat-card"><h4>UBOS Population</h4><div class="value">${pop.toLocaleString()}</div><div class="sub">${selectedDistrict || 'Selected area'}</div></div>
             `;
 
-            // Coverage table & cards
-            document.getElementById('coverageTableBody').innerHTML = indicators.map(i => `
-                <tr><td>${i.name}</td><td>${i.doses.toLocaleString()}</td><td>${i.target_population.toLocaleString()}</td>
-                <td><strong>${i.coverage}%</strong></td><td><span class="badge ${i.color}">${i.coverage >= 95 ? '✓ Target Met' : i.coverage >= 70 ? '⚠ Moderate' : '✗ Low'}</span></td></tr>
-            `).join('');
-
-            document.getElementById('coverageCards').innerHTML = indicators.slice(0, 12).map(i => `
-                <div class="coverage-card ${i.color}"><h4>${i.name}</h4>
-                <div class="metrics"><div class="metric"><div class="label">Doses</div><div class="val">${i.doses.toLocaleString()}</div></div>
-                <div class="metric"><div class="label">Target</div><div class="val">${i.target_population.toLocaleString()}</div></div>
-                <div class="metric"><div class="label">Coverage</div><div class="val ${i.color}">${i.coverage}%</div></div></div></div>
-            `).join('');
+            // Coverage table with color-coded cells
+            window.coverageData = indicators; // Store for Excel export
+            document.getElementById('coverageTableBody').innerHTML = indicators.map((i, idx) => {
+                const antigenInfo = getAntigenInfo(i.code);
+                return `
+                <tr>
+                    <td style="font-weight: 600;">${idx + 1}</td>
+                    <td style="text-align: left; font-weight: 500;">${i.name}</td>
+                    <td>${i.doses.toLocaleString()}</td>
+                    <td>${i.target_population.toLocaleString()}</td>
+                    <td class="coverage-cell ${i.color}">${i.coverage}%</td>
+                    <td style="text-align: left; font-size: 11px;">${antigenInfo}</td>
+                </tr>`;
+            }).join('');
 
             // Dropout table & cards
             document.getElementById('dropoutTableBody').innerHTML = dropouts.map(d => `
@@ -1123,7 +1286,7 @@
                 type: 'line', data: {
                     labels: periods.map(formatPeriod),
                     datasets: ids.map((id, i) => ({ label: (meta.items?.[id]?.name || id).substring(0, 25), data: periods.map(p => data[id]?.find(d => d.period === p)?.value || 0), borderColor: COLORS[i % COLORS.length], tension: 0.4, fill: false }))
-                }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
+                }, options: { responsive: true, plugins: { datalabels: { display: false }, legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
             });
 
             if (charts.bar) charts.bar.destroy();
@@ -1132,7 +1295,7 @@
                 type: 'bar', data: {
                     labels: ids.map(id => (meta.items?.[id]?.name || id).substring(0, 20)),
                     datasets: [{ data: ids.map(id => data[id]?.find(d => d.period === lastP)?.value || 0), backgroundColor: ids.map((_, i) => COLORS[i % COLORS.length]) }]
-                }, options: { responsive: true, plugins: { legend: { display: false } } }
+                }, options: { responsive: true, plugins: { datalabels: { display: false }, legend: { display: false } } }
             });
         }
 
@@ -1149,7 +1312,7 @@
                 type: 'bar', data: {
                     labels: indicators.slice(0, 15).map(i => i.code),
                     datasets: [{ label: 'Coverage %', data: indicators.slice(0, 15).map(i => i.coverage), backgroundColor: indicators.slice(0, 15).map(i => i.color === 'green' ? '#27ae60' : i.color === 'yellow' ? '#f39c12' : '#e74c3c') }]
-                }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { max: 120, ticks: { callback: v => v + '%' } } } }
+                }, options: { responsive: true, plugins: { datalabels: { display: false }, legend: { display: false } }, scales: { y: { max: 120, ticks: { callback: v => v + '%' } } } }
             });
 
             if (charts.dropout) charts.dropout.destroy();
@@ -1157,50 +1320,289 @@
                 type: 'bar', data: {
                     labels: dropouts.map(d => d.name),
                     datasets: [{ label: 'Dropout %', data: dropouts.map(d => d.dropout_rate), backgroundColor: dropouts.map(d => d.color === 'green' ? '#27ae60' : '#e74c3c') }]
-                }, options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } } }
+                }, options: { responsive: true, indexAxis: 'y', plugins: { datalabels: { display: false }, legend: { display: false } } }
             });
         }
 
+        // Store trend data globally for forecast options
+        let currentTrendData = null;
+
         async function loadTrendAnalysis() {
             const indicatorId = document.getElementById('trendIndicator').value;
-            if (!indicatorId) return;
+            if (!indicatorId) {
+                document.getElementById('outliersSection').style.display = 'none';
+                document.getElementById('forecastOptions').style.display = 'none';
+                return;
+            }
 
             const period = getSelectedPeriod();
             const r = await fetch(`/api/trend-analysis?orgUnit=${selectedOrgUnit.id}&period=${period}&indicator=${indicatorId}`);
             const data = await r.json();
 
-            if (data.error) { document.getElementById('trendResults').innerHTML = `<div class="error">${data.error}</div>`; return; }
+            if (data.error) {
+                document.getElementById('trendResults').innerHTML = `<div class="error">${data.error}</div>`;
+                document.getElementById('outliersSection').style.display = 'none';
+                document.getElementById('forecastOptions').style.display = 'none';
+                return;
+            }
+
+            // Store data globally for updateForecast
+            currentTrendData = data;
 
             const stats = data.stats || {};
             const outliers = data.outliers || [];
-            const forecast = data.forecast || [];
+            const ts = data.data || [];
 
+            // Get indicator name
+            const indicatorSelect = document.getElementById('trendIndicator');
+            const indicatorName = indicatorSelect.options[indicatorSelect.selectedIndex].text;
+
+            // Show outliers section if any exist
+            if (outliers.length > 0) {
+                document.getElementById('outliersSection').style.display = 'block';
+
+                // Create outliers table
+                let outliersTableHtml = `
+                    <table style="width:100%; font-size:12px; background:white; border-radius:4px;">
+                        <thead>
+                            <tr style="background:#856404; color:white;">
+                                <th style="padding:8px; text-align:left;">Period</th>
+                                <th style="padding:8px; text-align:right;">Value</th>
+                                <th style="padding:8px; text-align:right;">Z-Score</th>
+                                <th style="padding:8px; text-align:left;">Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                outliers.forEach(o => {
+                    const periodStr = ts[o.index] ? formatPeriod(ts[o.index].period) : `Period ${o.index + 1}`;
+                    const severity = Math.abs(o.zscore) > 3 ? 'High' : 'Moderate';
+                    const severityColor = Math.abs(o.zscore) > 3 ? '#e74c3c' : '#f39c12';
+                    outliersTableHtml += `
+                        <tr>
+                            <td style="padding:8px;">${periodStr}</td>
+                            <td style="padding:8px; text-align:right; font-weight:bold;">${o.value.toLocaleString()}</td>
+                            <td style="padding:8px; text-align:right;">${o.zscore}</td>
+                            <td style="padding:8px;"><span style="background:${severityColor}; color:white; padding:2px 8px; border-radius:4px; font-size:10px;">${severity}</span></td>
+                        </tr>
+                    `;
+                });
+
+                outliersTableHtml += '</tbody></table>';
+                document.getElementById('outliersTable').innerHTML = outliersTableHtml;
+
+                // Show forecast options when outliers exist
+                document.getElementById('forecastOptions').style.display = 'block';
+            } else {
+                document.getElementById('outliersSection').style.display = 'none';
+                document.getElementById('forecastOptions').style.display = 'none';
+            }
+
+            // Show stats
             document.getElementById('trendResults').innerHTML = `
                 <div class="cards-grid">
                     <div class="stat-card"><h4>Mean</h4><div class="value">${stats.mean?.toLocaleString()}</div></div>
                     <div class="stat-card"><h4>Min</h4><div class="value">${stats.min?.toLocaleString()}</div></div>
                     <div class="stat-card"><h4>Max</h4><div class="value">${stats.max?.toLocaleString()}</div></div>
+                    <div class="stat-card"><h4>Data Points</h4><div class="value">${ts.length}</div></div>
+                    ${outliers.length ? `<div class="stat-card" style="border-top-color:#f39c12;"><h4>Outliers</h4><div class="value" style="color:#f39c12;">${outliers.length}</div></div>` : ''}
                 </div>
-                ${outliers.length ? `<div style="margin-top:15px;"><strong>⚠️ Outliers Detected:</strong><div class="outlier-list">${outliers.map(o => `<span class="outlier-badge">Period ${o.index + 1}: ${o.value} (Z=${o.zscore})</span>`).join('')}</div></div>` : ''}
-                ${forecast.length ? `<div style="margin-top:15px;"><strong>📈 Forecast (Next 3 periods):</strong><div class="forecast-list">${forecast.map((f, i) => `<span class="forecast-item">+${i + 1}: ${f.toLocaleString()}</span>`).join('')}</div></div>` : ''}
             `;
 
-            // Forecast chart
-            const ts = data.data || [];
-            const labels = ts.map(t => formatPeriod(t.period)).concat(forecast.map((_, i) => `Forecast +${i + 1}`));
-            const values = ts.map(t => t.value).concat(forecast);
-            const colors = ts.map(() => '#11998e').concat(forecast.map(() => '#3498db'));
+            // Update forecast chart with default option (with outliers)
+            updateForecast();
+        }
+
+        function updateForecast() {
+            if (!currentTrendData) return;
+
+            const forecastType = document.querySelector('input[name="forecastType"]:checked')?.value || 'with';
+            const ts = currentTrendData.data || [];
+            const outliers = currentTrendData.outliers || [];
+            const outlierIndices = new Set(outliers.map(o => o.index));
+
+            let dataForForecast, labelsForChart, valuesForChart;
+
+            if (forecastType === 'without' && outliers.length > 0) {
+                // Filter out outliers
+                dataForForecast = ts.filter((_, idx) => !outlierIndices.has(idx));
+                labelsForChart = ts.map((t, idx) => ({
+                    label: formatPeriod(t.period),
+                    isOutlier: outlierIndices.has(idx),
+                    value: t.value
+                }));
+            } else {
+                dataForForecast = ts;
+                labelsForChart = ts.map((t, idx) => ({
+                    label: formatPeriod(t.period),
+                    isOutlier: outlierIndices.has(idx),
+                    value: t.value
+                }));
+            }
+
+            // Calculate new forecast
+            const forecastValues = dataForForecast.map(d => d.value);
+            const newForecast = simpleForecast(forecastValues, 3);
+
+            // Build chart data
+            const labels = labelsForChart.map(l => l.label).concat(newForecast.map((_, i) => `Forecast +${i + 1}`));
+            const values = labelsForChart.map(l => l.value).concat(newForecast);
+
+            // Create point colors (red for outliers)
+            const pointColors = labelsForChart.map(l => l.isOutlier ? '#e74c3c' : '#11998e').concat(newForecast.map(() => '#3498db'));
+            const pointRadius = labelsForChart.map(l => l.isOutlier ? 8 : 4).concat(newForecast.map(() => 4));
 
             if (charts.forecast) charts.forecast.destroy();
             charts.forecast = new Chart(document.getElementById('forecastChart'), {
-                type: 'line', data: {
+                type: 'line',
+                data: {
                     labels,
                     datasets: [{
-                        label: 'Value', data: values, borderColor: '#11998e', backgroundColor: 'rgba(17,153,142,0.1)', fill: true, tension: 0.4,
-                        segment: { borderColor: ctx => ctx.p1DataIndex >= ts.length ? '#3498db' : '#11998e', borderDash: ctx => ctx.p1DataIndex >= ts.length ? [5, 5] : [] }
+                        label: 'Value',
+                        data: values,
+                        borderColor: '#11998e',
+                        backgroundColor: 'rgba(17,153,142,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: pointColors,
+                        pointBorderColor: pointColors,
+                        pointRadius: pointRadius,
+                        segment: {
+                            borderColor: ctx => ctx.p1DataIndex >= ts.length ? '#3498db' : '#11998e',
+                            borderDash: ctx => ctx.p1DataIndex >= ts.length ? [5, 5] : []
+                        }
                     }]
-                }, options: { responsive: true, plugins: { legend: { display: false } } }
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            display: true,
+                            color: function (context) {
+                                return context.dataIndex < labelsForChart.length && labelsForChart[context.dataIndex].isOutlier ? '#e74c3c' : '#333';
+                            },
+                            anchor: 'top',
+                            align: 'top',
+                            offset: 4,
+                            font: { size: 9, weight: 'bold' },
+                            formatter: function (value) {
+                                return value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value.toLocaleString();
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return 'Doses: ' + context.parsed.y.toLocaleString();
+                                },
+                                afterLabel: function (context) {
+                                    if (context.dataIndex < labelsForChart.length && labelsForChart[context.dataIndex].isOutlier) {
+                                        return '⚠️ OUTLIER';
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: { display: true, text: 'Month/Year', font: { size: 11 } },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                font: { size: 9 }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: { display: true, text: 'Doses Administered', font: { size: 11 } },
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return value >= 1000 ? (value / 1000).toFixed(0) + 'k' : value;
+                                }
+                            }
+                        }
+                    }
+                }
             });
+
+            // Show forecast values
+            const forecastHtml = newForecast.length ? `
+                <div style="margin-top:15px; padding:10px; background:#e3f2fd; border-radius:6px;">
+                    <strong>📈 Forecast (Next 3 periods)${forecastType === 'without' ? ' - Excluding Outliers' : ''}:</strong>
+                    <div class="forecast-list" style="margin-top:8px;">
+                        ${newForecast.map((f, i) => `<span class="forecast-item">+${i + 1}: ${Math.round(f).toLocaleString()}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Append forecast to trend results
+            const trendResultsDiv = document.getElementById('trendResults');
+            const existingForecast = trendResultsDiv.querySelector('.forecast-display');
+            if (existingForecast) existingForecast.remove();
+            trendResultsDiv.insertAdjacentHTML('beforeend', `<div class="forecast-display">${forecastHtml}</div>`);
+        }
+
+        // Simple linear regression forecast
+        function simpleForecast(values, periodsAhead = 3) {
+            if (values.length < 2) return [];
+            const n = values.length;
+            const xMean = (n - 1) / 2;
+            const yMean = values.reduce((a, b) => a + b, 0) / n;
+            const numerator = values.reduce((sum, v, i) => sum + (i - xMean) * (v - yMean), 0);
+            const denominator = values.reduce((sum, _, i) => sum + Math.pow(i - xMean, 2), 0);
+            const slope = denominator !== 0 ? numerator / denominator : 0;
+            const intercept = yMean - slope * xMean;
+            return Array.from({ length: periodsAhead }, (_, i) => slope * (n + i) + intercept);
+        }
+
+        function downloadOutliers() {
+            if (!currentTrendData || !currentTrendData.outliers || !currentTrendData.outliers.length) {
+                alert('No outliers to download.');
+                return;
+            }
+
+            const ts = currentTrendData.data || [];
+            const outliers = currentTrendData.outliers;
+            const indicatorSelect = document.getElementById('trendIndicator');
+            const indicatorName = indicatorSelect.options[indicatorSelect.selectedIndex].text;
+
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+
+            // Prepare outliers data
+            const wsData = [
+                ['Outliers Report - ' + indicatorName],
+                ['Organization: ' + selectedOrgUnit.name],
+                ['Period: ' + getSelectedPeriod()],
+                ['Generated: ' + new Date().toLocaleString()],
+                [''],
+                ['Period', 'Value', 'Z-Score', 'Severity', 'Recommendation']
+            ];
+
+            outliers.forEach(o => {
+                const periodStr = ts[o.index] ? formatPeriod(ts[o.index].period) : `Period ${o.index + 1}`;
+                const severity = Math.abs(o.zscore) > 3 ? 'High' : 'Moderate';
+                const recommendation = Math.abs(o.zscore) > 3 ? 'Investigate data entry error' : 'Review for accuracy';
+                wsData.push([periodStr, o.value, o.zscore, severity, recommendation]);
+            });
+
+            wsData.push(['']);
+            wsData.push(['Notes:']);
+            wsData.push(['- Z-Score > 2 indicates significant deviation from trend']);
+            wsData.push(['- High severity (Z > 3) suggests possible data quality issues']);
+            wsData.push(['- Consider removing outliers for cleaner forecasting']);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [{ wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 30 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'Outliers');
+
+            const filename = `Outliers_${indicatorName.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
         }
 
         function formatPeriod(p) { const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; return p?.length === 6 ? `${m[parseInt(p.substring(4, 6)) - 1]} ${p.substring(0, 4)}` : p; }
@@ -1247,6 +1649,125 @@
             });
 
             doc.save(`${tableId}_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function downloadCoverageExcel() {
+            if (!window.coverageData || !window.coverageData.length) {
+                alert('No coverage data available. Please load data first.');
+                return;
+            }
+
+            const indicators = window.coverageData;
+
+            // Create workbook and worksheet
+            const wb = XLSX.utils.book_new();
+
+            // Prepare data with headers
+            const wsData = [
+                ['#', 'Antigen / Indicator', 'Doses Given', 'Target Population', 'Coverage %', 'Disease Prevented', 'Schedule']
+            ];
+
+            indicators.forEach((i, idx) => {
+                const info = ANTIGEN_INFO[i.code] || { disease: 'Immunization', schedule: '-' };
+                wsData.push([idx + 1, i.name, i.doses.toLocaleString(), i.target_population.toLocaleString(), i.coverage + '%', info.disease, info.schedule]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 4 },   // #
+                { wch: 40 },  // Antigen
+                { wch: 12 },  // Doses
+                { wch: 15 },  // Target Pop
+                { wch: 12 },  // Coverage %
+                { wch: 35 },  // Disease Prevented
+                { wch: 25 }   // Schedule
+            ];
+
+            // Apply cell styling for colors to Coverage % column
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let row = 1; row <= range.e.r; row++) {
+                const coverageCell = ws[XLSX.utils.encode_cell({ r: row, c: 4 })]; // Coverage % column
+
+                if (coverageCell) {
+                    // Parse coverage value (remove % sign if present)
+                    const coverageVal = parseFloat(String(coverageCell.v).replace('%', ''));
+                    let bgColor, fontColor;
+
+                    if (coverageVal >= 95) {
+                        bgColor = '27AE60'; // Green
+                        fontColor = 'FFFFFF';
+                    } else if (coverageVal >= 70) {
+                        bgColor = 'FFD700'; // Bright Yellow/Gold
+                        fontColor = '000000'; // Black text for visibility
+                    } else {
+                        bgColor = 'E74C3C'; // Red
+                        fontColor = 'FFFFFF';
+                    }
+
+                    // Apply styles to Coverage % cell (xlsx-js-style format)
+                    coverageCell.s = {
+                        fill: { patternType: 'solid', fgColor: { rgb: bgColor } },
+                        font: { color: { rgb: fontColor }, bold: true },
+                        alignment: { horizontal: 'center' }
+                    };
+                }
+            }
+
+            // Style header row
+            for (let col = 0; col <= 6; col++) {
+                const headerCell = ws[XLSX.utils.encode_cell({ r: 0, c: col })];
+                if (headerCell) {
+                    headerCell.s = {
+                        fill: { patternType: 'solid', fgColor: { rgb: '2C3E50' } },
+                        font: { color: { rgb: 'FFFFFF' }, bold: true },
+                        alignment: { horizontal: 'center' }
+                    };
+                }
+            }
+
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Coverage Performance');
+
+            // Add summary sheet
+            const totalDoses = indicators.reduce((s, i) => s + i.doses, 0);
+            const avgCoverage = Math.round(indicators.reduce((s, i) => s + i.coverage, 0) / indicators.length);
+            const greenCount = indicators.filter(i => i.color === 'green').length;
+            const yellowCount = indicators.filter(i => i.color === 'yellow').length;
+            const redCount = indicators.filter(i => i.color === 'red').length;
+
+            const summaryData = [
+                ['Coverage Performance Summary'],
+                [''],
+                ['Report Date:', new Date().toLocaleDateString()],
+                ['Organization:', selectedOrgUnit.name],
+                ['Period:', getSelectedPeriod()],
+                ['District:', selectedDistrict || 'N/A'],
+                [''],
+                ['Total Doses Administered:', totalDoses],
+                ['Average Coverage:', avgCoverage + '%'],
+                [''],
+                ['Performance Breakdown:'],
+                ['🟢 On Target (≥95%):', greenCount + ' indicators'],
+                ['🟡 Moderate (70-94.9%):', yellowCount + ' indicators'],
+                ['🔴 Low (<70%):', redCount + ' indicators'],
+                [''],
+                ['Legend:'],
+                ['GREEN - Coverage ≥ 95% (Target Met)'],
+                ['YELLOW - Coverage 70-94.9% (Moderate)'],
+                ['RED - Coverage < 70% (Low - Needs Attention)']
+            ];
+
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+            wsSummary['!cols'] = [{ wch: 30 }, { wch: 25 }];
+            XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+            // Generate filename
+            const filename = `Coverage_Performance_${selectedOrgUnit.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+            // Download file
+            XLSX.writeFile(wb, filename);
         }
     </script>
 </body>
