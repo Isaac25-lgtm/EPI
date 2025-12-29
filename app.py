@@ -5,12 +5,103 @@ from requests.auth import HTTPBasicAuth
 import os
 from dotenv import load_dotenv
 import json
+import hashlib
+from datetime import datetime, timedelta
+from functools import wraps
+import threading
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'epi-dashboard-secret-key-2024')
 CORS(app)
+
+# ============ CACHING SYSTEM ============
+class SimpleCache:
+    """Thread-safe in-memory cache with expiration"""
+    def __init__(self, default_ttl=300):  # 5 minutes default
+        self._cache = {}
+        self._lock = threading.Lock()
+        self.default_ttl = default_ttl
+    
+    def _make_key(self, *args, **kwargs):
+        """Generate cache key from args"""
+        key_data = json.dumps({'args': args, 'kwargs': sorted(kwargs.items())}, sort_keys=True)
+        return hashlib.md5(key_data.encode()).hexdigest()
+    
+    def get(self, key):
+        """Get item from cache if not expired"""
+        with self._lock:
+            if key in self._cache:
+                item = self._cache[key]
+                if datetime.now() < item['expires']:
+                    return item['value']
+                else:
+                    del self._cache[key]
+        return None
+    
+    def set(self, key, value, ttl=None):
+        """Set item in cache with TTL"""
+        if ttl is None:
+            ttl = self.default_ttl
+        with self._lock:
+            self._cache[key] = {
+                'value': value,
+                'expires': datetime.now() + timedelta(seconds=ttl),
+                'created': datetime.now()
+            }
+    
+    def delete(self, key):
+        """Remove item from cache"""
+        with self._lock:
+            if key in self._cache:
+                del self._cache[key]
+    
+    def clear(self):
+        """Clear all cache"""
+        with self._lock:
+            self._cache.clear()
+    
+    def stats(self):
+        """Get cache statistics"""
+        with self._lock:
+            now = datetime.now()
+            valid = sum(1 for v in self._cache.values() if now < v['expires'])
+            return {
+                'total_entries': len(self._cache),
+                'valid_entries': valid,
+                'expired_entries': len(self._cache) - valid
+            }
+
+# Initialize cache instances
+org_units_cache = SimpleCache(default_ttl=3600)      # 1 hour - org units rarely change
+data_elements_cache = SimpleCache(default_ttl=3600)  # 1 hour - data elements rarely change
+analytics_cache = SimpleCache(default_ttl=300)       # 5 minutes - analytics data changes
+search_cache = SimpleCache(default_ttl=600)          # 10 minutes - search results
+
+def cached(cache_instance, ttl=None):
+    """Decorator for caching function results"""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Generate cache key
+            key = cache_instance._make_key(f.__name__, *args, **kwargs)
+            
+            # Try to get from cache
+            result = cache_instance.get(key)
+            if result is not None:
+                return result
+            
+            # Execute function and cache result
+            result = f(*args, **kwargs)
+            
+            # Only cache successful results
+            if isinstance(result, dict) and 'error' not in result:
+                cache_instance.set(key, result, ttl)
+            
+            return result
+        return wrapper
+    return decorator
 
 DHIS2_BASE_URL = 'https://hmis.health.go.ug/api'
 
@@ -223,13 +314,36 @@ def get_user_info():
         return jsonify({'error': 'Not authenticated'})
     return jsonify({'displayName': session.get('display_name', 'User')})
 
-@app.route('/api/org-units')
-def get_org_units():
-    auth = get_auth()
-    if not auth:
+@app.route('/api/cache-stats')
+def cache_stats():
+    """Get cache statistics"""
+    if not is_logged_in():
         return jsonify({'error': 'Not authenticated'})
+    return jsonify({
+        'org_units': org_units_cache.stats(),
+        'data_elements': data_elements_cache.stats(),
+        'analytics': analytics_cache.stats(),
+        'search': search_cache.stats()
+    })
+
+@app.route('/api/clear-cache', methods=['POST'])
+def clear_cache():
+    """Clear all caches"""
+    if not is_logged_in():
+        return jsonify({'error': 'Not authenticated'})
+    org_units_cache.clear()
+    data_elements_cache.clear()
+    analytics_cache.clear()
+    search_cache.clear()
+    return jsonify({'success': True, 'message': 'All caches cleared'})
+
+def fetch_org_units_cached(auth, parent_id=None):
+    """Fetch org units with caching"""
+    cache_key = org_units_cache._make_key('org_units', parent_id)
+    cached = org_units_cache.get(cache_key)
+    if cached:
+        return cached
     
-    parent_id = request.args.get('parent')
     try:
         if parent_id:
             response = requests.get(f"{DHIS2_BASE_URL}/organisationUnits/{parent_id}",
@@ -237,13 +351,105 @@ def get_org_units():
         else:
             response = requests.get(f"{DHIS2_BASE_URL}/organisationUnits",
                 auth=auth, params={'level': 1, 'fields': 'id,displayName,level,childCount', 'paging': 'false'}, timeout=30)
-        return jsonify(response.json()) if response.status_code == 200 else jsonify({'error': f'Status {response.status_code}'})
+        
+        if response.status_code == 200:
+            data = response.json()
+            org_units_cache.set(cache_key, data)
+            return data
+        return {'error': f'Status {response.status_code}'}
+    except requests.exceptions.Timeout:
+        return {'error': 'Connection timeout - try again'}
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return {'error': str(e)}
+
+@app.route('/api/org-units')
+def get_org_units():
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    parent_id = request.args.get('parent')
+    result = fetch_org_units_cached(auth, parent_id)
+    return jsonify(result)
 
 @app.route('/api/districts')
 def get_districts():
     return jsonify(UBOS_POPULATION)
+
+@app.route('/api/search-org-units')
+def search_org_units():
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    query = request.args.get('query', '').strip().lower()
+    if len(query) < 3:
+        return jsonify({'error': 'Query must be at least 3 characters'})
+    
+    # Check cache first
+    cache_key = search_cache._make_key('search_org', query)
+    cached = search_cache.get(cache_key)
+    if cached:
+        return jsonify(cached)
+    
+    try:
+        # Search for org units by name
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits",
+            auth=auth,
+            params={
+                'filter': f'displayName:ilike:{query}',
+                'fields': 'id,displayName,level,path,parent[id,displayName]',
+                'paging': 'false'
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            units = data.get('organisationUnits', [])
+            
+            # Format results with readable path
+            for unit in units:
+                if 'path' in unit:
+                    parent = unit.get('parent', {})
+                    unit['path'] = parent.get('displayName', '')
+                else:
+                    unit['path'] = ''
+            
+            # Sort by level (districts first), then by name
+            units.sort(key=lambda x: (x.get('level', 99), x.get('displayName', '')))
+            
+            result = {'organisationUnits': units}
+            search_cache.set(cache_key, result)
+            return jsonify(result)
+        
+        return jsonify({'error': f'Search failed: {response.status_code}'})
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Search timeout - try again'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+def fetch_data_elements_cached(auth, pattern='105-CL'):
+    """Fetch data elements with caching"""
+    cache_key = data_elements_cache._make_key('data_elements', pattern)
+    cached = data_elements_cache.get(cache_key)
+    if cached:
+        return cached
+    
+    try:
+        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth, params={'filter': f'code:like:{pattern}', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            data_elements_cache.set(cache_key, data)
+            return data
+        return {'error': f'Status {response.status_code}'}
+    except requests.exceptions.Timeout:
+        return {'error': 'Connection timeout'}
+    except Exception as e:
+        return {'error': str(e)}
 
 @app.route('/api/search-data-elements')
 def search_data_elements():
@@ -252,12 +458,8 @@ def search_data_elements():
         return jsonify({'error': 'Not authenticated'})
     
     pattern = request.args.get('pattern', '105-CL')
-    try:
-        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
-            auth=auth, params={'filter': f'code:like:{pattern}', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
-        return jsonify(response.json()) if response.status_code == 200 else jsonify({'error': f'Status {response.status_code}'})
-    except Exception as e:
-        return jsonify({'error': str(e)})
+    result = fetch_data_elements_cached(auth, pattern)
+    return jsonify(result)
 
 @app.route('/api/raw-data')
 def get_raw_data():
@@ -275,28 +477,40 @@ def get_raw_data():
     else:
         periods = period
     
+    # Check cache
+    cache_key = analytics_cache._make_key('raw_data', org_unit, period, indicators)
+    cached = analytics_cache.get(cache_key)
+    if cached:
+        cached['_cached'] = True
+        return jsonify(cached)
+    
     try:
-        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
-            auth=auth, params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName', 'paging': 'false'}, timeout=30)
+        # Get data elements (cached)
+        elements_data = fetch_data_elements_cached(auth, '105-CL')
+        if 'error' in elements_data:
+            return jsonify(elements_data)
         
-        if response.status_code == 200:
-            elements = response.json().get('dataElements', [])
-            if indicators:
-                ids = [i.strip() for i in indicators.split(',') if i.strip()]
-            else:
-                ids = [e['id'] for e in elements]
-            
-            if ids:
-                dx_dimension = ";".join(ids)
-                params = [('dimension', f'dx:{dx_dimension}'), ('dimension', f'pe:{periods}'),
-                          ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
-                data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=60)
-                if data_response.status_code == 200:
-                    data = data_response.json()
-                    data['dataElementMeta'] = {e['id']: e for e in elements}
-                    return jsonify(data)
-                return jsonify({'error': f'Analytics error: {data_response.status_code}'})
+        elements = elements_data.get('dataElements', [])
+        if indicators:
+            ids = [i.strip() for i in indicators.split(',') if i.strip()]
+        else:
+            ids = [e['id'] for e in elements]
+        
+        if ids:
+            dx_dimension = ";".join(ids)
+            params = [('dimension', f'dx:{dx_dimension}'), ('dimension', f'pe:{periods}'),
+                      ('dimension', f'ou:{org_unit}'), ('displayProperty', 'NAME'), ('skipMeta', 'false')]
+            data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=60)
+            if data_response.status_code == 200:
+                data = data_response.json()
+                data['dataElementMeta'] = {e['id']: e for e in elements}
+                data['_cached'] = False
+                analytics_cache.set(cache_key, data)
+                return jsonify(data)
+            return jsonify({'error': f'Analytics error: {data_response.status_code}'})
         return jsonify({'error': 'No data elements found'})
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try again or select a smaller time period'})
     except Exception as e:
         return jsonify({'error': str(e)})
 
@@ -309,9 +523,22 @@ def get_analytics_data():
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
     district_name = request.args.get('districtName', '').upper()
     period = request.args.get('period', 'LAST_12_MONTHS')
+    custom_population = request.args.get('customPopulation', None)
+    
+    # Check cache first (include custom population in cache key if provided)
+    cache_key = analytics_cache._make_key('analytics_data', org_unit, district_name, period, custom_population or '')
+    cached = analytics_cache.get(cache_key)
+    if cached:
+        cached['_cached'] = True
+        return jsonify(cached)
     
     divisor = get_period_divisor(period)
-    population = UBOS_POPULATION.get(district_name, 0)
+    
+    # Use custom population if provided (for facilities), otherwise use UBOS data
+    if custom_population and custom_population.isdigit():
+        population = int(custom_population)
+    else:
+        population = UBOS_POPULATION.get(district_name, 0)
     
     if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
         start, end = period.split('-')
@@ -322,11 +549,13 @@ def get_analytics_data():
         periods = period
     
     try:
-        response = requests.get(f"{DHIS2_BASE_URL}/dataElements",
-            auth=auth, params={'filter': 'code:like:105-CL', 'fields': 'id,code,displayName,shortName', 'paging': 'false'}, timeout=30)
+        # Get data elements (cached)
+        elements_data = fetch_data_elements_cached(auth, '105-CL')
+        if 'error' in elements_data:
+            return jsonify(elements_data)
         
-        if response.status_code == 200:
-            elements = response.json().get('dataElements', [])
+        if True:  # Replaces: if response.status_code == 200:
+            elements = elements_data.get('dataElements', [])
             ids = [e['id'] for e in elements]
             code_map = {e['id']: e['code'] for e in elements}
             
@@ -385,9 +614,355 @@ def get_analytics_data():
                             'color': 'red' if dropout >= 10 else 'green'
                         })
                 
+                analytics_result['_cached'] = False
+                analytics_cache.set(cache_key, analytics_result)
                 return jsonify(analytics_result)
             return jsonify({'error': f'Analytics error: {data_response.status_code}'})
         return jsonify({'error': 'Failed to fetch data'})
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try again or select a smaller time period'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/red-categorization')
+def red_categorization():
+    """RED Categorization Tool - Analyze selected unit across quarters for progress monitoring"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    org_unit = request.args.get('orgUnit', 'akV6429SUqu')
+    district_name = request.args.get('districtName', '').upper()
+    custom_population = request.args.get('customPopulation', None)
+    
+    # Get custom date range if provided
+    start_date = request.args.get('startDate', None)  # Format: YYYY-MM
+    end_date = request.args.get('endDate', None)      # Format: YYYY-MM
+    
+    # Check cache
+    cache_key = analytics_cache._make_key('red_categorization_quarterly', org_unit, custom_population or '', start_date or '', end_date or '')
+    cached = analytics_cache.get(cache_key)
+    if cached:
+        cached['_cached'] = True
+        return jsonify(cached)
+    
+    from datetime import datetime
+    from calendar import month_abbr
+    
+    # Helper function to generate quarters from date range
+    def generate_quarters(start, end):
+        """Generate quarters between start and end dates"""
+        quarters = []
+        
+        # Parse dates
+        start_y, start_m = map(int, start.split('-'))
+        end_y, end_m = map(int, end.split('-'))
+        
+        # Generate all months in range
+        current_y, current_m = start_y, start_m
+        months_list = []
+        
+        while (current_y < end_y) or (current_y == end_y and current_m <= end_m):
+            months_list.append((current_y, current_m))
+            current_m += 1
+            if current_m > 12:
+                current_m = 1
+                current_y += 1
+        
+        # Group into quarters
+        i = 0
+        quarter_num = 1
+        while i < len(months_list):
+            # Take up to 3 months for a quarter
+            quarter_months = months_list[i:i+3]
+            if not quarter_months:
+                break
+            
+            month_codes = [f"{y}{m:02d}" for y, m in quarter_months]
+            month_names = [month_abbr[m] for y, m in quarter_months]
+            
+            # Create quarter name
+            if len(quarter_months) == 3:
+                q_name = f"Q{quarter_num} {quarter_months[0][0]}"
+                q_display = f"{month_names[0]}-{month_names[2]}"
+            else:
+                # Partial quarter
+                q_name = f"{month_names[0]}-{month_names[-1]} {quarter_months[0][0]}"
+                q_display = "-".join(month_names)
+            
+            quarters.append({
+                'name': q_name,
+                'display': q_display,
+                'months': ';'.join(month_codes),
+                'period': f"{quarter_months[0][0]}Q{quarter_num}"
+            })
+            
+            i += 3
+            quarter_num += 1
+            if quarter_num > 4:
+                quarter_num = 1
+        
+        return quarters
+    
+    # Generate quarters based on input
+    if start_date and end_date:
+        try:
+            quarters = generate_quarters(start_date, end_date)
+            if not quarters:
+                return jsonify({'error': 'Invalid date range'})
+        except:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM'})
+    else:
+        # Default: Last 8 quarters ending at Q3 2025 (July-September 2025)
+        quarters = [
+            {'name': 'Q3 2025', 'display': 'Jul-Sep', 'period': '2025Q3', 'months': '202507;202508;202509'},
+            {'name': 'Q2 2025', 'display': 'Apr-Jun', 'period': '2025Q2', 'months': '202504;202505;202506'},
+            {'name': 'Q1 2025', 'display': 'Jan-Mar', 'period': '2025Q1', 'months': '202501;202502;202503'},
+            {'name': 'Q4 2024', 'display': 'Oct-Dec', 'period': '2024Q4', 'months': '202410;202411;202412'},
+            {'name': 'Q3 2024', 'display': 'Jul-Sep', 'period': '2024Q3', 'months': '202407;202408;202409'},
+            {'name': 'Q2 2024', 'display': 'Apr-Jun', 'period': '2024Q2', 'months': '202404;202405;202406'},
+            {'name': 'Q1 2024', 'display': 'Jan-Mar', 'period': '2024Q1', 'months': '202401;202402;202403'},
+            {'name': 'Q4 2023', 'display': 'Oct-Dec', 'period': '2023Q4', 'months': '202310;202311;202312'},
+        ]
+    
+    try:
+        # Get org unit info including ancestors for district lookup
+        org_response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{org_unit}",
+            auth=auth,
+            params={'fields': 'id,name,level,ancestors[id,name,level]'},
+            timeout=30
+        )
+        
+        if org_response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch org unit info'})
+        
+        org_info = org_response.json()
+        unit_name = org_info.get('name', 'Unknown')
+        unit_level = org_info.get('level', 1)
+        
+        # Get population - try multiple sources
+        annual_population = 0
+        
+        # Helper function to clean district name for UBOS lookup
+        def clean_district_name(name):
+            """Remove common suffixes like 'District', 'City', etc. for UBOS lookup"""
+            cleaned = name.upper().strip()
+            for suffix in [' DISTRICT', ' CITY', ' MUNICIPALITY', ' TOWN COUNCIL', ' SUB COUNTY', ' SUBCOUNTY', ' PARISH', ' HC II', ' HC III', ' HC IV', ' HOSPITAL']:
+                if cleaned.endswith(suffix):
+                    cleaned = cleaned[:-len(suffix)].strip()
+            return cleaned
+        
+        if custom_population and custom_population.isdigit():
+            annual_population = int(custom_population)
+        else:
+            # Try direct lookup with provided district name
+            if district_name:
+                annual_population = UBOS_POPULATION.get(district_name, 0)
+                # Try cleaned version
+                if annual_population == 0:
+                    annual_population = UBOS_POPULATION.get(clean_district_name(district_name), 0)
+            
+            # If not found, try unit name directly
+            if annual_population == 0:
+                annual_population = UBOS_POPULATION.get(unit_name.upper(), 0)
+                # Try cleaned version
+                if annual_population == 0:
+                    annual_population = UBOS_POPULATION.get(clean_district_name(unit_name), 0)
+            
+            # If still not found and this is a sub-district unit, look up parent district
+            if annual_population == 0 and unit_level >= 4:
+                ancestors = org_info.get('ancestors', [])
+                # Find district level ancestor (usually level 3)
+                for ancestor in ancestors:
+                    anc_name = ancestor.get('name', '').upper()
+                    anc_cleaned = clean_district_name(anc_name)
+                    if ancestor.get('level') == 3:  # District level
+                        annual_population = UBOS_POPULATION.get(anc_name, 0)
+                        if annual_population == 0:
+                            annual_population = UBOS_POPULATION.get(anc_cleaned, 0)
+                        if annual_population > 0:
+                            break
+        
+        # If still no population found, return error with helpful message
+        if annual_population == 0:
+            return jsonify({
+                'error': f'Population data not found for "{unit_name}". Please select a district or enter custom population for facilities.',
+                'unit_name': unit_name,
+                'quarters': [],
+                'summary': {'cat1': 0, 'cat2': 0, 'cat3': 0, 'cat4': 0},
+                'total_quarters': 0
+            })
+        
+        # Relevant data element codes for RED analysis
+        elements_data = fetch_data_elements_cached(auth, '105-CL')
+        if 'error' in elements_data:
+            return jsonify(elements_data)
+        
+        elements = elements_data.get('dataElements', [])
+        
+        # Find relevant element IDs
+        code_to_id = {e['code']: e['id'] for e in elements}
+        bcg_id = code_to_id.get('105-CL01')
+        dpt1_id = code_to_id.get('105-CL10')
+        dpt3_id = code_to_id.get('105-CL12')
+        mr_id = code_to_id.get('105-CL23')
+        
+        if not all([bcg_id, dpt1_id, dpt3_id, mr_id]):
+            return jsonify({'error': 'Missing required data elements for RED analysis'})
+        
+        dx_dimension = f"{bcg_id};{dpt1_id};{dpt3_id};{mr_id}"
+        
+        # Collect all periods for a single query
+        all_months = []
+        for q in quarters:
+            all_months.extend(q['months'].split(';'))
+        pe_dimension = ";".join(all_months)
+        
+        # Fetch analytics data for all periods at once
+        params = [
+            ('dimension', f'dx:{dx_dimension}'),
+            ('dimension', f'pe:{pe_dimension}'),
+            ('dimension', f'ou:{org_unit}'),
+            ('displayProperty', 'NAME'),
+            ('skipMeta', 'false')
+        ]
+        
+        data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=120)
+        
+        if data_response.status_code != 200:
+            return jsonify({'error': f'Analytics error: {data_response.status_code}'})
+        
+        data = data_response.json()
+        
+        # Parse results by period
+        headers = data.get('headers', [])
+        dx_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'dx'), 0)
+        pe_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'pe'), 1)
+        val_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'value'), -1)
+        if val_idx == -1:
+            val_idx = len(headers) - 1
+        
+        # Aggregate by period and data element
+        period_data = {}
+        for row in data.get('rows', []):
+            dx_id = row[dx_idx] if len(row) > dx_idx else ''
+            pe = row[pe_idx] if len(row) > pe_idx else ''
+            try:
+                value = int(float(row[val_idx])) if len(row) > val_idx else 0
+            except:
+                value = 0
+            
+            if pe not in period_data:
+                period_data[pe] = {'bcg': 0, 'dpt1': 0, 'dpt3': 0, 'mr': 0}
+            
+            if dx_id == bcg_id:
+                period_data[pe]['bcg'] += value
+            elif dx_id == dpt1_id:
+                period_data[pe]['dpt1'] += value
+            elif dx_id == dpt3_id:
+                period_data[pe]['dpt3'] += value
+            elif dx_id == mr_id:
+                period_data[pe]['mr'] += value
+        
+        # Aggregate by quarter
+        results = []
+        cat_counts = {'cat1': 0, 'cat2': 0, 'cat3': 0, 'cat4': 0}
+        
+        # Quarterly calculations based on annual population
+        # TOTAL (Quarterly Population) = Annual Population / 4
+        # Q-TARGET = (Annual Population × 4.3%) / 4
+        # Q-TARGET BCG = (Annual Population × 4.85%) / 4
+        quarterly_population = round(annual_population / 4)  # For display
+        target_pop = round(annual_population * 0.043 / 4)    # Q-TARGET for DPT/MR
+        target_bcg = round(annual_population * 0.0485 / 4)   # Q-TARGET for BCG
+        
+        for q in quarters:
+            months = q['months'].split(';')
+            
+            # Sum doses for this quarter
+            bcg = sum(period_data.get(m, {}).get('bcg', 0) for m in months)
+            dpt1 = sum(period_data.get(m, {}).get('dpt1', 0) for m in months)
+            dpt3 = sum(period_data.get(m, {}).get('dpt3', 0) for m in months)
+            mr = sum(period_data.get(m, {}).get('mr', 0) for m in months)
+            
+            # Calculate coverages
+            bcg_cov = round((bcg / target_bcg) * 100, 1) if target_bcg > 0 else 0
+            dpt1_cov = round((dpt1 / target_pop) * 100, 1) if target_pop > 0 else 0
+            dpt3_cov = round((dpt3 / target_pop) * 100, 1) if target_pop > 0 else 0
+            mr_cov = round((mr / target_pop) * 100, 1) if target_pop > 0 else 0
+            
+            # Calculate unimmunized
+            unimm_dpt3 = max(0, target_pop - dpt3)
+            unimm_mr = max(0, target_pop - mr)
+            zero_dose = max(0, target_pop - dpt1)
+            under_imm = max(0, dpt1 - dpt3)
+            
+            # Calculate dropout rates
+            dpt1_3_dropout = round(((dpt1 - dpt3) / dpt1) * 100, 1) if dpt1 > 0 else 0
+            dpt1_mr_dropout = round(((dpt1 - mr) / dpt1) * 100, 1) if dpt1 > 0 else 0
+            
+            # Determine Access and Utilization
+            access = 'Good' if dpt1_cov >= 90 else 'Poor'
+            utilization = 'Good' if dpt1_3_dropout <= 10 else 'Poor'
+            
+            # Determine Category
+            if access == 'Good' and utilization == 'Good':
+                category = 'Cat. 1'
+                cat_counts['cat1'] += 1
+            elif access == 'Good' and utilization == 'Poor':
+                category = 'Cat. 2'
+                cat_counts['cat2'] += 1
+            elif access == 'Poor' and utilization == 'Good':
+                category = 'Cat. 3'
+                cat_counts['cat3'] += 1
+            else:
+                category = 'Cat. 4'
+                cat_counts['cat4'] += 1
+            
+            results.append({
+                'name': q['name'],
+                'display': q.get('display', q['name']),  # Month names (e.g., "Jul-Sep")
+                'period': q['period'],
+                'population': quarterly_population,  # TOTAL = Annual / 4
+                'target_pop': target_pop,            # Q-TARGET = Annual × 4.3% / 4
+                'target_bcg': target_bcg,            # Q-TARGET BCG = Annual × 4.85% / 4
+                'annual_population': annual_population,  # For reference
+                'bcg': bcg,
+                'dpt1': dpt1,
+                'dpt3': dpt3,
+                'mr': mr,
+                'bcg_cov': bcg_cov,
+                'dpt1_cov': dpt1_cov,
+                'dpt3_cov': dpt3_cov,
+                'mr_cov': mr_cov,
+                'unimm_dpt3': unimm_dpt3,
+                'unimm_mr': unimm_mr,
+                'zero_dose': zero_dose,
+                'under_imm': under_imm,
+                'dpt1_3_dropout': dpt1_3_dropout,
+                'dpt1_mr_dropout': dpt1_mr_dropout,
+                'access': access,
+                'utilization': utilization,
+                'category': category
+            })
+        
+        result = {
+            'unit_name': unit_name,
+            'annual_population': annual_population,
+            'quarterly_population': quarterly_population,
+            'quarterly_target': target_pop,
+            'quarters': results,
+            'summary': cat_counts,
+            'total_quarters': len(results),
+            '_cached': False
+        }
+        
+        analytics_cache.set(cache_key, result)
+        return jsonify(result)
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try again or select a smaller time period'})
     except Exception as e:
         return jsonify({'error': str(e)})
 

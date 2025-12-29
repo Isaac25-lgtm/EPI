@@ -29,11 +29,23 @@
             width: 100%;
             max-width: 420px;
             text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo {
             font-size: 60px;
             margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         h1 {
@@ -61,18 +73,74 @@
             font-size: 14px;
         }
 
+        .input-wrapper {
+            position: relative;
+        }
+
         .form-group input {
             width: 100%;
             padding: 15px;
+            padding-right: 45px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
         .form-group input:focus {
             border-color: #11998e;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(17, 153, 142, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #7f8c8d;
+            padding: 0;
+        }
+
+        .toggle-password:hover {
+            color: #11998e;
+        }
+
+        .remember-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .remember-me input {
+            accent-color: #11998e;
+            width: 16px;
+            height: 16px;
         }
 
         .btn {
@@ -86,17 +154,40 @@
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(17, 153, 142, 0.4);
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .btn .btn-text {
+            transition: opacity 0.3s;
+        }
+
+        .btn.loading .btn-text {
+            opacity: 0;
+        }
+
+        .btn .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn.loading .spinner {
+            opacity: 1;
         }
 
         .error-msg {
@@ -107,6 +198,23 @@
             margin-bottom: 20px;
             display: none;
             font-size: 14px;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success-msg {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+            animation: fadeIn 0.3s;
         }
 
         .info-box {
@@ -130,31 +238,46 @@
             line-height: 1.5;
         }
 
-        .spinner {
-            display: none;
-            margin-left: 10px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
         .spinner::after {
             content: "";
             display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .keyboard-hint {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-top: 15px;
+        }
+
+        .keyboard-hint kbd {
+            background: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            border: 1px solid #bdc3c7;
+        }
+
+        /* Caps Lock Warning */
+        .caps-warning {
+            display: none;
+            font-size: 12px;
+            color: #e67e22;
+            margin-top: 5px;
+        }
+
+        .caps-warning.show {
+            display: block;
         }
     </style>
 </head>
@@ -166,21 +289,44 @@
         <p class="subtitle">Child Immunization Analytics - Uganda HMIS</p>
 
         <div class="error-msg" id="errorMsg"></div>
+        <div class="success-msg" id="successMsg"></div>
 
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">DHIS2 Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your DHIS2 username" required>
+                <div class="input-wrapper">
+                    <input type="text" id="username" name="username" placeholder="Enter your DHIS2 username" required
+                           autocomplete="username" autofocus>
+                </div>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required
+                           autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility()" title="Show/Hide Password">
+                        👁️
+                    </button>
+                </div>
+                <div class="caps-warning" id="capsWarning">⚠️ Caps Lock is ON</div>
             </div>
+            
+            <div class="remember-row">
+                <label class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <span>Remember my username</span>
+                </label>
+            </div>
+            
             <button type="submit" class="btn" id="loginBtn">
-                Login to Dashboard
-                <span class="spinner" id="spinner"></span>
+                <span class="btn-text">Login to Dashboard</span>
+                <span class="spinner"></span>
             </button>
         </form>
+
+        <div class="keyboard-hint">
+            Press <kbd>Enter</kbd> to submit
+        </div>
 
         <div class="info-box">
             <h4>🔐 Secure Login</h4>
@@ -190,18 +336,63 @@
     </div>
 
     <script>
+        // Load remembered username
+        const rememberedUser = localStorage.getItem('epiRememberedUser');
+        if (rememberedUser) {
+            document.getElementById('username').value = rememberedUser;
+            document.getElementById('rememberMe').checked = true;
+            document.getElementById('password').focus();
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleBtn = document.querySelector('.toggle-password');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
+        }
+
+        // Caps Lock detection
+        document.getElementById('password').addEventListener('keyup', function(e) {
+            const capsWarning = document.getElementById('capsWarning');
+            if (e.getModifierState && e.getModifierState('CapsLock')) {
+                capsWarning.classList.add('show');
+            } else {
+                capsWarning.classList.remove('show');
+            }
+        });
+
+        // Form submission
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const btn = document.getElementById('loginBtn');
-            const spinner = document.getElementById('spinner');
             const errorMsg = document.getElementById('errorMsg');
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+            const successMsg = document.getElementById('successMsg');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            const rememberMe = document.getElementById('rememberMe').checked;
 
+            // Validation
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            btn.classList.add('loading');
             btn.disabled = true;
-            spinner.style.display = 'inline-block';
             errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+            usernameInput.classList.remove('error');
+            passwordInput.classList.remove('error');
 
             try {
                 const response = await fetch('/login', {
@@ -213,18 +404,45 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    window.location.href = '/';
+                    // Remember username if checked
+                    if (rememberMe) {
+                        localStorage.setItem('epiRememberedUser', username);
+                    } else {
+                        localStorage.removeItem('epiRememberedUser');
+                    }
+                    
+                    successMsg.textContent = `✓ Welcome, ${data.displayName || username}! Redirecting...`;
+                    successMsg.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
                 } else {
-                    errorMsg.textContent = data.error || 'Login failed';
-                    errorMsg.style.display = 'block';
+                    showError(data.error || 'Login failed');
+                    passwordInput.classList.add('error');
+                    passwordInput.focus();
+                    passwordInput.select();
                 }
             } catch (err) {
-                errorMsg.textContent = 'Connection error. Please try again.';
-                errorMsg.style.display = 'block';
+                showError('Connection error. Please check your internet and try again.');
             }
 
+            btn.classList.remove('loading');
             btn.disabled = false;
-            spinner.style.display = 'none';
+        });
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = '❌ ' + message;
+            errorMsg.style.display = 'block';
+        }
+
+        // Focus password field on Enter in username field
+        document.getElementById('username').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('password').focus();
+            }
         });
     </script>
 </body>
