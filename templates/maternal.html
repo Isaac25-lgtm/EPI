@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maternal Health Analytics - Uganda HMIS</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.2.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* CSS Variables for Theme */
+        :root {
+            --bg-primary: #fdf2f8;
+            --bg-secondary: #fce7f3;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --border-color: #e5e7eb;
+            --border-light: #f3f4f6;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --accent-pink: #ec4899;
+            --accent-rose: #f43f5e;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --table-header-bg: #f9fafb;
+            --table-hover-bg: #fdf2f8;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --border-light: #475569;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --accent-pink: #f472b6;
+            --accent-rose: #fb7185;
+            --accent-purple: #a78bfa;
+            --accent-teal: #2dd4bf;
+            --table-header-bg: #334155;
+            --table-hover-bg: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #ec4899 0%, #f43f5e 50%, #ef4444 100%);
+            color: white;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(236, 72, 153, 0.3);
+        }
+
+        [data-theme="dark"] .header {
+            background: linear-gradient(135deg, #be185d 0%, #e11d48 50%, #dc2626 100%);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 20px;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-2px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] .brand-icon {
+            background: #f472b6;
+        }
+
+        .brand-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text p {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 18px;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px 6px 6px;
+            border-radius: 25px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 64px;
+            z-index: 90;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        .tab-nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-primary);
+        }
+
+        .tab-btn.active {
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab-btn.active.anc {
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+        }
+
+        .tab-btn.active.intrapartum {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        }
+
+        .tab-btn.active.pnc {
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+        }
+
+        .tab-icon {
+            font-size: 18px;
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Filters Bar */
+        .filters-bar {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+        }
+
+        .btn-fetch {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-fetch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
+        }
+
+        .btn-fetch:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Toggle Charts Button */
+        .toggle-charts {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .btn-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: all 0.2s;
+        }
+
+        .btn-toggle:hover {
+            background: var(--bg-secondary);
+        }
+
+        .btn-toggle .chevron {
+            transition: transform 0.3s;
+        }
+
+        .btn-toggle.charts-visible .chevron {
+            transform: rotate(180deg);
+        }
+
+        /* Data Table Card */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            margin-bottom: 24px;
+        }
+
+        .table-card.anc {
+            border: 2px solid rgba(236, 72, 153, 0.3);
+        }
+
+        .table-card.intrapartum {
+            border: 2px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .table-card.pnc {
+            border: 2px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-header.anc {
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+        }
+
+        .table-header.intrapartum {
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        }
+
+        .table-header.pnc {
+            background: linear-gradient(135deg, #14b8a6, #06b6d4);
+        }
+
+        .table-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .table-header p {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .btn-download {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-download:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Data Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            padding: 14px 12px;
+            text-align: center;
+            font-weight: 700;
+            background: var(--table-header-bg);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .data-table th:first-child {
+            text-align: left;
+        }
+
+        .data-table td {
+            padding: 12px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .data-table td:first-child {
+            text-align: left;
+            background: var(--bg-secondary);
+            font-weight: 700;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--table-hover-bg);
+        }
+
+        /* Target Row */
+        .target-row {
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        [data-theme="dark"] .target-row {
+            background: rgba(59, 130, 246, 0.2) !important;
+        }
+
+        .target-row td {
+            color: #3b82f6;
+            font-weight: 700 !important;
+        }
+
+        /* Color Classes for Cells */
+        .cell-green {
+            background: #22c55e !important;
+            color: white !important;
+        }
+
+        .cell-yellow {
+            background: #facc15 !important;
+            color: #1f2937 !important;
+        }
+
+        .cell-red {
+            background: #ef4444 !important;
+            color: white !important;
+        }
+
+        .cell-gray {
+            background: #9ca3af !important;
+            color: white !important;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .chart-card.anc {
+            border-color: rgba(236, 72, 153, 0.2);
+        }
+
+        .chart-card.intrapartum {
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .chart-card.pnc {
+            border-color: rgba(20, 184, 166, 0.2);
+        }
+
+        .chart-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .chart-container {
+            height: 280px;
+            position: relative;
+        }
+
+        /* Legend */
+        .legend-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-top: 24px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .legend-content {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-color.green {
+            background: #22c55e;
+        }
+
+        .legend-color.yellow {
+            background: #facc15;
+        }
+
+        .legend-color.red {
+            background: #ef4444;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 12px 0;
+                gap: 12px;
+            }
+
+            .user-badge {
+                display: none;
+            }
+
+            .tab-nav-content {
+                flex-wrap: wrap;
+            }
+
+            .tab-btn {
+                flex: 1;
+                min-width: 100px;
+                justify-content: center;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Search Dropdown */
+        .search-container {
+            position: relative;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 10px 30px var(--shadow-color);
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .search-result-path {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="back-btn" title="Back to Home">←</a>
+                <div class="brand">
+                    <div class="brand-icon">💗</div>
+                    <div class="brand-text">
+                        <h1>Maternal Health Analytics</h1>
+                        <p id="facilityName">Select a facility or district</p>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" id="themeToggle" title="Toggle Dark Mode">🌙</button>
+                <div class="user-badge">
+                    <div class="user-avatar" id="userInitials">--</div>
+                    <span class="user-name" id="userName">Loading...</span>
+                </div>
+                <a href="/logout" class="header-btn" title="Logout">🚪</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+        <div class="tab-nav-content">
+            <button class="tab-btn active anc" data-tab="anc">
+                <span class="tab-icon">❤️</span>
+                ANC
+            </button>
+            <button class="tab-btn intrapartum" data-tab="intrapartum">
+                <span class="tab-icon">👶</span>
+                Intrapartum
+            </button>
+            <button class="tab-btn pnc" data-tab="pnc">
+                <span class="tab-icon">🩺</span>
+                PNC
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Filters Bar -->
+        <div class="filters-bar">
+            <div class="filters-grid">
+                <div class="filter-group search-container">
+                    <label>Facility / District</label>
+                    <input type="text" id="orgUnitSearch" placeholder="Type to search..." autocomplete="off">
+                    <div class="search-results" id="searchResults"></div>
+                    <input type="hidden" id="orgUnitId" value="">
+                </div>
+                <div class="filter-group">
+                    <label>Start Period</label>
+                    <input type="month" id="startDate" value="2023-01">
+                </div>
+                <div class="filter-group">
+                    <label>End Period</label>
+                    <input type="month" id="endDate" value="2025-03">
+                </div>
+                <div class="filter-group">
+                    <label>Custom Population</label>
+                    <input type="number" id="customPopulation" placeholder="Optional">
+                </div>
+                <div class="filter-group">
+                    <button class="btn-fetch" id="fetchData" disabled>
+                        📊 Fetch Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Charts -->
+        <div class="toggle-charts">
+            <button class="btn-toggle charts-visible" id="toggleCharts">
+                📈 <span id="toggleText">Hide Charts</span>
+                <span class="chevron">▼</span>
+            </button>
+        </div>
+
+        <!-- Tab Content: ANC -->
+        <div class="tab-content" id="tab-anc">
+            <div class="table-card anc">
+                <div class="table-header anc">
+                    <div>
+                        <h2>ANC - Antenatal Care Indicators</h2>
+                        <p>Quarterly performance tracking with color-coded status</p>
+                    </div>
+                    <button class="btn-download" onclick="downloadCSV('anc')">
+                        ⬇️ Download CSV
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="ancTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>ANC 1 Coverage</th>
+                                <th>ANC 1st Trimester</th>
+                                <th>ANC 4</th>
+                                <th>ANC 8</th>
+                                <th>IPT 3 Cov</th>
+                                <th>Hb Testing</th>
+                                <th>Iron/Folic Acid</th>
+                                <th>Ultrasound</th>
+                                <th>Teen Preg</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ancTableBody">
+                            <tr>
+                                <td colspan="10" class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <h3>No data loaded</h3>
+                                    <p>Select a facility and click "Fetch Data"</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ANC Charts -->
+            <div class="charts-grid" id="ancCharts">
+                <div class="chart-card anc">
+                    <h3>ANC 1st Visit vs Target & 1st Trimester</h3>
+                    <div class="chart-container">
+                        <canvas id="ancVisitChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card anc">
+                    <h3>IPT3 Coverage Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="ipt3Chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card anc">
+                    <h3>ANC Coverage Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="ancCoverageChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card anc">
+                    <h3>Iron/Folic Acid & Teen Pregnancies</h3>
+                    <div class="chart-container">
+                        <canvas id="ironTeenChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Intrapartum -->
+        <div class="tab-content" id="tab-intrapartum" style="display: none;">
+            <div class="table-card intrapartum">
+                <div class="table-header intrapartum">
+                    <div>
+                        <h2>Intrapartum Indicators</h2>
+                        <p>Delivery outcomes and newborn care metrics</p>
+                    </div>
+                    <button class="btn-download" onclick="downloadCSV('intrapartum')">
+                        ⬇️ Download CSV
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="intrapartumTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Deliveries %</th>
+                                <th>LBW %</th>
+                                <th>KMC Init %</th>
+                                <th>Asphyxia %</th>
+                                <th>Resuscitated %</th>
+                                <th>Fresh Still /1000</th>
+                                <th>Neonatal Mort</th>
+                                <th>Perinatal Mort</th>
+                                <th>Maternal Mort</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intrapartumTableBody">
+                            <tr>
+                                <td colspan="10" class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <h3>No data loaded</h3>
+                                    <p>Select a facility and click "Fetch Data"</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Intrapartum Charts -->
+            <div class="charts-grid" id="intrapartumCharts">
+                <div class="chart-card intrapartum">
+                    <h3>Target vs Actual Deliveries</h3>
+                    <div class="chart-container">
+                        <canvas id="deliveriesChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card intrapartum">
+                    <h3>Birth Asphyxia & Resuscitation</h3>
+                    <div class="chart-container">
+                        <canvas id="asphyxiaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: PNC -->
+        <div class="tab-content" id="tab-pnc" style="display: none;">
+            <div class="table-card pnc">
+                <div class="table-header pnc">
+                    <div>
+                        <h2>PNC - Postnatal Care Indicators</h2>
+                        <p>Postnatal follow-up and breastfeeding metrics</p>
+                    </div>
+                    <button class="btn-download" onclick="downloadCSV('pnc')">
+                        ⬇️ Download CSV
+                    </button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="pncTable">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Breastfeeding within 1hr</th>
+                                <th>PNC at 24 hours</th>
+                                <th>PNC at 6 Days</th>
+                                <th>PNC at 6 Weeks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pncTableBody">
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <h3>No data loaded</h3>
+                                    <p>Select a facility and click "Fetch Data"</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PNC Charts -->
+            <div class="charts-grid" id="pncCharts">
+                <div class="chart-card pnc" style="grid-column: span 2;">
+                    <h3>PNC Coverage Trends</h3>
+                    <div class="chart-container" style="height: 320px;">
+                        <canvas id="pncTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend-card">
+            <div class="legend-content">
+                <span class="legend-title">Legend:</span>
+                <div class="legend-item">
+                    <div class="legend-color green"></div>
+                    <span>Target Met</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color yellow"></div>
+                    <span>Near Target (70%+)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color red"></div>
+                    <span>Below Target</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ============ STATE ============
+        let currentTab = 'anc';
+        let chartsVisible = true;
+        let ancData = [];
+        let intrapartumData = [];
+        let pncData = [];
+        let ancCharts = {};
+        let intrapartumCharts = {};
+        let pncCharts = {};
+        let searchTimeout = null;
+        let selectedOrgUnit = null;
+
+        // ============ THEME ============
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('maternal-theme');
+
+        if (savedTheme === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('maternal-theme', 'light');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('maternal-theme', 'dark');
+            }
+            // Redraw charts with new theme
+            if (ancData.length) renderANCCharts();
+            if (intrapartumData.length) renderIntrapartumCharts();
+            if (pncData.length) renderPNCCharts();
+        });
+
+        // ============ TAB NAVIGATION ============
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                currentTab = tab;
+
+                // Update button states
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Show/hide content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.getElementById(`tab-${tab}`).style.display = 'block';
+            });
+        });
+
+        // ============ TOGGLE CHARTS ============
+        document.getElementById('toggleCharts').addEventListener('click', () => {
+            chartsVisible = !chartsVisible;
+            const btn = document.getElementById('toggleCharts');
+            const text = document.getElementById('toggleText');
+
+            btn.classList.toggle('charts-visible', chartsVisible);
+            text.textContent = chartsVisible ? 'Hide Charts' : 'Show Charts';
+
+            document.querySelectorAll('.charts-grid').forEach(grid => {
+                grid.style.display = chartsVisible ? 'grid' : 'none';
+            });
+        });
+
+        // ============ SEARCH ============
+        const orgUnitSearch = document.getElementById('orgUnitSearch');
+        const searchResults = document.getElementById('searchResults');
+
+        orgUnitSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+
+            if (searchTimeout) clearTimeout(searchTimeout);
+
+            if (query.length < 3) {
+                searchResults.classList.remove('show');
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/search-org-units?query=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        console.error(data.error);
+                        return;
+                    }
+
+                    const units = data.organisationUnits || [];
+                    searchResults.innerHTML = units.length === 0
+                        ? '<div class="search-result-item"><span class="search-result-name">No results found</span></div>'
+                        : units.map(unit => `
+                            <div class="search-result-item" data-id="${unit.id}" data-name="${unit.displayName}" data-level="${unit.level}">
+                                <div class="search-result-name">${unit.displayName}</div>
+                                <div class="search-result-path">Level ${unit.level}${unit.path ? ' • ' + unit.path : ''}</div>
+                            </div>
+                        `).join('');
+
+                    searchResults.classList.add('show');
+
+                    // Add click handlers
+                    searchResults.querySelectorAll('.search-result-item[data-id]').forEach(item => {
+                        item.addEventListener('click', () => {
+                            selectedOrgUnit = {
+                                id: item.dataset.id,
+                                name: item.dataset.name,
+                                level: parseInt(item.dataset.level)
+                            };
+                            orgUnitSearch.value = item.dataset.name;
+                            document.getElementById('orgUnitId').value = item.dataset.id;
+                            document.getElementById('facilityName').textContent = item.dataset.name;
+                            searchResults.classList.remove('show');
+                            document.getElementById('fetchData').disabled = false;
+                        });
+                    });
+                } catch (err) {
+                    console.error('Search error:', err);
+                }
+            }, 300);
+        });
+
+        // Close search on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                searchResults.classList.remove('show');
+            }
+        });
+
+        // ============ FETCH DATA ============
+        document.getElementById('fetchData').addEventListener('click', async () => {
+            const orgUnitId = document.getElementById('orgUnitId').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const customPop = document.getElementById('customPopulation').value;
+
+            if (!orgUnitId) {
+                alert('Please select an organization unit');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const params = new URLSearchParams({
+                    orgUnit: orgUnitId,
+                    districtName: selectedOrgUnit?.name || '',
+                    startDate: startDate,
+                    endDate: endDate
+                });
+
+                if (customPop) params.append('customPopulation', customPop);
+
+                // Fetch all three datasets
+                const [ancRes, intraRes, pncRes] = await Promise.all([
+                    fetch(`/maternal/api/anc-data?${params}`),
+                    fetch(`/maternal/api/intrapartum-data?${params}`),
+                    fetch(`/maternal/api/pnc-data?${params}`)
+                ]);
+
+                const [ancJson, intraJson, pncJson] = await Promise.all([
+                    ancRes.json(),
+                    intraRes.json(),
+                    pncRes.json()
+                ]);
+
+                // Store data
+                ancData = ancJson.quarters || [];
+                intrapartumData = intraJson.quarters || [];
+                pncData = pncJson.quarters || [];
+
+                // Render tables
+                renderANCTable(ancData, ancJson.targets);
+                renderIntrapartumTable(intrapartumData, intraJson.targets);
+                renderPNCTable(pncData, pncJson.targets);
+
+                // Render charts
+                renderANCCharts();
+                renderIntrapartumCharts();
+                renderPNCCharts();
+
+            } catch (err) {
+                console.error('Fetch error:', err);
+                alert('Failed to fetch data: ' + err.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // ============ RENDER TABLES ============
+        function getCellClass(color) {
+            return color ? `cell-${color}` : '';
+        }
+
+        function renderANCTable(data, targets) {
+            const tbody = document.getElementById('ancTableBody');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <h3>No data available</h3>
+                            <p>Try a different time period or organization unit</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            // Target row + data rows (reversed for newest first)
+            const targetRow = `
+                <tr class="target-row">
+                    <td>Target</td>
+                    <td>${targets?.anc1_coverage || 100}%</td>
+                    <td>${targets?.anc1_first_trimester || 45}%</td>
+                    <td>${targets?.anc4 || 60}%</td>
+                    <td>${targets?.anc8 || 20}%</td>
+                    <td>${targets?.ipt3 || 85}%</td>
+                    <td>${targets?.hb_testing || 75}%</td>
+                    <td>${targets?.iron_folic || 75}%</td>
+                    <td>${targets?.ultrasound || 40}%</td>
+                    <td>&lt;${targets?.teen_pregnancy || 15}%</td>
+                </tr>
+            `;
+
+            const dataRows = [...data].reverse().map(row => `
+                <tr>
+                    <td>${row.period}</td>
+                    <td class="${getCellClass(row.anc1_cov_color)}">${row.anc1_cov}%</td>
+                    <td class="${getCellClass(row.anc1_first_tri_color)}">${row.anc1_first_tri}%</td>
+                    <td class="${getCellClass(row.anc4_color)}">${row.anc4}%</td>
+                    <td class="${getCellClass(row.anc8_color)}">${row.anc8}%</td>
+                    <td class="${getCellClass(row.ipt3_color)}">${row.ipt3}%</td>
+                    <td class="${getCellClass(row.hb_testing_color)}">${row.hb_testing}%</td>
+                    <td class="${getCellClass(row.iron_folic_color)}">${row.iron_folic}%</td>
+                    <td class="${getCellClass(row.ultrasound_color)}">${row.ultrasound}%</td>
+                    <td class="${getCellClass(row.teen_pregnancy_color)}">${row.teen_pregnancy}%</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = targetRow + dataRows;
+        }
+
+        function renderIntrapartumTable(data, targets) {
+            const tbody = document.getElementById('intrapartumTableBody');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <h3>No data available</h3>
+                            <p>Try a different time period or organization unit</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const targetRow = `
+                <tr class="target-row">
+                    <td>Target</td>
+                    <td>${targets?.deliveries || 68}%</td>
+                    <td>&lt;${targets?.lbw || 5}%</td>
+                    <td>${targets?.kmc_initiation || 100}%</td>
+                    <td>&lt;${targets?.birth_asphyxia || 1}%</td>
+                    <td>${targets?.resuscitated || 100}%</td>
+                    <td>&lt;${targets?.fresh_stillbirth || 5}</td>
+                    <td>&lt;${targets?.neonatal_mortality || 5}</td>
+                    <td>${targets?.perinatal_mortality || 12}</td>
+                    <td>${targets?.maternal_mortality || 20}</td>
+                </tr>
+            `;
+
+            const dataRows = [...data].reverse().map(row => `
+                <tr>
+                    <td>${row.period}</td>
+                    <td class="${getCellClass(row.deliveries_color)}">${row.deliveries_cov}%</td>
+                    <td class="${getCellClass(row.lbw_color)}">${row.lbw}%</td>
+                    <td class="${getCellClass(row.kmc_color)}">${row.kmc_initiation !== null ? row.kmc_initiation + '%' : '-'}</td>
+                    <td class="${getCellClass(row.asphyxia_color)}">${row.birth_asphyxia}%</td>
+                    <td class="${getCellClass(row.resuscitated_color)}">${row.resuscitated !== null ? row.resuscitated + '%' : '-'}</td>
+                    <td class="${getCellClass(row.fresh_still_color)}">${row.fresh_stillbirth}</td>
+                    <td class="${getCellClass(row.neonatal_color)}">${row.neonatal_mortality}</td>
+                    <td class="${getCellClass(row.perinatal_color)}">${row.perinatal_mortality}</td>
+                    <td class="${getCellClass(row.maternal_color)}">${row.maternal_mortality}</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = targetRow + dataRows;
+        }
+
+        function renderPNCTable(data, targets) {
+            const tbody = document.getElementById('pncTableBody');
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <h3>No data available</h3>
+                            <p>Try a different time period or organization unit</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const targetRow = `
+                <tr class="target-row">
+                    <td>Target</td>
+                    <td>${targets?.breastfeeding_1hr || 90}%</td>
+                    <td>${targets?.pnc_24hrs || 90}%</td>
+                    <td>${targets?.pnc_6days || 70}%</td>
+                    <td>${targets?.pnc_6weeks || 70}%</td>
+                </tr>
+            `;
+
+            const dataRows = [...data].reverse().map(row => `
+                <tr>
+                    <td>${row.period}</td>
+                    <td class="${getCellClass(row.breastfeeding_color)}">${row.breastfeeding_1hr}%</td>
+                    <td class="${getCellClass(row.pnc_24hrs_color)}">${row.pnc_24hrs}%</td>
+                    <td class="${getCellClass(row.pnc_6days_color)}">${row.pnc_6days}%</td>
+                    <td class="${getCellClass(row.pnc_6weeks_color)}">${row.pnc_6weeks}%</td>
+                </tr>
+            `).join('');
+
+            tbody.innerHTML = targetRow + dataRows;
+        }
+
+        // ============ RENDER CHARTS ============
+        function getChartColors() {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            return {
+                grid: isDark ? '#374151' : '#e5e7eb',
+                text: isDark ? '#9ca3af' : '#6b7280',
+                bg: isDark ? '#1f2937' : '#ffffff'
+            };
+        }
+
+        function renderANCCharts() {
+            if (!ancData.length) return;
+            const colors = getChartColors();
+            const labels = ancData.map(d => d.period);
+
+            // Destroy existing charts
+            Object.values(ancCharts).forEach(chart => chart?.destroy());
+
+            // Chart 1: ANC Visits vs Target
+            const ctx1 = document.getElementById('ancVisitChart').getContext('2d');
+            ancCharts.visits = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'ANC 1st Visit',
+                            data: ancData.map(d => d.anc1_visits),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2
+                        },
+                        {
+                            label: '1st Trimester %',
+                            data: ancData.map(d => d.anc1_first_tri),
+                            type: 'line',
+                            borderColor: '#22c55e',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#22c55e',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: colors.text } }
+                    },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y1: { position: 'right', ticks: { color: colors.text }, grid: { display: false } }
+                    }
+                }
+            });
+
+            // Chart 2: IPT3 Trend
+            const ctx2 = document.getElementById('ipt3Chart').getContext('2d');
+            ancCharts.ipt3 = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'IPT3 Coverage %',
+                        data: ancData.map(d => d.ipt3),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#8b5cf6',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: colors.text } },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 85,
+                                    yMax: 85,
+                                    borderColor: '#888',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Target 85%', display: true }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+
+            // Chart 3: ANC Coverage Comparison
+            const ctx3 = document.getElementById('ancCoverageChart').getContext('2d');
+            ancCharts.coverage = new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'ANC1 Coverage',
+                            data: ancData.map(d => d.anc1_cov),
+                            borderColor: '#ec4899',
+                            borderWidth: 3,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'ANC4',
+                            data: ancData.map(d => d.anc4),
+                            borderColor: '#f59e0b',
+                            borderWidth: 3,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'ANC8',
+                            data: ancData.map(d => d.anc8),
+                            borderColor: '#14b8a6',
+                            borderWidth: 3,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: colors.text } } },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+
+            // Chart 4: Iron/Folic & Teen
+            const ctx4 = document.getElementById('ironTeenChart').getContext('2d');
+            ancCharts.ironTeen = new Chart(ctx4, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Iron/Folic Acid %',
+                            data: ancData.map(d => d.iron_folic),
+                            backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Teen Pregnancies %',
+                            data: ancData.map(d => d.teen_pregnancy),
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: '#ef4444',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: colors.text } } },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+        }
+
+        function renderIntrapartumCharts() {
+            if (!intrapartumData.length) return;
+            const colors = getChartColors();
+            const labels = intrapartumData.map(d => d.period);
+
+            Object.values(intrapartumCharts).forEach(chart => chart?.destroy());
+
+            // Chart 1: Deliveries
+            const ctx1 = document.getElementById('deliveriesChart').getContext('2d');
+            intrapartumCharts.deliveries = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Target',
+                            data: intrapartumData.map(d => d.target),
+                            borderColor: '#9ca3af',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Actual Deliveries',
+                            data: intrapartumData.map(d => d.deliveries),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#3b82f6',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: colors.text } } },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+
+            // Chart 2: Asphyxia
+            const ctx2 = document.getElementById('asphyxiaChart').getContext('2d');
+            intrapartumCharts.asphyxia = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Birth Asphyxia %',
+                            data: intrapartumData.map(d => d.birth_asphyxia),
+                            borderColor: '#f59e0b',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#f59e0b'
+                        },
+                        {
+                            label: 'Resuscitated %',
+                            data: intrapartumData.map(d => d.resuscitated),
+                            borderColor: '#22c55e',
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#22c55e'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: colors.text } } },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+        }
+
+        function renderPNCCharts() {
+            if (!pncData.length) return;
+            const colors = getChartColors();
+            const labels = pncData.map(d => d.period);
+
+            Object.values(pncCharts).forEach(chart => chart?.destroy());
+
+            const ctx = document.getElementById('pncTrendChart').getContext('2d');
+            pncCharts.trend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Breastfeeding 1hr',
+                            data: pncData.map(d => d.breastfeeding_1hr),
+                            borderColor: '#22c55e',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#22c55e'
+                        },
+                        {
+                            label: 'PNC 24hrs',
+                            data: pncData.map(d => d.pnc_24hrs),
+                            borderColor: '#3b82f6',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3b82f6'
+                        },
+                        {
+                            label: 'PNC 6 Days',
+                            data: pncData.map(d => d.pnc_6days),
+                            borderColor: '#f59e0b',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#f59e0b'
+                        },
+                        {
+                            label: 'PNC 6 Weeks',
+                            data: pncData.map(d => d.pnc_6weeks),
+                            borderColor: '#ef4444',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ef4444'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: colors.text } },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: '#888',
+                                    borderWidth: 2,
+                                    borderDash: [6, 6],
+                                    label: { content: 'Target 70%', display: true }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.text }, grid: { color: colors.grid } }
+                    }
+                }
+            });
+        }
+
+        // ============ CSV DOWNLOAD ============
+        function downloadCSV(type) {
+            let data, headers, filename;
+
+            if (type === 'anc') {
+                data = ancData;
+                headers = ['Period', 'ANC1 Coverage', 'ANC 1st Trimester', 'ANC4', 'ANC8', 'IPT3', 'Hb Testing', 'Iron/Folic Acid', 'Ultrasound', 'Teen Pregnancies'];
+                filename = 'ANC_Data';
+            } else if (type === 'intrapartum') {
+                data = intrapartumData;
+                headers = ['Period', 'Deliveries %', 'LBW %', 'KMC Init %', 'Asphyxia %', 'Resuscitated %', 'Fresh Stillbirths', 'Neonatal Mort', 'Perinatal Mort', 'Maternal Mort'];
+                filename = 'Intrapartum_Data';
+            } else {
+                data = pncData;
+                headers = ['Period', 'Breastfeeding 1hr %', 'PNC 24hrs %', 'PNC 6 Days %', 'PNC 6 Weeks %'];
+                filename = 'PNC_Data';
+            }
+
+            if (!data.length) {
+                alert('No data to download');
+                return;
+            }
+
+            const facilityName = selectedOrgUnit?.name?.replace(/[^a-z0-9]/gi, '_') || 'Unknown';
+            const csvRows = [headers.join(',')];
+
+            data.forEach(row => {
+                if (type === 'anc') {
+                    csvRows.push(`${row.period},${row.anc1_cov}%,${row.anc1_first_tri}%,${row.anc4}%,${row.anc8}%,${row.ipt3}%,${row.hb_testing}%,${row.iron_folic}%,${row.ultrasound}%,${row.teen_pregnancy}%`);
+                } else if (type === 'intrapartum') {
+                    csvRows.push(`${row.period},${row.deliveries_cov}%,${row.lbw}%,${row.kmc_initiation ?? '-'}%,${row.birth_asphyxia}%,${row.resuscitated ?? '-'}%,${row.fresh_stillbirth},${row.neonatal_mortality},${row.perinatal_mortality},${row.maternal_mortality}`);
+                } else {
+                    csvRows.push(`${row.period},${row.breastfeeding_1hr}%,${row.pnc_24hrs}%,${row.pnc_6days}%,${row.pnc_6weeks}%`);
+                }
+            });
+
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${filename}_${facilityName}_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // ============ UTILITIES ============
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('show', show);
+        }
+
+        // ============ INIT ============
+        async function init() {
+            try {
+                const response = await fetch('/api/check-auth');
+                const data = await response.json();
+
+                if (!data.authenticated) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const displayName = data.displayName || 'User';
+                document.getElementById('userName').textContent = displayName;
+
+                const names = displayName.split(' ');
+                const initials = names.length >= 2
+                    ? (names[0][0] + names[names.length - 1][0]).toUpperCase()
+                    : displayName.substring(0, 2).toUpperCase();
+                document.getElementById('userInitials').textContent = initials;
+            } catch (err) {
+                console.error('Auth check failed:', err);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
+

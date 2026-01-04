@@ -16,6 +16,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'epi-dashboard-secret-key-2024')
 CORS(app)
 
+# ============ REGISTER BLUEPRINTS ============
+# Import and register health module blueprints
+from modules.maternal import maternal_bp
+app.register_blueprint(maternal_bp)
+
 # ============ CACHING SYSTEM ============
 class SimpleCache:
     """Thread-safe in-memory cache with expiration"""
@@ -260,6 +265,12 @@ def generate_monthly_periods(start, end):
 # Routes
 @app.route('/')
 def index():
+    if not is_logged_in():
+        return redirect(url_for('login'))
+    return render_template('landing.html')
+
+@app.route('/epi')
+def epi_dashboard():
     if not is_logged_in():
         return redirect(url_for('login'))
     return render_template('dashboard.html')
@@ -963,6 +974,568 @@ def red_categorization():
         
     except requests.exceptions.Timeout:
         return jsonify({'error': 'Request timeout - try again or select a smaller time period'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/ranking-data')
+def ranking_data():
+    """Get coverage data for ranking districts in a region or facilities in a district"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    parent_org_unit = request.args.get('parentOrgUnit', '')
+    period = request.args.get('period', 'LAST_12_MONTHS')
+    ranking_type = request.args.get('type', 'district')  # 'district' or 'facility'
+    facility_populations = request.args.get('facilityPopulations', '{}')  # JSON string of {orgUnitId: population}
+    
+    if not parent_org_unit:
+        return jsonify({'error': 'Parent org unit required'})
+    
+    # Parse facility populations if provided
+    try:
+        fac_pops = json.loads(facility_populations) if facility_populations else {}
+    except:
+        fac_pops = {}
+    
+    # Determine period divisor
+    divisor = get_period_divisor(period)
+    
+    if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
+        start, end = period.split('-')
+        periods = generate_monthly_periods(start, end)
+        period_count = len(periods.split(';'))
+        divisor = 12 / period_count if period_count < 12 else 1
+    else:
+        periods = period
+    
+    try:
+        # Get children of the parent org unit
+        org_response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{parent_org_unit}",
+            auth=auth,
+            params={'fields': 'id,displayName,children[id,displayName,level]'},
+            timeout=30
+        )
+        
+        if org_response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch org units'})
+        
+        org_data = org_response.json()
+        parent_name = org_data.get('displayName', 'Unknown')
+        children = org_data.get('children', [])
+        
+        if not children:
+            return jsonify({'error': f'No child units found under {parent_name}'})
+        
+        # Sort children alphabetically
+        children.sort(key=lambda x: x.get('displayName', ''))
+        
+        # Get data elements (cached)
+        elements_data = fetch_data_elements_cached(auth, '105-CL')
+        if 'error' in elements_data:
+            return jsonify(elements_data)
+        
+        elements = elements_data.get('dataElements', [])
+        ids = [e['id'] for e in elements]
+        code_map = {e['id']: e['code'] for e in elements}
+        id_to_code = {e['id']: e['code'] for e in elements}
+        
+        # Fetch analytics for all children at once
+        child_ids = [c['id'] for c in children]
+        ou_dimension = ";".join(child_ids)
+        dx_dimension = ";".join(ids)
+        
+        params = [
+            ('dimension', f'dx:{dx_dimension}'),
+            ('dimension', f'pe:{periods}'),
+            ('dimension', f'ou:{ou_dimension}'),
+            ('displayProperty', 'NAME'),
+            ('skipMeta', 'false')
+        ]
+        
+        data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=120)
+        
+        if data_response.status_code != 200:
+            return jsonify({'error': f'Analytics error: {data_response.status_code}'})
+        
+        data = data_response.json()
+        
+        # Parse results
+        headers = data.get('headers', [])
+        dx_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'dx'), 0)
+        ou_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'ou'), 1)
+        val_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'value'), -1)
+        if val_idx == -1:
+            val_idx = len(headers) - 1
+        
+        # Aggregate by org unit and data element
+        org_data_map = {}  # {org_unit_id: {dx_id: total_doses}}
+        for row in data.get('rows', []):
+            dx_id = row[dx_idx] if len(row) > dx_idx else ''
+            ou_id = row[ou_idx] if len(row) > ou_idx else ''
+            try:
+                value = int(float(row[val_idx])) if len(row) > val_idx else 0
+            except:
+                value = 0
+            
+            if ou_id not in org_data_map:
+                org_data_map[ou_id] = {}
+            if dx_id not in org_data_map[ou_id]:
+                org_data_map[ou_id][dx_id] = 0
+            org_data_map[ou_id][dx_id] += value
+        
+        # Build result with coverage calculations
+        # ALL antigens for complete display
+        all_antigens = [
+            ('105-CL01', 'BCG', 4.85),
+            ('105-CL02', 'HepB0', 4.85),
+            ('105-CL04', 'OPV0', 4.85),
+            ('105-CL05', 'OPV1', 4.3),
+            ('105-CL06', 'OPV2', 4.3),
+            ('105-CL07', 'OPV3', 4.3),
+            ('105-CL08', 'IPV1', 4.3),
+            ('105-CL09', 'IPV2', 4.3),
+            ('105-CL10', 'DPT1', 4.3),
+            ('105-CL11', 'DPT2', 4.3),
+            ('105-CL12', 'DPT3', 4.3),
+            ('105-CL13', 'PCV1', 4.3),
+            ('105-CL14', 'PCV2', 4.3),
+            ('105-CL15', 'PCV3', 4.3),
+            ('105-CL16', 'Rota1', 4.3),
+            ('105-CL17', 'Rota2', 4.3),
+            ('105-CL18', 'Rota3', 4.3),
+            ('105-CL19', 'Mal1', 4.3),
+            ('105-CL20', 'Mal2', 4.3),
+            ('105-CL21', 'Mal3', 4.3),
+            ('105-CL26', 'Mal4', 4.3),
+            ('105-CL22', 'YF', 4.3),
+            ('105-CL23', 'MR1', 4.3),
+            ('105-CL27', 'MR2', 4.3),
+            ('105-CL24', 'FIC1', 4.3),
+            ('105-CL28', 'FIC2', 4.3),
+        ]
+        
+        # Get antigen IDs
+        antigen_map = {}
+        for e in elements:
+            for code, name, _ in all_antigens:
+                if e['code'] == code:
+                    antigen_map[code] = e['id']
+        
+        rankings = []
+        regional_totals = {}  # To track regional totals by antigen
+        total_regional_population = 0
+        
+        for child in children:
+            child_id = child['id']
+            child_name = child.get('displayName', 'Unknown')
+            
+            # Get population from UBOS
+            if ranking_type == 'facility' and child_id in fac_pops:
+                population = int(fac_pops[child_id])
+            elif ranking_type == 'district':
+                # Try to match district name with UBOS data
+                clean_name = child_name.upper().replace(' DISTRICT', '').replace(' CITY', '').strip()
+                population = UBOS_POPULATION.get(clean_name, 0)
+                if population == 0:
+                    population = UBOS_POPULATION.get(child_name.upper(), 0)
+            else:
+                population = int(fac_pops.get(child_id, 0))
+            
+            total_regional_population += population
+            child_data = org_data_map.get(child_id, {})
+            
+            # Calculate coverage for each antigen
+            coverages = {}
+            total_coverage = 0
+            antigen_count = 0
+            
+            for code, name, target_pct in all_antigens:
+                antigen_id = antigen_map.get(code)
+                if antigen_id:
+                    doses = child_data.get(antigen_id, 0)
+                    
+                    # Track regional totals
+                    if name not in regional_totals:
+                        regional_totals[name] = {'doses': 0, 'target_pct': target_pct}
+                    regional_totals[name]['doses'] += doses
+                    
+                    if population > 0:
+                        coverage = calculate_coverage(doses, population, target_pct, divisor)
+                    else:
+                        coverage = 0
+                    coverages[name] = {
+                        'doses': doses,
+                        'coverage': coverage,
+                        'color': get_coverage_color(coverage)
+                    }
+                    total_coverage += coverage
+                    antigen_count += 1
+            
+            avg_coverage = round(total_coverage / antigen_count, 1) if antigen_count > 0 else 0
+            
+            # Calculate DPT1-DPT3 dropout
+            dpt1_id = antigen_map.get('105-CL10')
+            dpt3_id = antigen_map.get('105-CL12')
+            dpt1_doses = child_data.get(dpt1_id, 0) if dpt1_id else 0
+            dpt3_doses = child_data.get(dpt3_id, 0) if dpt3_id else 0
+            dropout = calculate_dropout(dpt1_doses, dpt3_doses)
+            
+            rankings.append({
+                'id': child_id,
+                'name': child_name,
+                'population': population,
+                'coverages': coverages,
+                'avg_coverage': avg_coverage,
+                'dropout': dropout,
+                'dropout_color': 'green' if dropout <= 10 else 'red'
+            })
+        
+        # Calculate regional coverage totals
+        regional_coverages = {}
+        for name, data in regional_totals.items():
+            if total_regional_population > 0:
+                cov = calculate_coverage(data['doses'], total_regional_population, data['target_pct'], divisor)
+            else:
+                cov = 0
+            regional_coverages[name] = {
+                'doses': data['doses'],
+                'coverage': cov,
+                'color': get_coverage_color(cov)
+            }
+        
+        # Sort by average coverage (descending)
+        rankings.sort(key=lambda x: x['avg_coverage'], reverse=True)
+        
+        # Add rank
+        for i, r in enumerate(rankings):
+            r['rank'] = i + 1
+        
+        return jsonify({
+            'parent_name': parent_name,
+            'parent_id': parent_org_unit,
+            'type': ranking_type,
+            'period': period,
+            'units': rankings,
+            'antigens': [name for _, name, _ in all_antigens],
+            'total_units': len(rankings),
+            'regional_population': total_regional_population,
+            'regional_coverages': regional_coverages
+        })
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try again'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+@app.route('/api/regional-red-categorization')
+def regional_red_categorization():
+    """RED Categorization for districts in a region - each district uses its own population"""
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    parent_org_unit = request.args.get('parentOrgUnit', '')
+    start_date = request.args.get('startDate', None)
+    end_date = request.args.get('endDate', None)
+    
+    if not parent_org_unit:
+        return jsonify({'error': 'Parent org unit required'})
+    
+    from calendar import month_abbr
+    
+    # Helper function to generate quarters
+    def generate_quarters(start, end):
+        quarters = []
+        start_y, start_m = map(int, start.split('-'))
+        end_y, end_m = map(int, end.split('-'))
+        
+        current_y, current_m = start_y, start_m
+        months_list = []
+        
+        while (current_y < end_y) or (current_y == end_y and current_m <= end_m):
+            months_list.append((current_y, current_m))
+            current_m += 1
+            if current_m > 12:
+                current_m = 1
+                current_y += 1
+        
+        i = 0
+        quarter_num = 1
+        while i < len(months_list):
+            quarter_months = months_list[i:i+3]
+            if not quarter_months:
+                break
+            month_codes = [f"{y}{m:02d}" for y, m in quarter_months]
+            month_names = [month_abbr[m] for y, m in quarter_months]
+            
+            if len(quarter_months) == 3:
+                q_name = f"Q{quarter_num} {quarter_months[0][0]}"
+            else:
+                q_name = f"{month_names[0]}-{month_names[-1]} {quarter_months[0][0]}"
+            
+            quarters.append({
+                'name': q_name,
+                'months': ';'.join(month_codes),
+            })
+            
+            i += 3
+            quarter_num += 1
+            if quarter_num > 4:
+                quarter_num = 1
+        
+        return quarters
+    
+    # Generate quarters
+    if start_date and end_date:
+        try:
+            quarters = generate_quarters(start_date, end_date)
+        except:
+            quarters = generate_quarters('2023-10', '2025-09')
+    else:
+        quarters = generate_quarters('2023-10', '2025-09')
+    
+    try:
+        # Get children (districts) of the parent org unit (region)
+        org_response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{parent_org_unit}",
+            auth=auth,
+            params={'fields': 'id,displayName,children[id,displayName,level]'},
+            timeout=30
+        )
+        
+        if org_response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch districts'})
+        
+        org_data = org_response.json()
+        parent_name = org_data.get('displayName', 'Unknown')
+        children = org_data.get('children', [])
+        
+        if not children:
+            return jsonify({'error': f'No districts found under {parent_name}'})
+        
+        children.sort(key=lambda x: x.get('displayName', ''))
+        
+        # Get data elements
+        elements_data = fetch_data_elements_cached(auth, '105-CL')
+        if 'error' in elements_data:
+            return jsonify(elements_data)
+        
+        elements = elements_data.get('dataElements', [])
+        code_to_id = {e['code']: e['id'] for e in elements}
+        
+        bcg_id = code_to_id.get('105-CL01')
+        dpt1_id = code_to_id.get('105-CL10')
+        dpt3_id = code_to_id.get('105-CL12')
+        mr_id = code_to_id.get('105-CL23')
+        
+        if not all([bcg_id, dpt1_id, dpt3_id, mr_id]):
+            return jsonify({'error': 'Missing required data elements'})
+        
+        dx_dimension = f"{bcg_id};{dpt1_id};{dpt3_id};{mr_id}"
+        
+        # Get all periods
+        all_months = []
+        for q in quarters:
+            all_months.extend(q['months'].split(';'))
+        pe_dimension = ";".join(all_months)
+        
+        # Get all district IDs
+        child_ids = [c['id'] for c in children]
+        ou_dimension = ";".join(child_ids)
+        
+        # Fetch analytics
+        params = [
+            ('dimension', f'dx:{dx_dimension}'),
+            ('dimension', f'pe:{pe_dimension}'),
+            ('dimension', f'ou:{ou_dimension}'),
+            ('displayProperty', 'NAME'),
+            ('skipMeta', 'false')
+        ]
+        
+        data_response = requests.get(f"{DHIS2_BASE_URL}/analytics", auth=auth, params=params, timeout=120)
+        
+        if data_response.status_code != 200:
+            return jsonify({'error': f'Analytics error: {data_response.status_code}'})
+        
+        data = data_response.json()
+        
+        # Parse results
+        headers = data.get('headers', [])
+        dx_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'dx'), 0)
+        pe_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'pe'), 1)
+        ou_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'ou'), 2)
+        val_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'value'), -1)
+        if val_idx == -1:
+            val_idx = len(headers) - 1
+        
+        # Aggregate by district, period, data element
+        district_data = {}  # {ou_id: {period: {dx_id: value}}}
+        for row in data.get('rows', []):
+            dx_id = row[dx_idx] if len(row) > dx_idx else ''
+            pe = row[pe_idx] if len(row) > pe_idx else ''
+            ou_id = row[ou_idx] if len(row) > ou_idx else ''
+            try:
+                value = int(float(row[val_idx])) if len(row) > val_idx else 0
+            except:
+                value = 0
+            
+            if ou_id not in district_data:
+                district_data[ou_id] = {}
+            if pe not in district_data[ou_id]:
+                district_data[ou_id][pe] = {'bcg': 0, 'dpt1': 0, 'dpt3': 0, 'mr': 0}
+            
+            if dx_id == bcg_id:
+                district_data[ou_id][pe]['bcg'] += value
+            elif dx_id == dpt1_id:
+                district_data[ou_id][pe]['dpt1'] += value
+            elif dx_id == dpt3_id:
+                district_data[ou_id][pe]['dpt3'] += value
+            elif dx_id == mr_id:
+                district_data[ou_id][pe]['mr'] += value
+        
+        # Build results by district with their individual populations
+        district_results = []
+        cat_counts = {'cat1': 0, 'cat2': 0, 'cat3': 0, 'cat4': 0}
+        regional_totals = {'bcg': 0, 'dpt1': 0, 'dpt3': 0, 'mr': 0, 'population': 0}
+        
+        for child in children:
+            child_id = child['id']
+            child_name = child.get('displayName', 'Unknown')
+            
+            # Get district population from UBOS
+            clean_name = child_name.upper().replace(' DISTRICT', '').replace(' CITY', '').strip()
+            population = UBOS_POPULATION.get(clean_name, 0)
+            if population == 0:
+                population = UBOS_POPULATION.get(child_name.upper(), 0)
+            
+            regional_totals['population'] += population
+            
+            # Sum across all quarters for this district
+            total_bcg = 0
+            total_dpt1 = 0
+            total_dpt3 = 0
+            total_mr = 0
+            
+            for q in quarters:
+                months = q['months'].split(';')
+                for m in months:
+                    d = district_data.get(child_id, {}).get(m, {})
+                    total_bcg += d.get('bcg', 0)
+                    total_dpt1 += d.get('dpt1', 0)
+                    total_dpt3 += d.get('dpt3', 0)
+                    total_mr += d.get('mr', 0)
+            
+            regional_totals['bcg'] += total_bcg
+            regional_totals['dpt1'] += total_dpt1
+            regional_totals['dpt3'] += total_dpt3
+            regional_totals['mr'] += total_mr
+            
+            # Calculate annual coverage (using annual population, not divided by 4)
+            divisor = 1  # Annual data
+            target_pop = round(population * 0.043) if population > 0 else 0
+            target_bcg = round(population * 0.0485) if population > 0 else 0
+            
+            bcg_cov = round((total_bcg / target_bcg) * 100, 1) if target_bcg > 0 else 0
+            dpt1_cov = round((total_dpt1 / target_pop) * 100, 1) if target_pop > 0 else 0
+            dpt3_cov = round((total_dpt3 / target_pop) * 100, 1) if target_pop > 0 else 0
+            mr_cov = round((total_mr / target_pop) * 100, 1) if target_pop > 0 else 0
+            
+            # Calculate both dropouts
+            dropout_dpt = calculate_dropout(total_dpt1, total_dpt3)  # DPT1→DPT3
+            dropout_mr = calculate_dropout(total_dpt1, total_mr)     # DPT1→MR
+            
+            # Calculate gaps/unimmunized
+            unimm_dpt3 = max(0, target_pop - total_dpt3)
+            unimm_mr = max(0, target_pop - total_mr)
+            zero_dose = max(0, target_bcg - total_bcg)
+            under_imm = max(0, total_dpt1 - total_dpt3)
+            
+            access = 'Good' if dpt1_cov >= 90 else 'Poor'
+            utilization = 'Good' if dropout_dpt <= 10 else 'Poor'
+            
+            if access == 'Good' and utilization == 'Good':
+                category = 'Cat. 1'
+                cat_counts['cat1'] += 1
+            elif access == 'Good' and utilization == 'Poor':
+                category = 'Cat. 2'
+                cat_counts['cat2'] += 1
+            elif access == 'Poor' and utilization == 'Good':
+                category = 'Cat. 3'
+                cat_counts['cat3'] += 1
+            else:
+                category = 'Cat. 4'
+                cat_counts['cat4'] += 1
+            
+            district_results.append({
+                'id': child_id,
+                'name': child_name,
+                'population': population,
+                'target_pop': target_pop,
+                'target_bcg': target_bcg,
+                'bcg': total_bcg,
+                'dpt1': total_dpt1,
+                'dpt3': total_dpt3,
+                'mr': total_mr,
+                'bcg_cov': bcg_cov,
+                'dpt1_cov': dpt1_cov,
+                'dpt3_cov': dpt3_cov,
+                'mr_cov': mr_cov,
+                'dropout_dpt': dropout_dpt,
+                'dropout_mr': dropout_mr,
+                'unimm_dpt3': unimm_dpt3,
+                'unimm_mr': unimm_mr,
+                'zero_dose': zero_dose,
+                'under_imm': under_imm,
+                'access': access,
+                'utilization': utilization,
+                'category': category
+            })
+        
+        # Sort by DPT1 coverage (descending) for ranking
+        district_results.sort(key=lambda x: x['dpt1_cov'], reverse=True)
+        for i, d in enumerate(district_results):
+            d['rank'] = i + 1
+        
+        # Calculate regional totals coverage
+        reg_target = round(regional_totals['population'] * 0.043) if regional_totals['population'] > 0 else 0
+        reg_target_bcg = round(regional_totals['population'] * 0.0485) if regional_totals['population'] > 0 else 0
+        
+        # Regional gaps
+        reg_unimm_dpt3 = max(0, reg_target - regional_totals['dpt3'])
+        reg_unimm_mr = max(0, reg_target - regional_totals['mr'])
+        reg_zero_dose = max(0, reg_target_bcg - regional_totals['bcg'])
+        reg_under_imm = max(0, regional_totals['dpt1'] - regional_totals['dpt3'])
+        
+        regional_coverage = {
+            'bcg_cov': round((regional_totals['bcg'] / reg_target_bcg) * 100, 1) if reg_target_bcg > 0 else 0,
+            'dpt1_cov': round((regional_totals['dpt1'] / reg_target) * 100, 1) if reg_target > 0 else 0,
+            'dpt3_cov': round((regional_totals['dpt3'] / reg_target) * 100, 1) if reg_target > 0 else 0,
+            'mr_cov': round((regional_totals['mr'] / reg_target) * 100, 1) if reg_target > 0 else 0,
+            'dropout_dpt': calculate_dropout(regional_totals['dpt1'], regional_totals['dpt3']),
+            'dropout_mr': calculate_dropout(regional_totals['dpt1'], regional_totals['mr']),
+            'unimm_dpt3': reg_unimm_dpt3,
+            'unimm_mr': reg_unimm_mr,
+            'zero_dose': reg_zero_dose,
+            'under_imm': reg_under_imm,
+            'target_pop': reg_target,
+            'target_bcg': reg_target_bcg
+        }
+        
+        return jsonify({
+            'parent_name': parent_name,
+            'parent_id': parent_org_unit,
+            'districts': district_results,
+            'summary': cat_counts,
+            'total_districts': len(district_results),
+            'regional_population': regional_totals['population'],
+            'regional_totals': regional_totals,
+            'regional_coverage': regional_coverage
+        })
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try again'})
     except Exception as e:
         return jsonify({'error': str(e)})
 

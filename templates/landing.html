@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uganda eHMIS Analytics - Ministry of Health</title>
+    <style>
+        /* CSS Variables for Theme */
+        :root {
+            --bg-primary: #f0f4ff;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e40af 0%, #3730a3 50%, #4f46e5 100%);
+            color: white;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] .brand-icon {
+            background: #3b82f6;
+        }
+
+        .brand-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+            font-size: 18px;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px 6px 6px;
+            border-radius: 25px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 24px;
+            width: 380px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: none;
+            z-index: 200;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .notification-header {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notification-list {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notification-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .notification-item.critical {
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .notification-item.warning {
+            background: rgba(245, 158, 11, 0.08);
+        }
+
+        .notification-content {
+            display: flex;
+            gap: 12px;
+        }
+
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .notification-icon.critical {
+            background: rgba(239, 68, 68, 0.15);
+        }
+
+        .notification-icon.warning {
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .notification-text {
+            flex: 1;
+        }
+
+        .notification-text p {
+            font-size: 13px;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .notification-footer {
+            padding: 12px;
+            text-align: center;
+            background: var(--bg-primary);
+        }
+
+        .notification-footer a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Alert Banner */
+        .alert-banner {
+            background: linear-gradient(135deg, #dc2626, #ea580c);
+            color: white;
+            padding: 10px 24px;
+            display: none;
+        }
+
+        .alert-banner.show {
+            display: block;
+        }
+
+        .alert-banner-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .alert-pulse {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .alert-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 16px;
+        }
+
+        .alert-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* Welcome Section */
+        .welcome {
+            margin-bottom: 32px;
+        }
+
+        .welcome h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .welcome p {
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+
+        .stat-info label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--stat-color-1), var(--stat-color-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: linear-gradient(135deg, var(--stat-color-1), var(--stat-color-2));
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Health Modules Grid */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .module-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 4px 20px var(--shadow-color);
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--module-color-1), var(--module-color-2));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .module-card:hover::before {
+            opacity: 1;
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px var(--shadow-color);
+            border-color: transparent;
+        }
+
+        .module-card:hover .module-content {
+            color: white;
+        }
+
+        .module-card:hover .module-icon {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .module-card:hover .module-icon .secondary-icon {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .module-card:hover .module-arrow {
+            transform: translateX(8px);
+            color: white;
+        }
+
+        .module-content {
+            position: relative;
+            z-index: 1;
+            transition: color 0.3s;
+        }
+
+        .module-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--module-color-1), var(--module-color-2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .secondary-icon {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 28px;
+            height: 28px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: background 0.3s;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .module-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            transition: color 0.3s;
+        }
+
+        .module-card:hover .module-desc {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .module-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #3b82f6;
+            transition: color 0.3s;
+        }
+
+        .module-arrow {
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        /* Decorative circles on cards */
+        .module-decor {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--module-color-1), var(--module-color-2));
+            opacity: 0.08;
+            z-index: 0;
+            transition: opacity 0.3s;
+        }
+
+        .module-card:hover .module-decor {
+            opacity: 0.15;
+        }
+
+        .module-decor-1 {
+            width: 120px;
+            height: 120px;
+            top: -40px;
+            right: -40px;
+        }
+
+        .module-decor-2 {
+            width: 160px;
+            height: 160px;
+            bottom: -60px;
+            right: -20px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 24px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            border: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-wrap: wrap;
+                height: auto;
+                padding: 12px 0;
+                gap: 12px;
+            }
+
+            .user-badge {
+                display: none;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="brand">
+                <div class="brand-icon">✚</div>
+                <div class="brand-text">
+                    <h1>Uganda eHMIS Analytics</h1>
+                    <p>Ministry of Health</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" id="themeToggle" title="Toggle Dark Mode">🌙</button>
+                <button class="header-btn" id="notificationBtn" title="Notifications">
+                    🔔
+                    <span class="notification-badge" id="alertCount">0</span>
+                </button>
+                <div class="user-badge">
+                    <div class="user-avatar" id="userInitials">--</div>
+                    <span class="user-name" id="userName">Loading...</span>
+                </div>
+                <a href="/logout" class="header-btn" title="Logout">🚪</a>
+            </div>
+        </div>
+
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div class="notification-header">
+                ⚠️ Alerts & Notifications
+            </div>
+            <div class="notification-list" id="notificationList">
+                <div class="notification-item">
+                    <div class="notification-content">
+                        <div class="notification-text">
+                            <p style="color: var(--text-muted)">No alerts at the moment</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="notification-footer">
+                <a href="#">View All Notifications</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Alert Banner -->
+    <div class="alert-banner" id="alertBanner">
+        <div class="alert-banner-content">
+            <div class="alert-pulse"></div>
+            ⚠️ <span id="alertBannerText">Critical alerts require attention</span>
+            <button class="alert-btn" onclick="document.getElementById('notificationBtn').click()">View Details</button>
+        </div>
+    </div>
+
+    <main class="main">
+        <!-- Welcome Section -->
+        <div class="welcome">
+            <h2>Welcome back, <span id="welcomeName">User</span> 👋</h2>
+            <p>Select a health program module to view analytics and reports</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card" style="--stat-color-1: #3b82f6; --stat-color-2: #6366f1;">
+                <div class="stat-info">
+                    <label>Total Facilities</label>
+                    <div class="stat-value" id="statFacilities">--</div>
+                </div>
+                <div class="stat-icon">🏥</div>
+            </div>
+            <div class="stat-card" style="--stat-color-1: #10b981; --stat-color-2: #059669;">
+                <div class="stat-info">
+                    <label>Districts Covered</label>
+                    <div class="stat-value" id="statDistricts">--</div>
+                </div>
+                <div class="stat-icon">📍</div>
+            </div>
+            <div class="stat-card" style="--stat-color-1: #f59e0b; --stat-color-2: #ef4444;">
+                <div class="stat-info">
+                    <label>Active Alerts</label>
+                    <div class="stat-value" id="statAlerts">0</div>
+                </div>
+                <div class="stat-icon">🚨</div>
+            </div>
+            <div class="stat-card" style="--stat-color-1: #8b5cf6; --stat-color-2: #a855f7;">
+                <div class="stat-info">
+                    <label>Reports Due</label>
+                    <div class="stat-value" id="statReports">--</div>
+                </div>
+                <div class="stat-icon">📋</div>
+            </div>
+        </div>
+
+        <!-- Health Modules Grid -->
+        <div class="modules-grid">
+            <!-- Maternal Health -->
+            <a href="/maternal" class="module-card" style="--module-color-1: #ec4899; --module-color-2: #f43f5e;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        💗
+                        <div class="secondary-icon">👶</div>
+                    </div>
+                    <h3 class="module-title">Maternal Health</h3>
+                    <p class="module-desc">ANC, PNC, Deliveries, Maternal Deaths</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- EPI -->
+            <a href="/epi" class="module-card" style="--module-color-1: #3b82f6; --module-color-2: #6366f1;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        💉
+                        <div class="secondary-icon">🛡️</div>
+                    </div>
+                    <h3 class="module-title">EPI</h3>
+                    <p class="module-desc">Immunization Coverage & Dropout Rates</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- WASH -->
+            <a href="#" class="module-card" style="--module-color-1: #06b6d4; --module-color-2: #14b8a6;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        💧
+                        <div class="secondary-icon">🏠</div>
+                    </div>
+                    <h3 class="module-title">WASH</h3>
+                    <p class="module-desc">Water, Sanitation & Hygiene Indicators</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Medicine Tracking -->
+            <a href="#" class="module-card" style="--module-color-1: #8b5cf6; --module-color-2: #a855f7;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        💊
+                        <div class="secondary-icon">🏪</div>
+                    </div>
+                    <h3 class="module-title">Medicine Tracking</h3>
+                    <p class="module-desc">Weekly & Monthly Stock Monitoring</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Nutrition -->
+            <a href="#" class="module-card" style="--module-color-1: #22c55e; --module-color-2: #10b981;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        🍎
+                        <div class="secondary-icon">🌿</div>
+                    </div>
+                    <h3 class="module-title">Nutrition</h3>
+                    <p class="module-desc">Malnutrition, MUAC, Growth Monitoring</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- HIV -->
+            <a href="#" class="module-card" style="--module-color-1: #ef4444; --module-color-2: #f43f5e;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        🎗️
+                        <div class="secondary-icon">🧪</div>
+                    </div>
+                    <h3 class="module-title">HIV</h3>
+                    <p class="module-desc">Testing, ART Coverage, Viral Suppression</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- TB -->
+            <a href="#" class="module-card" style="--module-color-1: #f59e0b; --module-color-2: #f97316;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        🩺
+                        <div class="secondary-icon">🔬</div>
+                    </div>
+                    <h3 class="module-title">TB</h3>
+                    <p class="module-desc">Case Detection, Treatment Outcomes</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- RBF Assessment -->
+            <a href="#" class="module-card" style="--module-color-1: #6366f1; --module-color-2: #3b82f6;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        📝
+                        <div class="secondary-icon">✅</div>
+                    </div>
+                    <h3 class="module-title">RBF Assessment</h3>
+                    <p class="module-desc">Results-Based Financing Indicators</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- PMTCT -->
+            <a href="#" class="module-card" style="--module-color-1: #d946ef; --module-color-2: #ec4899;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        🛡️
+                        <div class="secondary-icon">👶</div>
+                    </div>
+                    <h3 class="module-title">PMTCT</h3>
+                    <p class="module-desc">Prevention of Mother-to-Child Transmission</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Community Health -->
+            <a href="#" class="module-card" style="--module-color-1: #14b8a6; --module-color-2: #06b6d4;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        👥
+                        <div class="secondary-icon">🏠</div>
+                    </div>
+                    <h3 class="module-title">Community Health</h3>
+                    <p class="module-desc">VHT Activities, Outreaches, Referrals</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Malaria -->
+            <a href="#" class="module-card" style="--module-color-1: #eab308; --module-color-2: #f59e0b;">
+                <div class="module-decor module-decor-1"></div>
+                <div class="module-decor module-decor-2"></div>
+                <div class="module-content">
+                    <div class="module-icon">
+                        🦟
+                        <div class="secondary-icon">🔬</div>
+                    </div>
+                    <h3 class="module-title">Malaria</h3>
+                    <p class="module-desc">Cases, Testing, Treatment, IPTp</p>
+                    <div class="module-footer">
+                        <span>View Analytics</span>
+                        <span class="module-arrow">→</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="connection-status">
+            <div class="status-dot"></div>
+            <span>Connected to HMIS</span>
+        </div>
+        <p>Uganda Health Analytics System v2.0 • Last sync: Today at 06:00 AM</p>
+    </footer>
+
+    <script>
+        // Check authentication
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                const data = await response.json();
+                if (!data.authenticated) {
+                    window.location.href = '/login';
+                    return;
+                }
+                // Update user info
+                const displayName = data.displayName || 'User';
+                document.getElementById('userName').textContent = displayName;
+                document.getElementById('welcomeName').textContent = displayName.split(' ')[0];
+                // Generate initials
+                const names = displayName.split(' ');
+                const initials = names.length >= 2
+                    ? (names[0][0] + names[names.length - 1][0]).toUpperCase()
+                    : displayName.substring(0, 2).toUpperCase();
+                document.getElementById('userInitials').textContent = initials;
+            } catch (err) {
+                console.error('Auth check failed:', err);
+            }
+        }
+
+        // Theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('ehmis-theme');
+        if (savedTheme === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('ehmis-theme', 'light');
+            } else {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('ehmis-theme', 'dark');
+            }
+        });
+
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+
+</html>
