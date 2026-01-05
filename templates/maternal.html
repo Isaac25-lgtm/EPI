@@ -1089,10 +1089,9 @@
                         <thead>
                             <tr>
                                 <th style="text-align: left;">Indicator</th>
-                                <th style="text-align: right;">Numerator</th>
-                                <th style="text-align: right;">Denominator</th>
-                                <th style="text-align: right;">Indicator</th>
-                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Data element</th>
+                                <th style="text-align: right;">Target</th>
+                                <th style="text-align: right;">Performance</th>
                             </tr>
                         </thead>
                         <tbody id="intrapartumTableBody">
@@ -2836,7 +2835,6 @@
             indicators.forEach(ind => {
                 const color = getIntrapartumColor(ind.indicator, ind.value);
                 const colorBg = color === 'green' ? '#10b981' : (color === 'yellow' ? '#f59e0b' : '#ef4444');
-                const emoji = color === 'green' ? '✅' : (color === 'yellow' ? '⚠️' : '❌');
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -2845,9 +2843,6 @@
                     <td style="text-align: right;">${ind.denominator.toLocaleString()}</td>
                     <td style="text-align: right; font-weight: 600; background-color: ${colorBg}; color: white; padding: 12px; border-radius: 4px;">
                         ${ind.value}${ind.unit}
-                    </td>
-                    <td style="text-align: center; background-color: ${colorBg}; color: white; border-radius: 4px;">
-                        ${emoji}
                     </td>
                 `;
                 tbody.appendChild(row);

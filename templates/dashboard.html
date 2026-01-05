@@ -2916,21 +2916,30 @@
             <div class="filters-row" style="margin-top: 20px;">
                 <div class="filter-group">
                     <label for="periodSelect">Period</label>
-                    <select id="periodSelect" onchange="updatePeriodDisplay()">
+                    <select id="periodSelect" onchange="handlePeriodChange()">
                         <option value="">-- Select Period --</option>
                         <option value="LAST_12_MONTHS">Last 12 Months</option>
                             <option value="LAST_6_MONTHS">Last 6 Months</option>
                             <option value="LAST_3_MONTHS">Last 3 Months</option>
                             <option value="THIS_YEAR">This Year</option>
                             <option value="LAST_YEAR">Last Year</option>
+                        <option value="CUSTOM">Custom Range</option>
                     </select>
             </div>
+                <div class="filter-group" id="epiStartDateGroup" style="display: none;">
+                    <label for="epiStartDate">Start Month</label>
+                    <input type="month" id="epiStartDate" onchange="updatePeriodDisplay()">
                 </div>
+                <div class="filter-group" id="epiEndDateGroup" style="display: none;">
+                    <label for="epiEndDate">End Month</label>
+                    <input type="month" id="epiEndDate" onchange="updatePeriodDisplay()">
+                </div>
+            </div>
 
             <div class="selected-info">
                 <span>Selected: <span class="highlight" id="selectedOrg">None</span></span>
                 <span>Period: <span class="highlight" id="selectedPeriod">Not selected</span></span>
-            </div>
+                </div>
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="loadData()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3972,16 +3981,103 @@
 
             function getSelectedPeriod() {
                 const periodSelect = document.getElementById('periodSelect');
-                return periodSelect ? periodSelect.value : 'LAST_12_MONTHS';
+                if (!periodSelect) return 'LAST_12_MONTHS';
+                
+                const periodValue = periodSelect.value;
+                
+                // Handle custom range
+                if (periodValue === 'CUSTOM') {
+                    const startDate = document.getElementById('epiStartDate').value;
+                    const endDate = document.getElementById('epiEndDate').value;
+                    
+                    if (!startDate || !endDate) {
+                        return null; // Will trigger validation error
+                    }
+                    
+                    // Build DHIS2 period format (e.g., 202301;202302;202303...)
+                    const start = new Date(startDate + '-01');
+                    const end = new Date(endDate + '-01');
+                    
+                    const periods = [];
+                    let current = new Date(start);
+                    
+                    while (current <= end) {
+                        const year = current.getFullYear();
+                        const month = String(current.getMonth() + 1).padStart(2, '0');
+                        periods.push(`${year}${month}`);
+                        current.setMonth(current.getMonth() + 1);
+                    }
+                    
+                    return periods.join(';');
+                }
+                
+                return periodValue || null;
+            }
+
+            function handlePeriodChange() {
+                const periodSelect = document.getElementById('periodSelect');
+                const isCustom = periodSelect.value === 'CUSTOM';
+                const startGroup = document.getElementById('epiStartDateGroup');
+                const endGroup = document.getElementById('epiEndDateGroup');
+                const startInput = document.getElementById('epiStartDate');
+                const endInput = document.getElementById('epiEndDate');
+                
+                if (isCustom) {
+                    // Show custom date inputs
+                    startGroup.style.display = 'block';
+                    endGroup.style.display = 'block';
+                    
+                    // Set default dates if empty
+                    if (!startInput.value || !endInput.value) {
+                        const now = new Date();
+                        const endMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                        const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+                        const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+                        
+                        startInput.value = startMonth;
+                        endInput.value = endMonth;
+                    }
+                } else {
+                    // Hide custom date inputs
+                    startGroup.style.display = 'none';
+                    endGroup.style.display = 'none';
+                }
+                
+                updatePeriodDisplay();
             }
 
             function updatePeriodDisplay() {
                 const periodSelect = document.getElementById('periodSelect');
                 const selectedPeriodSpan = document.getElementById('selectedPeriod');
-                if (periodSelect && selectedPeriodSpan) {
-                    const value = periodSelect.value;
-                    const text = periodSelect.options[periodSelect.selectedIndex].text;
-                    selectedPeriodSpan.textContent = value ? text : 'Not selected';
+                
+                if (!periodSelect || !selectedPeriodSpan) return;
+                
+                const periodValue = periodSelect.value;
+                
+                if (periodValue === 'CUSTOM') {
+                    const startDate = document.getElementById('epiStartDate').value;
+                    const endDate = document.getElementById('epiEndDate').value;
+                    
+                    if (startDate && endDate) {
+                        // Format dates nicely (e.g., "Jan 2025 - Jul 2025")
+                        const start = new Date(startDate + '-01');
+                        const end = new Date(endDate + '-01');
+                        
+                        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+                        
+                        const startFormatted = start.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+                        const endFormatted = end.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+                        
+                        selectedPeriodSpan.textContent = `${startFormatted} - ${endFormatted} (${months} month${months > 1 ? 's' : ''})`;
+                    } else {
+                        selectedPeriodSpan.textContent = 'Select dates';
+                    }
+                } else if (periodValue) {
+                    // Show the selected preset period text
+                    const selectedOption = periodSelect.options[periodSelect.selectedIndex];
+                    selectedPeriodSpan.textContent = selectedOption.text;
+                } else {
+                    selectedPeriodSpan.textContent = 'Not selected';
                 }
             }
 
@@ -3992,13 +4088,26 @@
                     return;
                 }
                 
-                const period = getSelectedPeriod();
+                const periodSelectValue = document.getElementById('periodSelect').value;
                 
                 // Validate period selection
-                if (!period) {
+                if (!periodSelectValue) {
                     alert('Please select a period first');
                     return;
                 }
+                
+                // For custom range, validate dates are selected
+                if (periodSelectValue === 'CUSTOM') {
+                    const startDate = document.getElementById('epiStartDate').value;
+                    const endDate = document.getElementById('epiEndDate').value;
+                    
+                    if (!startDate || !endDate) {
+                        alert('Please select both start and end months for your custom range');
+                        return;
+                    }
+                }
+                
+                const period = getSelectedPeriod();
                 
                 document.getElementById('selectedPeriod').textContent = period;
                 document.getElementById('errorMessage').style.display = 'none';
