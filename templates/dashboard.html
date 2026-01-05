@@ -3366,21 +3366,24 @@
                     </button>
                 </div>
                 
-                <!-- Infant Population -->
-                <div class="formula editable-formula" data-indicator="infant_pop">
+                <!-- Target Population Percentages -->
+                <div class="formula editable-formula" data-indicator="target_pct">
                     <div class="formula-header">
-                        <strong>Infant Population (Target):</strong>
-                        <button class="btn-edit" onclick="editEpiFormula('infant_pop')">✏️ Edit</button>
+                        <strong>Target Population Percentages:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('target_pct')">✏️ Edit</button>
                     </div>
-                    <div class="formula-content" id="formula-infant_pop">
-                        = (4% × UBOS Population) for Districts<br>
-                        = Catchment Population (under 1 year) for Facilities
+                    <div class="formula-content" id="formula-target_pct">
+                        <strong>BCG, OPV0, HepB Birth, PAB:</strong> 4.85% of UBOS Population<br>
+                        <strong>DPT, PCV, Polio, MR, Malaria, Rota, etc.:</strong> 4.3% of UBOS Population<br>
+                        <em>For facilities: Use custom catchment population entered</em>
                     </div>
-                    <div class="formula-edit hidden" id="edit-infant_pop">
-                        <label>Infant Percentage of Population:</label>
-                        <input type="number" step="0.1" value="4" id="input-infant_pop" style="width: 100px;">%
-                        <button class="btn btn-primary" onclick="saveEpiFormula('infant_pop')" style="margin-left: 8px;">💾 Save</button>
-                        <button class="btn btn-secondary" onclick="cancelEpiEdit('infant_pop')" style="margin-left: 4px;">❌ Cancel</button>
+                    <div class="formula-edit hidden" id="edit-target_pct">
+                        <label>BCG/OPV0/HepB/PAB (%):</label>
+                        <input type="number" step="0.01" value="4.85" id="input-bcg_pct" style="width: 80px;">
+                        <label style="margin-left: 12px;">Others (%):</label>
+                        <input type="number" step="0.01" value="4.3" id="input-default_pct" style="width: 80px;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('target_pct')" style="margin-left: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('target_pct')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
                 </div>
 
@@ -3391,11 +3394,12 @@
                         <button class="btn-edit" onclick="editEpiFormula('bcg')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-bcg">
-                        = (105-CL01. BCG doses / Infant Population) × 100
+                        = (105-CL01. BCG doses / Target Population) × 100<br>
+                        <em>Target Population = (UBOS Pop × 4.85%) ÷ Period Divisor</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-bcg">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-CL01. BCG doses / Infant Population) × 100" id="input-bcg" style="width: 100%;">
+                        <input type="text" value="(BCG doses / Target Population) × 100" id="input-bcg" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveEpiFormula('bcg')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEdit('bcg')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3408,11 +3412,12 @@
                         <button class="btn-edit" onclick="editEpiFormula('dpt1')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-dpt1">
-                        = (105-CL10. DPT-HepB+Hib 1 doses / Infant Population) × 100
+                        = (105-CL10. DPT-HepB+Hib 1 doses / Target Population) × 100<br>
+                        <em>Target Population = (UBOS Pop × 4.3%) ÷ Period Divisor</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-dpt1">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-CL10. DPT-HepB+Hib 1 doses / Infant Population) × 100" id="input-dpt1" style="width: 100%;">
+                        <input type="text" value="(DPT1 doses / Target Population) × 100" id="input-dpt1" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveEpiFormula('dpt1')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEdit('dpt1')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3425,11 +3430,12 @@
                         <button class="btn-edit" onclick="editEpiFormula('dpt3')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-dpt3">
-                        = (105-CL12. DPT-HepB+Hib 3 doses / Infant Population) × 100
+                        = (105-CL12. DPT-HepB+Hib 3 doses / Target Population) × 100<br>
+                        <em>Target Population = (UBOS Pop × 4.3%) ÷ Period Divisor</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-dpt3">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-CL12. DPT-HepB+Hib 3 doses / Infant Population) × 100" id="input-dpt3" style="width: 100%;">
+                        <input type="text" value="(DPT3 doses / Target Population) × 100" id="input-dpt3" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveEpiFormula('dpt3')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEdit('dpt3')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3442,11 +3448,12 @@
                         <button class="btn-edit" onclick="editEpiFormula('measles')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-measles">
-                        = (105-CL23. Measles (MR1) doses / Infant Population) × 100
+                        = (105-CL23. Measles (MR1) doses / Target Population) × 100<br>
+                        <em>Target Population = (UBOS Pop × 4.3%) ÷ Period Divisor</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-measles">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-CL23. Measles (MR1) doses / Infant Population) × 100" id="input-measles" style="width: 100%;">
+                        <input type="text" value="(Measles doses / Target Population) × 100" id="input-measles" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveEpiFormula('measles')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEdit('measles')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3459,11 +3466,12 @@
                         <button class="btn-edit" onclick="editEpiFormula('fic')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-fic">
-                        = (105-CL24. Fully immunized by 1 year / Infant Population) × 100
+                        = (105-CL24. Fully immunized children / Target Population) × 100<br>
+                        <em>Target Population = (UBOS Pop × 4.3%) ÷ Period Divisor</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-fic">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-CL24. Fully immunized by 1 year / Infant Population) × 100" id="input-fic" style="width: 100%;">
+                        <input type="text" value="(Fully Immunized / Target Population) × 100" id="input-fic" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveEpiFormula('fic')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEdit('fic')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3491,15 +3499,15 @@
                 <!-- General Coverage Targets -->
                 <div class="formula editable-formula" data-indicator="target_coverage">
                     <div class="formula-header">
-                        <strong>General Coverage (BCG, DPT, Polio, Measles, etc.):</strong>
+                        <strong>Vaccine Coverage (All Antigens):</strong>
                         <button class="btn-edit" onclick="editEpiTarget('coverage')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="target-coverage">
-                        Green ≥90% | Yellow 80-89.9% | Red &lt;80%
+                        🟢 Green ≥95% | 🟡 Yellow 70-94.9% | 🔴 Red &lt;70%
                     </div>
                     <div class="formula-edit hidden" id="edit-target-coverage">
-                        <label>Green ≥</label> <input type="number" step="0.1" value="90" id="green-coverage" style="width: 80px;">%
-                        <label style="margin-left: 12px;">Yellow ≥</label> <input type="number" step="0.1" value="80" id="yellow-coverage" style="width: 80px;">%
+                        <label>Green ≥</label> <input type="number" step="0.1" value="95" id="green-coverage" style="width: 80px;">%
+                        <label style="margin-left: 12px;">Yellow ≥</label> <input type="number" step="0.1" value="70" id="yellow-coverage" style="width: 80px;">%
                         <button class="btn btn-primary" onclick="saveEpiTarget('coverage')" style="margin-left: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEpiEditTarget('coverage')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -3512,7 +3520,8 @@
                         <button class="btn-edit" onclick="editEpiTarget('dropout')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="target-dropout">
-                        Green ≤10% | Yellow 10.1-20% | Red &gt;20%
+                        🟢 Green ≤10% | 🟡 Yellow 10.1-20% | 🔴 Red &gt;20%<br>
+                        <em>Lower dropout is better - indicates good follow-up</em>
                     </div>
                     <div class="formula-edit hidden" id="edit-target-dropout">
                         <label>Green ≤</label> <input type="number" step="0.1" value="10" id="green-dropout" style="width: 80px;">%
@@ -3522,20 +3531,17 @@
                     </div>
                 </div>
 
-                <!-- Fully Immunized Targets -->
-                <div class="formula editable-formula" data-indicator="target_fic">
+                <!-- Period Divisor Explanation -->
+                <div class="formula" style="border-left-color: #6366f1; margin-top: 24px;">
                     <div class="formula-header">
-                        <strong>Fully Immunized:</strong>
-                        <button class="btn-edit" onclick="editEpiTarget('fic')">✏️ Edit</button>
+                        <strong>📊 Period Divisor Explanation:</strong>
                     </div>
-                    <div class="formula-content" id="target-fic">
-                        Green ≥80% | Yellow 60-79.9% | Red &lt;60%
-                    </div>
-                    <div class="formula-edit hidden" id="edit-target-fic">
-                        <label>Green ≥</label> <input type="number" step="0.1" value="80" id="green-fic" style="width: 80px;">%
-                        <label style="margin-left: 12px;">Yellow ≥</label> <input type="number" step="0.1" value="60" id="yellow-fic" style="width: 80px;">%
-                        <button class="btn btn-primary" onclick="saveEpiTarget('fic')" style="margin-left: 8px;">💾 Save</button>
-                        <button class="btn btn-secondary" onclick="cancelEpiEditTarget('fic')" style="margin-left: 4px;">❌ Cancel</button>
+                    <div class="formula-content">
+                        <strong>Last 12 Months:</strong> Divisor = 1 (full year)<br>
+                        <strong>Last 6 Months:</strong> Divisor = 2 (half year target)<br>
+                        <strong>Last 3 Months:</strong> Divisor = 4 (quarter year target)<br>
+                        <strong>Custom Range:</strong> Calculated based on months selected<br><br>
+                        <em>Formula: Target Population = (Annual UBOS Pop × Target %) ÷ Period Divisor</em>
                     </div>
                 </div>
             </div>
