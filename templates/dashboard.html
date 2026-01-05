@@ -2742,140 +2742,83 @@
 
         <!-- Filters -->
         <div class="filters-card">
-            <h3>🔍 Filters</h3>
-
-            <!-- Quick Search -->
-            <div class="filters-row" style="margin-bottom: 20px;">
-                <div class="filter-group search-container">
-                    <label>🔎 Quick Search (Districts & Facilities)</label>
-                    <div class="search-input-wrapper">
-                        <input type="text" id="orgUnitSearch"
-                            placeholder="Type to search districts, sub-counties, or facilities..."
-                            oninput="handleSearchInput(this.value)" onfocus="showSearchDropdown()" autocomplete="off">
-                        <span class="search-icon">🔍</span>
-                        <button class="clear-btn" onclick="clearSearch()" title="Clear search">✕</button>
-                    </div>
-                    <div id="searchDropdown" class="search-dropdown"></div>
-                    <div class="search-hint">💡 Tip: Type at least 3 characters to search. Press Esc to close.</div>
+            <h3>🎯 Data Filters & Selection</h3>
+            
+            <!-- Search Organization Unit -->
+            <div class="filter-group" style="margin-bottom: 20px; position: relative;">
+                <label for="orgUnitSearch">🔍 Quick Search for Facility or District</label>
+                <input type="text" 
+                       id="orgUnitSearch" 
+                       placeholder="Type facility or district name (min 3 characters)..." 
+                       style="padding: 12px; width: 100%; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;"
+                       oninput="handleSearchInput(this.value)"
+                       onfocus="showSearchDropdown()"
+                       autocomplete="off">
+                <div id="searchDropdown" class="search-dropdown">
+                    <!-- Search results will appear here -->
                 </div>
             </div>
 
-            <!-- Or Browse Hierarchy -->
-            <div style="text-align: center; margin: 10px 0; color: #7f8c8d; font-size: 12px;">
-                <span style="background: #f0f4f8; padding: 0 15px;">— OR browse by hierarchy —</span>
+            <!-- OR Separator -->
+            <div style="text-align: center; margin: 20px 0; color: var(--text-secondary); font-weight: 600;">
+                — OR Navigate Hierarchy —
             </div>
 
+            <!-- Hierarchical Selection -->
             <div class="filters-row">
-                <div class="filter-group"><label>Level 1 - Country</label><select id="level1"
-                        onchange="loadChildren(1)">
-                        <option>Loading...</option>
-                    </select></div>
-                <div class="filter-group"><label>Level 2 - Region</label><select id="level2" onchange="loadChildren(2)"
-                        disabled>
+                <div class="filter-group">
+                    <label for="level2">Region</label>
+                    <select id="level2" onchange="loadChildren(2)">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="level3">District</label>
+                    <select id="level3" onchange="loadChildren(3)" disabled>
                         <option>--</option>
-                    </select></div>
-                <div class="filter-group"><label>Level 3 - District</label><select id="level3"
-                        onchange="loadChildren(3)" disabled>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="level5">Sub-county</label>
+                    <select id="level5" onchange="loadChildren(5)" disabled>
                         <option>--</option>
-                    </select></div>
-                <div class="filter-group" id="level4Group"><label>Level 4</label><select id="level4"
-                        onchange="loadChildren(4)" disabled>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="level6">Facility</label>
+                    <select id="level6" onchange="selectFinalLevel(6)" disabled>
                         <option>--</option>
-                    </select></div>
-                <div class="filter-group" id="level5Group"><label>Level 5</label><select id="level5"
-                        onchange="loadChildren(5)" disabled>
-                        <option>--</option>
-                    </select></div>
-                <div class="filter-group" id="level6Group"><label>Level 6 - Facility</label><select id="level6"
-                        onchange="selectFinalLevel(6)" disabled>
-                        <option>--</option>
-                    </select></div>
+                    </select>
+                </div>
             </div>
-            <div class="filters-row">
-                <div class="filter-group"><label>Period Type</label><select id="periodType"
-                        onchange="togglePeriodInputs()">
-                        <option value="relative">Relative</option>
-                        <option value="month">Month</option>
-                        <option value="quarter">Quarter</option>
-                        <option value="year">Year</option>
-                        <option value="custom">Custom</option>
-                    </select></div>
-                <div class="filter-group" id="relativePeriodGroup"><label>Period</label><select id="relativePeriod">
-                        <optgroup label="Months">
-                            <option value="LAST_12_MONTHS" selected>Last 12 Months</option>
-                            <option value="LAST_6_MONTHS">Last 6 Months</option>
-                            <option value="LAST_3_MONTHS">Last 3 Months</option>
-                            <option value="LAST_MONTH">Last Month</option>
-                        </optgroup>
-                        <optgroup label="Quarters">
-                            <option value="LAST_4_QUARTERS">Last 4 Quarters</option>
-                            <option value="THIS_QUARTER">This Quarter</option>
-                            <option value="LAST_QUARTER">Last Quarter</option>
-                        </optgroup>
-                        <optgroup label="Years">
-                            <option value="THIS_YEAR">This Year</option>
-                            <option value="LAST_YEAR">Last Year</option>
-                        </optgroup>
-                    </select></div>
-                <div class="filter-group" id="yearGroup" style="display:none;"><label>Year</label><select
-                        id="yearSelect"></select></div>
-                <div class="filter-group" id="monthYearGroup" style="display:none;"><label>Year</label><select
-                        id="monthYear"></select></div>
-                <div class="filter-group" id="monthGroup" style="display:none;"><label>Month</label><select
-                        id="monthSelect">
-                        <option value="01">Jan</option>
-                        <option value="02">Feb</option>
-                        <option value="03">Mar</option>
-                        <option value="04">Apr</option>
-                        <option value="05">May</option>
-                        <option value="06">Jun</option>
-                        <option value="07">Jul</option>
-                        <option value="08">Aug</option>
-                        <option value="09">Sep</option>
-                        <option value="10">Oct</option>
-                        <option value="11">Nov</option>
-                        <option value="12">Dec</option>
-                    </select></div>
-                <div class="filter-group" id="quarterYearGroup" style="display:none;"><label>Year</label><select
-                        id="quarterYear"></select></div>
-                <div class="filter-group" id="quarterGroup" style="display:none;"><label>Quarter</label><select
-                        id="quarterSelect">
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
-                    </select></div>
-                <div class="filter-group" id="customStartGroup" style="display:none;"><label>Start</label><input
-                        id="startPeriod" placeholder="202401"></div>
-                <div class="filter-group" id="customEndGroup" style="display:none;"><label>End</label><input
-                        id="endPeriod" placeholder="202412"></div>
+
+            <!-- Period Selection -->
+            <div class="filters-row" style="margin-top: 20px;">
+                <div class="filter-group">
+                    <label for="periodSelect">Period</label>
+                    <select id="periodSelect" onchange="updatePeriodDisplay()">
+                        <option value="">-- Select Period --</option>
+                        <option value="LAST_12_MONTHS">Last 12 Months</option>
+                        <option value="LAST_6_MONTHS">Last 6 Months</option>
+                        <option value="LAST_3_MONTHS">Last 3 Months</option>
+                        <option value="THIS_YEAR">This Year</option>
+                        <option value="LAST_YEAR">Last Year</option>
+                    </select>
+                </div>
             </div>
+
             <div class="selected-info">
-                <span>📍 <strong>Org Unit:</strong> <span class="highlight" id="selectedOrg">Uganda</span></span>
-                <span>📅 <strong>Period:</strong> <span class="highlight" id="selectedPeriod">Last 12
-                        Months</span></span>
-                <span id="populationInfo" style="display:none;">👥 <strong>UBOS Population:</strong> <span
-                        class="highlight" id="ubosPopulation">-</span></span>
-
-                <!-- Period Comparison Toggle -->
-                <div class="comparison-toggle" id="comparisonToggle" style="display:none;">
-                    <span class="comparison-label">Compare with previous:</span>
-                    <label class="comparison-switch">
-                        <input type="checkbox" id="compareEnabled" onchange="toggleComparison()">
-                        <span class="comparison-slider"></span>
-                    </label>
-                </div>
-
-                <button class="btn btn-primary" onclick="loadData()">📊 Load Data</button>
+                <span>Selected: <span class="highlight" id="selectedOrg">None</span></span>
+                <span>Period: <span class="highlight" id="selectedPeriod">Not selected</span></span>
             </div>
-
-            <!-- Filter Presets -->
-            <div class="presets-container">
-                <span class="preset-label">💾 Saved Presets:</span>
-                <div id="presetsArea">
-                    <span style="color:#95a5a6; font-size:11px;">No saved presets</span>
-                </div>
-                <button class="save-preset-btn" onclick="saveFilterPreset()">+ Save Current</button>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="loadData()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    Load Data
+                </button>
+                <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
             </div>
         </div>
 
@@ -3447,19 +3390,35 @@
             }
 
             async function initOrgUnits() {
-                const sel = document.getElementById('level1');
-                sel.innerHTML = '<option>⏳ Loading...</option>';
+                const sel = document.getElementById('level2');
+                sel.innerHTML = '<option value="">⏳ Loading...</option>';
                 sel.disabled = true;
 
                 try {
-                    const r = await fetch('/api/org-units');
-                    const d = await r.json();
-                    const units = d.organisationUnits || [];
-                    sel.innerHTML = '<option value="">-- Select Country --</option>' + units.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
-                    sel.disabled = false;
-                    const uganda = units.find(u => u.displayName.includes('Uganda') || u.displayName.includes('MOH'));
-                    if (uganda) { sel.value = uganda.id; loadChildren(1); }
+                    // First get the country (top level)
+                    const countryResponse = await fetch('/api/org-units');
+                    const countryData = await countryResponse.json();
+                    const countries = countryData.organisationUnits || [];
+                    
+                    // Find Uganda
+                    const uganda = countries.find(u => u.displayName.includes('Uganda') || u.displayName.includes('MOH'));
+                    
+                    if (uganda) {
+                        // Now get the regions (children of country)
+                        const regionsResponse = await fetch(`/api/org-units?parent=${uganda.id}`);
+                        const regionsData = await regionsResponse.json();
+                        // The API returns children array when fetching by parent
+                        const regions = regionsData.children || regionsData.organisationUnits || [];
+                        
+                        sel.innerHTML = '<option value="">-- Select Region (' + regions.length + ') --</option>' + 
+                            regions.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
+                        sel.disabled = false;
+                    } else {
+                        sel.innerHTML = '<option value="">-- No regions found --</option>';
+                        sel.disabled = false;
+                    }
                 } catch (e) {
+                    console.error('Error loading org units:', e);
                     sel.innerHTML = '<option>❌ Error loading</option>';
                     sel.disabled = false;
                 }
@@ -3488,17 +3447,26 @@
                     }
                 }
 
-                // Clear lower levels (allow all levels for analytics to enable facility analysis)
+                // Clear lower levels (skip level4 which doesn't exist in UI)
                 for (let i = level + 1; i <= 6; i++) {
+                    if (i === 4) continue; // Skip County level
                     const s = document.getElementById(`level${i}`);
-                    s.innerHTML = '<option>--</option>'; s.disabled = true;
+                    if (s) {
+                        s.innerHTML = '<option>--</option>'; 
+                        s.disabled = true;
+                    }
                 }
 
                 // Allow loading children up to level 6 (facility level)
                 if (!parentId || level >= 6) return;
 
-                const nextLevel = level + 1;
+                // Determine next level (skip level 4 - County)
+                let nextLevel = level + 1;
+                if (nextLevel === 4) nextLevel = 5; // Skip County, go directly to Sub-county
+                
                 const nextSel = document.getElementById(`level${nextLevel}`);
+                if (!nextSel) return;
+                
                 nextSel.innerHTML = '<option>⏳ Loading...</option>';
                 nextSel.disabled = false;
                 nextSel.style.opacity = '0.7';
@@ -3506,7 +3474,30 @@
                 try {
                     const r = await fetch(`/api/org-units?parent=${parentId}`);
                     const d = await r.json();
-                    const children = (d.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    let children = (d.organisationUnits || d.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    
+                    // If we're loading from District (level 3) to Sub-county (level 5),
+                    // the DHIS2 hierarchy has Counties in between, so we need to skip them
+                    // We load the children of the first child (County) to get Sub-counties
+                    if (level === 3 && children.length > 0) {
+                        // Check if first child is a County (level 4)
+                        // If so, we need to load Sub-counties from all Counties
+                        const allSubCounties = [];
+                        for (const county of children) {
+                            try {
+                                const subR = await fetch(`/api/org-units?parent=${county.id}`);
+                                const subD = await subR.json();
+                                const subChildren = subD.organisationUnits || subD.children || [];
+                                allSubCounties.push(...subChildren);
+                            } catch (e) {
+                                console.error('Error loading sub-counties from county:', e);
+                            }
+                        }
+                        if (allSubCounties.length > 0) {
+                            children = allSubCounties.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                        }
+                    }
+                    
                     nextSel.style.opacity = '1';
                     if (!children.length) {
                         nextSel.innerHTML = '<option>📭 No sub-units</option>';
@@ -3516,6 +3507,7 @@
                     const levelNames = ['', 'Country', 'Region', 'District', 'County', 'Sub-county', 'Facility'];
                     nextSel.innerHTML = `<option value="">-- Select ${levelNames[nextLevel] || 'Unit'} (${children.length}) --</option>` + children.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
                 } catch (e) {
+                    console.error('Error loading children:', e);
                     nextSel.innerHTML = '<option>❌ Error loading</option>';
                     nextSel.style.opacity = '1';
                 }
@@ -3556,12 +3548,18 @@
             }
 
             function getSelectedPeriod() {
-                const type = document.getElementById('periodType').value;
-                if (type === 'relative') return document.getElementById('relativePeriod').value;
-                if (type === 'month') return `${document.getElementById('monthYear').value}${document.getElementById('monthSelect').value}`;
-                if (type === 'quarter') return `${document.getElementById('quarterYear').value}${document.getElementById('quarterSelect').value}`;
-                if (type === 'year') { const y = document.getElementById('yearSelect').value; return `${y}01-${y}12`; }
-                if (type === 'custom') return `${document.getElementById('startPeriod').value}-${document.getElementById('endPeriod').value}`;
+                const periodSelect = document.getElementById('periodSelect');
+                return periodSelect ? periodSelect.value : 'LAST_12_MONTHS';
+            }
+
+            function updatePeriodDisplay() {
+                const periodSelect = document.getElementById('periodSelect');
+                const selectedPeriodSpan = document.getElementById('selectedPeriod');
+                if (periodSelect && selectedPeriodSpan) {
+                    const value = periodSelect.value;
+                    const text = periodSelect.options[periodSelect.selectedIndex].text;
+                    selectedPeriodSpan.textContent = value ? text : 'Not selected';
+                }
             }
 
             async function loadData() {
@@ -5626,7 +5624,50 @@
                 }
             }
 
-            function selectSearchResult(id, name, level, path = '') {
+            async function loadChildrenAndSelect(parentLevel, parentId, targetChild) {
+                try {
+                    const response = await fetch(`/api/org-units?parent=${parentId}`);
+                    const data = await response.json();
+                    const children = data.organisationUnits || [];
+                    
+                    // Determine which level to populate
+                    let targetLevel;
+                    if (parentLevel === 2) targetLevel = 3; // Region -> District
+                    else if (parentLevel === 3) targetLevel = 5; // District -> Sub-county (skipping county)
+                    else if (parentLevel === 4) targetLevel = 5; // County -> Sub-county
+                    else if (parentLevel === 5) targetLevel = 6; // Sub-county -> Facility
+                    else return;
+
+                    const select = document.getElementById(`level${targetLevel}`);
+                    
+                    if (!select || children.length === 0) return;
+                    
+                    // Populate dropdown
+                    select.innerHTML = '<option value="">-- Select --</option>';
+                    children.forEach(child => {
+                        const option = document.createElement('option');
+                        option.value = child.id;
+                        option.textContent = child.displayName;
+                        option.dataset.name = child.displayName;
+                        select.appendChild(option);
+                    });
+                    
+                    select.disabled = false;
+                    
+                    // Select the target child if provided
+                    if (targetChild && targetChild.id) {
+                        select.value = targetChild.id;
+                        console.log(`    ↳ Loaded ${children.length} options for Level ${targetLevel}, selected: ${targetChild.name}`);
+                    } else {
+                        console.log(`    ↳ Loaded ${children.length} options for Level ${targetLevel}`);
+                    }
+                    
+                } catch (error) {
+                    console.error(`Error loading children for level ${parentLevel}:`, error);
+                }
+            }
+
+            async function selectSearchResult(id, name, level, path = '') {
                 // Update selected org unit
                 selectedOrgUnit = { id, name, level, path: path || name };
                 document.getElementById('selectedOrg').textContent = name;
@@ -5634,55 +5675,92 @@
                 // Reset facility population when changing org unit
                 facilityPopulation = null;
 
-                // Check if it's a district for analytics
-                if (level === 3) {
-                    selectedDistrict = name.toUpperCase().replace(' DISTRICT', '').trim();
-                    const pop = ubosPopulation[selectedDistrict] || 0;
-                    document.getElementById('ubosPopulation').textContent = pop.toLocaleString();
-                    document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
-                } else if (level >= FACILITY_LEVEL_THRESHOLD) {
-                    // For facility level, show that custom population is needed
-                    document.getElementById('ubosPopulation').textContent = 'Custom (will prompt)';
-                    document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
-                } else {
-                    // For non-district levels below facility, clear district info
-                    if (level < 3) {
-                        selectedDistrict = '';
-                        document.getElementById('populationInfo').style.display = 'none';
-                    }
-                }
-
                 // Close dropdown and clear search
                 clearSearch();
 
-                // Reset hierarchy dropdowns
-                resetHierarchyDropdowns();
+                console.log(`🔍 Loading hierarchy for: ${name} (Level ${level})`);
 
-                // Show success feedback
-                const searchInput = document.getElementById('orgUnitSearch');
-                searchInput.value = '';
-                searchInput.placeholder = `✓ Selected: ${name}`;
-                setTimeout(() => {
-                    searchInput.placeholder = 'Type to search districts, sub-counties, or facilities...';
-                }, 3000);
+                try {
+                    // Fetch the org unit with its ancestors
+                    const response = await fetch(`/api/org-units/${id}`);
+                    const orgUnit = await response.json();
+                    
+                    // Build hierarchy: [Country, Region, District, County, Sub-county, Facility]
+                    const ancestors = orgUnit.ancestors || [];
+                    const fullHierarchy = [
+                        ...ancestors.map(a => ({ id: a.id, name: a.displayName, level: a.level })),
+                        { id: orgUnit.id, name: orgUnit.displayName, level: orgUnit.level }
+                    ];
+                    
+                    console.log('Hierarchy:', fullHierarchy.map(h => `L${h.level}: ${h.name}`).join(' → '));
 
-                // Toast notification with facility indicator
-                const levelNames = ['', 'Country', 'Region', 'District', 'County', 'Sub-county', 'Facility', 'Facility'];
-                const levelName = level >= FACILITY_LEVEL_THRESHOLD ? 'Facility' : (levelNames[level] || 'Unit');
-                toastSuccess(`${levelName}: ${name} - Loading data...`, 'Organization Selected');
+                    const region = fullHierarchy.find(h => h.level === 2);
+                    const district = fullHierarchy.find(h => h.level === 3);
+                    const county = fullHierarchy.find(h => h.level === 4);
+                    const subCounty = fullHierarchy.find(h => h.level === 5);
+                    const facility = fullHierarchy.find(h => h.level === 6);
+                    
+                    // Reset all dropdowns first
+                    for (let i = 2; i <= 6; i++) {
+                        const sel = document.getElementById(`level${i}`);
+                        if (sel && i > 2) {
+                            sel.innerHTML = '<option value="">-- Select --</option>';
+                            sel.disabled = true;
+                            sel.value = '';
+                        }
+                    }
+                    
+                    // Populate Level 2 (Region)
+                    if (region) {
+                        const level2Select = document.getElementById('level2');
+                        level2Select.value = region.id;
+                        console.log(`  ✅ Region: ${region.name}`);
+                        await loadChildrenAndSelect(2, region.id, district);
+                    }
+                    
+                    // Populate Level 3 (District)
+                    if (district) {
+                        console.log(`  ✅ District: ${district.name}`);
+                        
+                        // Update district info for analytics
+                        selectedDistrict = district.name.toUpperCase().replace(' DISTRICT', '').trim();
+                        const pop = ubosPopulation[selectedDistrict] || 0;
+                        if (pop) {
+                            document.getElementById('ubosPopulation').textContent = pop.toLocaleString();
+                            document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
+                        }
+                        
+                        // Load sub-counties for this district (via county if it exists)
+                        if (county) {
+                            await loadChildrenAndSelect(4, county.id, subCounty);
+                        } else {
+                            await loadChildrenAndSelect(3, district.id, subCounty);
+                        }
+                    }
+                    
+                    // Populate Level 5 (Sub-county)
+                    if (subCounty) {
+                        console.log(`  ✅ Sub-county: ${subCounty.name}`);
+                        await loadChildrenAndSelect(5, subCounty.id, facility);
+                    }
+                    
+                    // Populate Level 6 (Facility)
+                    if (facility && level === 6) {
+                        console.log(`  ✅ Facility: ${facility.name}`);
+                    }
 
-                // AUTO-LOAD DATA after selecting from search
-                // Small delay to let the UI update
-                setTimeout(() => {
-                    loadData();
-                }, 300);
+                } catch (error) {
+                    console.error('Error fetching org unit hierarchy:', error);
+                    alert('Error loading organization unit details. Please try again.');
+                }
             }
 
             function resetHierarchyDropdowns() {
                 // Reset all dropdowns to show that search was used
-                for (let i = 1; i <= 6; i++) {
+                for (let i = 2; i <= 6; i++) {
                     const sel = document.getElementById(`level${i}`);
-                    if (i === 1) {
+                    if (!sel) continue;
+                    if (i === 2) {
                         sel.value = '';
                     } else {
                         sel.innerHTML = '<option>--</option>';
@@ -5925,6 +6003,8 @@
 
             function renderPresets(presets) {
                 const container = document.getElementById('presetsArea');
+                
+                if (!container) return; // Element doesn't exist in new layout
 
                 if (!presets.length) {
                     container.innerHTML = '<span style="color:#95a5a6; font-size:11px;">No saved presets</span>';

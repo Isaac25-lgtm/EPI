@@ -1,23 +1,24 @@
-# Health Analytics Modules
-# Each health program has its own module/blueprint
+"""
+Uganda eHMIS Analytics - Modular Health Program Modules
+Each health program has its own module for maintainability
+"""
 
-from flask import Blueprint
+# Module registry - add new modules here
+MODULES = {
+    'epi': 'EPI - Expanded Programme on Immunization',
+    'maternal': 'Maternal Health - ANC, PNC, Deliveries',
+    'wash': 'WASH - Water, Sanitation & Hygiene',
+    'medicine': 'Medicine Tracking',
+    'nutrition': 'Nutrition - Malnutrition, Growth Monitoring',
+    'hiv': 'HIV - Testing, ART, Viral Suppression',
+    'tb': 'TB - Case Detection, Treatment',
+    'rbf': 'RBF Assessment - Results-Based Financing',
+    'pmtct': 'PMTCT - Prevention of Mother-to-Child Transmission',
+    'community': 'Community Health - VHT Activities',
+    'malaria': 'Malaria - Cases, Testing, Treatment'
+}
 
-# Module registry - will be populated as modules are imported
-MODULES = {}
-
-def register_module(name, blueprint, display_name, icon, color_from, color_to, description):
-    """Register a health module for the landing page"""
-    MODULES[name] = {
-        'blueprint': blueprint,
-        'display_name': display_name,
-        'icon': icon,
-        'color_from': color_from,
-        'color_to': color_to,
-        'description': description
-    }
-
-def get_all_modules():
-    """Get all registered modules"""
+def get_active_modules():
+    """Return list of active modules"""
     return MODULES
 

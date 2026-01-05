@@ -1,5 +1,27 @@
+# Core Flask
 Flask==3.0.0
 flask-cors==4.0.0
-requests==2.31.0
 python-dotenv==1.0.0
+
+# HTTP Client
+requests==2.31.0
+urllib3>=2.0.0
+
+# Production WSGI Server (10,000+ users)
 gunicorn==21.2.0
+
+# Session Management for Scale
+Flask-Session==0.5.0
+
+# Redis for caching and sessions (production)
+redis==5.0.0
+
+# Rate Limiting
+Flask-Limiter==3.5.0
+
+# Async workers for better concurrency (optional)
+# gevent==23.9.0
+# greenlet==3.0.0
+
+# Production monitoring (optional)
+# sentry-sdk[flask]==1.32.0

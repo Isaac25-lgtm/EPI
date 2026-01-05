@@ -1,0 +1,57 @@
+# GitHub Actions Workflow for Uganda eHMIS Analytics
+# Automatically deploys when you push to main/master
+
+name: Deploy Uganda eHMIS
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run syntax check
+        run: |
+          python -m py_compile app.py
+          python -m py_compile wsgi.py
+          python -m py_compile config.py
+          python -m py_compile modules/core.py
+          python -m py_compile modules/auth.py
+          python -m py_compile modules/epi.py
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Render
+        # Render auto-deploys from GitHub, but you can trigger manually if needed
+        run: |
+          echo "Deployment triggered by push to ${{ github.ref }}"
+          echo "Render will auto-deploy from the connected repository"
+      
+      # Optional: Notify on successful deployment
+      # - name: Notify Success
+      #   run: |
+      #     curl -X POST -H "Content-Type: application/json" \
+      #       -d '{"text":"Uganda eHMIS deployed successfully!"}' \
+      #       ${{ secrets.SLACK_WEBHOOK }}
+
