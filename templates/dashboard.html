@@ -3571,7 +3571,20 @@
             }
 
             async function loadData() {
+                // Validate org unit selection
+                if (!selectedOrgUnit || !selectedOrgUnit.id) {
+                    alert('Please select an organization unit first');
+                    return;
+                }
+                
                 const period = getSelectedPeriod();
+                
+                // Validate period selection
+                if (!period) {
+                    alert('Please select a period first');
+                    return;
+                }
+                
                 document.getElementById('selectedPeriod').textContent = period;
                 document.getElementById('errorMessage').style.display = 'none';
 
@@ -3670,6 +3683,12 @@
             document.addEventListener('DOMContentLoaded', function () {
                 // Initialize RED date inputs
                 initializeREDDates();
+                
+                // Force hide the facility population modal on page load
+                const modal = document.getElementById('facilityPopulationModal');
+                if (modal) {
+                    modal.style.cssText = 'display: none !important; visibility: hidden; pointer-events: none;';
+                }
 
                 const input = document.getElementById('facilityPopulationInput');
                 if (input) {
