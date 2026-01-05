@@ -99,6 +99,117 @@
             color: #11998e;
         }
 
+        /* Analysis Section Styles */
+        .analysis-section {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        .formula {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            border-left: 4px solid #11998e;
+        }
+
+        [data-theme="dark"] .formula {
+            background: #1f2937;
+            color: #f3f4f6;
+        }
+
+        .editable-formula {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .editable-formula:hover {
+            border-left-color: #38ef7d;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .formula-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .formula-content {
+            line-height: 1.6;
+        }
+
+        .formula-edit {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        [data-theme="dark"] .formula-edit {
+            background: #111827;
+            border-color: #374151;
+        }
+
+        .formula-edit label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-right: 4px;
+        }
+
+        .formula-edit input[type="text"],
+        .formula-edit input[type="number"] {
+            padding: 6px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        [data-theme="dark"] .formula-edit input {
+            background: #1f2937;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
+
+        .btn-edit {
+            background: #11998e;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-edit:hover {
+            background: #38ef7d;
+        }
+
+        .formula-edit.hidden {
+            display: none;
+        }
+
+        .editable-formula.editing {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        [data-theme="dark"] .editable-formula.editing {
+            background: #064e3b;
+        }
+
+        .tab-content.hidden {
+            display: none;
+        }
+
         .user-badge {
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -2687,7 +2798,8 @@
             <h1>💉 EPI - Child Immunization Dashboard</h1>
         </div>
         <div class="nav-tabs">
-            <button class="nav-tab active">📈 Analytics</button>
+            <button class="nav-tab active" onclick="switchEpiTab('analytics')">📈 Analytics</button>
+            <button class="nav-tab" onclick="switchEpiTab('analysis')">🔬 Show Analysis</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <span class="user-badge" id="userBadge">Loading...</span>
@@ -3244,6 +3356,191 @@
             </div>
         </div>
 
+        <!-- Analysis Tab Content -->
+        <div id="analysisTab" class="tab-content hidden">
+            <div class="analysis-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3>📐 Calculation Formulas & Analysis</h3>
+                    <button class="btn btn-secondary" onclick="resetEpiCustomizations()" style="font-size: 13px; padding: 6px 12px;">
+                        🔄 Reset All to Defaults
+                    </button>
+                </div>
+                
+                <!-- Infant Population -->
+                <div class="formula editable-formula" data-indicator="infant_pop">
+                    <div class="formula-header">
+                        <strong>Infant Population (Target):</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('infant_pop')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-infant_pop">
+                        = (4% × UBOS Population) for Districts<br>
+                        = Catchment Population (under 1 year) for Facilities
+                    </div>
+                    <div class="formula-edit hidden" id="edit-infant_pop">
+                        <label>Infant Percentage of Population:</label>
+                        <input type="number" step="0.1" value="4" id="input-infant_pop" style="width: 100px;">%
+                        <button class="btn btn-primary" onclick="saveEpiFormula('infant_pop')" style="margin-left: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('infant_pop')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- BCG Coverage -->
+                <div class="formula editable-formula" data-indicator="bcg">
+                    <div class="formula-header">
+                        <strong>BCG Coverage:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('bcg')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-bcg">
+                        = (105-CL01. BCG doses / Infant Population) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-bcg">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="(105-CL01. BCG doses / Infant Population) × 100" id="input-bcg" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('bcg')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('bcg')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- DPT-HepB+Hib 1 Coverage -->
+                <div class="formula editable-formula" data-indicator="dpt1">
+                    <div class="formula-header">
+                        <strong>DPT-HepB+Hib 1 Coverage:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('dpt1')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-dpt1">
+                        = (105-CL10. DPT-HepB+Hib 1 doses / Infant Population) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-dpt1">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="(105-CL10. DPT-HepB+Hib 1 doses / Infant Population) × 100" id="input-dpt1" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('dpt1')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('dpt1')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- DPT-HepB+Hib 3 Coverage -->
+                <div class="formula editable-formula" data-indicator="dpt3">
+                    <div class="formula-header">
+                        <strong>DPT-HepB+Hib 3 Coverage:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('dpt3')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-dpt3">
+                        = (105-CL12. DPT-HepB+Hib 3 doses / Infant Population) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-dpt3">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="(105-CL12. DPT-HepB+Hib 3 doses / Infant Population) × 100" id="input-dpt3" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('dpt3')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('dpt3')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Measles (MR1) Coverage -->
+                <div class="formula editable-formula" data-indicator="measles">
+                    <div class="formula-header">
+                        <strong>Measles (MR1) Coverage:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('measles')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-measles">
+                        = (105-CL23. Measles (MR1) doses / Infant Population) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-measles">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="(105-CL23. Measles (MR1) doses / Infant Population) × 100" id="input-measles" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('measles')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('measles')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Fully Immunized -->
+                <div class="formula editable-formula" data-indicator="fic">
+                    <div class="formula-header">
+                        <strong>Fully Immunized by 1 Year:</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('fic')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-fic">
+                        = (105-CL24. Fully immunized by 1 year / Infant Population) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-fic">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="(105-CL24. Fully immunized by 1 year / Infant Population) × 100" id="input-fic" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('fic')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('fic')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Dropout Rate -->
+                <div class="formula editable-formula" data-indicator="dropout">
+                    <div class="formula-header">
+                        <strong>Dropout Rate (DPT1 to DPT3):</strong>
+                        <button class="btn-edit" onclick="editEpiFormula('dropout')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="formula-dropout">
+                        = ((DPT1 doses - DPT3 doses) / DPT1 doses) × 100
+                    </div>
+                    <div class="formula-edit hidden" id="edit-dropout">
+                        <label>Custom Formula:</label>
+                        <input type="text" value="((DPT1 doses - DPT3 doses) / DPT1 doses) × 100" id="input-dropout" style="width: 100%;">
+                        <button class="btn btn-primary" onclick="saveEpiFormula('dropout')" style="margin-top: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEdit('dropout')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 32px; margin-bottom: 16px;">🎨 Color Coding Targets</h3>
+                
+                <!-- General Coverage Targets -->
+                <div class="formula editable-formula" data-indicator="target_coverage">
+                    <div class="formula-header">
+                        <strong>General Coverage (BCG, DPT, Polio, Measles, etc.):</strong>
+                        <button class="btn-edit" onclick="editEpiTarget('coverage')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="target-coverage">
+                        Green ≥90% | Yellow 80-89.9% | Red &lt;80%
+                    </div>
+                    <div class="formula-edit hidden" id="edit-target-coverage">
+                        <label>Green ≥</label> <input type="number" step="0.1" value="90" id="green-coverage" style="width: 80px;">%
+                        <label style="margin-left: 12px;">Yellow ≥</label> <input type="number" step="0.1" value="80" id="yellow-coverage" style="width: 80px;">%
+                        <button class="btn btn-primary" onclick="saveEpiTarget('coverage')" style="margin-left: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEditTarget('coverage')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Dropout Rate Targets -->
+                <div class="formula editable-formula" data-indicator="target_dropout">
+                    <div class="formula-header">
+                        <strong>Dropout Rate:</strong>
+                        <button class="btn-edit" onclick="editEpiTarget('dropout')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="target-dropout">
+                        Green ≤10% | Yellow 10.1-20% | Red &gt;20%
+                    </div>
+                    <div class="formula-edit hidden" id="edit-target-dropout">
+                        <label>Green ≤</label> <input type="number" step="0.1" value="10" id="green-dropout" style="width: 80px;">%
+                        <label style="margin-left: 12px;">Yellow ≤</label> <input type="number" step="0.1" value="20" id="yellow-dropout" style="width: 80px;">%
+                        <button class="btn btn-primary" onclick="saveEpiTarget('dropout')" style="margin-left: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEditTarget('dropout')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Fully Immunized Targets -->
+                <div class="formula editable-formula" data-indicator="target_fic">
+                    <div class="formula-header">
+                        <strong>Fully Immunized:</strong>
+                        <button class="btn-edit" onclick="editEpiTarget('fic')">✏️ Edit</button>
+                    </div>
+                    <div class="formula-content" id="target-fic">
+                        Green ≥80% | Yellow 60-79.9% | Red &lt;60%
+                    </div>
+                    <div class="formula-edit hidden" id="edit-target-fic">
+                        <label>Green ≥</label> <input type="number" step="0.1" value="80" id="green-fic" style="width: 80px;">%
+                        <label style="margin-left: 12px;">Yellow ≥</label> <input type="number" step="0.1" value="60" id="yellow-fic" style="width: 80px;">%
+                        <button class="btn btn-primary" onclick="saveEpiTarget('fic')" style="margin-left: 8px;">💾 Save</button>
+                        <button class="btn btn-secondary" onclick="cancelEpiEditTarget('fic')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
             // Register Chart.js datalabels plugin
             Chart.register(ChartDataLabels);
@@ -3395,6 +3692,118 @@
 
                 // Show comparison toggle only in analytics
                 document.getElementById('comparisonToggle').style.display = isAnalytics ? 'flex' : 'none';
+            }
+
+            // ========== EPI Tab Switching Function ==========
+            function switchEpiTab(tab) {
+                // Update nav tabs
+                document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+                
+                // Toggle sections
+                if (tab === 'analytics') {
+                    document.getElementById('analyticsSection').style.display = 'block';
+                    document.getElementById('analysisTab').classList.add('hidden');
+                    document.querySelector('.filters-card').style.display = 'block';
+                } else if (tab === 'analysis') {
+                    document.getElementById('analyticsSection').style.display = 'none';
+                    document.getElementById('analysisTab').classList.remove('hidden');
+                    document.querySelector('.filters-card').style.display = 'none';
+                }
+            }
+
+            // ========== EPI Formula and Target Editing Functions ==========
+            let epiSessionCustomizations = {
+                formulas: {},
+                targets: {}
+            };
+
+            function editEpiFormula(indicator) {
+                document.getElementById(`formula-${indicator}`).style.display = 'none';
+                document.getElementById(`edit-${indicator}`).classList.remove('hidden');
+                document.querySelector(`[data-indicator="${indicator}"]`).classList.add('editing');
+            }
+
+            function cancelEpiEdit(indicator) {
+                document.getElementById(`formula-${indicator}`).style.display = 'block';
+                document.getElementById(`edit-${indicator}`).classList.add('hidden');
+                document.querySelector(`[data-indicator="${indicator}"]`).classList.remove('editing');
+            }
+
+            function saveEpiFormula(indicator) {
+                if (indicator === 'infant_pop') {
+                    const percentage = parseFloat(document.getElementById(`input-${indicator}`).value);
+                    if (isNaN(percentage) || percentage <= 0 || percentage > 100) {
+                        alert('Please enter a valid percentage between 0 and 100');
+                        return;
+                    }
+                    epiSessionCustomizations.formulas[indicator] = percentage;
+                    document.getElementById(`formula-${indicator}`).innerHTML = 
+                        `= (${percentage}% × UBOS Population) for Districts<br>= Catchment Population (under 1 year) for Facilities`;
+                    showToast(`Infant population percentage updated to ${percentage}%`, 'success');
+                } else {
+                    const formula = document.getElementById(`input-${indicator}`).value;
+                    epiSessionCustomizations.formulas[indicator] = formula;
+                    document.getElementById(`formula-${indicator}`).textContent = formula;
+                    showToast(`Formula for ${indicator.toUpperCase()} updated`, 'success');
+                }
+                cancelEpiEdit(indicator);
+            }
+
+            function editEpiTarget(indicator) {
+                document.getElementById(`target-${indicator}`).style.display = 'none';
+                document.getElementById(`edit-target-${indicator}`).classList.remove('hidden');
+                document.querySelector(`[data-indicator="target_${indicator}"]`).classList.add('editing');
+            }
+
+            function cancelEpiEditTarget(indicator) {
+                document.getElementById(`target-${indicator}`).style.display = 'block';
+                document.getElementById(`edit-target-${indicator}`).classList.add('hidden');
+                document.querySelector(`[data-indicator="target_${indicator}"]`).classList.remove('editing');
+            }
+
+            function saveEpiTarget(indicator) {
+                const greenThreshold = parseFloat(document.getElementById(`green-${indicator}`).value);
+                const yellowThreshold = parseFloat(document.getElementById(`yellow-${indicator}`).value);
+                
+                if (isNaN(greenThreshold) || isNaN(yellowThreshold)) {
+                    alert('Please enter valid numbers for thresholds');
+                    return;
+                }
+
+                if (indicator === 'dropout') {
+                    // Inverted logic for dropout (lower is better)
+                    if (greenThreshold >= yellowThreshold) {
+                        alert('For Dropout Rate: Green threshold must be LESS than Yellow threshold');
+                        return;
+                    }
+                    epiSessionCustomizations.targets[indicator] = { green: greenThreshold, yellow: yellowThreshold };
+                    document.getElementById(`target-${indicator}`).innerHTML = 
+                        `Green ≤${greenThreshold}% | Yellow ${greenThreshold + 0.1}-${yellowThreshold}% | Red >${yellowThreshold}%`;
+                } else {
+                    // Normal logic (higher is better)
+                    if (greenThreshold <= yellowThreshold) {
+                        alert('Green threshold must be GREATER than Yellow threshold');
+                        return;
+                    }
+                    epiSessionCustomizations.targets[indicator] = { green: greenThreshold, yellow: yellowThreshold };
+                    document.getElementById(`target-${indicator}`).innerHTML = 
+                        `Green ≥${greenThreshold}% | Yellow ${yellowThreshold}-${greenThreshold - 0.1}% | Red <${yellowThreshold}%`;
+                }
+                
+                showToast(`Color thresholds for ${indicator.toUpperCase()} updated`, 'success');
+                cancelEpiEditTarget(indicator);
+            }
+
+            function resetEpiCustomizations() {
+                if (!confirm('Are you sure you want to reset all customizations to default values?\n\nThis will:\n- Reset all formulas\n- Reset all color coding targets\n- Clear all session changes')) {
+                    return;
+                }
+                epiSessionCustomizations = {
+                    formulas: {},
+                    targets: {}
+                };
+                location.reload();
             }
 
             async function initOrgUnits() {
