@@ -1477,12 +1477,20 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.6);
-            display: flex;
+            display: none !important; /* Hidden by default */
+            visibility: hidden;
+            pointer-events: none;
             align-items: center;
             justify-content: center;
             z-index: 10000;
             backdrop-filter: blur(4px);
             animation: fadeIn 0.2s ease;
+        }
+
+        .facility-modal-overlay.show {
+            display: flex !important; /* Show when .show class is added */
+            visibility: visible;
+            pointer-events: auto;
         }
 
         .facility-modal {
@@ -2628,7 +2636,7 @@
     </div>
 
     <!-- Facility Population Modal -->
-    <div id="facilityPopulationModal" class="facility-modal-overlay" style="display: none;">
+    <div id="facilityPopulationModal" class="facility-modal-overlay" style="display: none !important; visibility: hidden; pointer-events: none;">
         <div class="facility-modal">
             <div class="facility-modal-header">
                 <h3>🏥 Facility Catchment Population</h3>
@@ -2789,7 +2797,7 @@
                     <select id="level6" onchange="selectFinalLevel(6)" disabled>
                         <option>--</option>
                     </select>
-                </div>
+            </div>
             </div>
 
             <!-- Period Selection -->
@@ -2799,13 +2807,13 @@
                     <select id="periodSelect" onchange="updatePeriodDisplay()">
                         <option value="">-- Select Period --</option>
                         <option value="LAST_12_MONTHS">Last 12 Months</option>
-                        <option value="LAST_6_MONTHS">Last 6 Months</option>
-                        <option value="LAST_3_MONTHS">Last 3 Months</option>
-                        <option value="THIS_YEAR">This Year</option>
-                        <option value="LAST_YEAR">Last Year</option>
+                            <option value="LAST_6_MONTHS">Last 6 Months</option>
+                            <option value="LAST_3_MONTHS">Last 3 Months</option>
+                            <option value="THIS_YEAR">This Year</option>
+                            <option value="LAST_YEAR">Last Year</option>
                     </select>
-                </div>
             </div>
+                </div>
 
             <div class="selected-info">
                 <span>Selected: <span class="highlight" id="selectedOrg">None</span></span>
@@ -3412,7 +3420,7 @@
                         
                         sel.innerHTML = '<option value="">-- Select Region (' + regions.length + ') --</option>' + 
                             regions.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
-                        sel.disabled = false;
+                    sel.disabled = false;
                     } else {
                         sel.innerHTML = '<option value="">-- No regions found --</option>';
                         sel.disabled = false;
@@ -3608,14 +3616,14 @@
                 document.getElementById('facilityModalPath').textContent = selectedOrgUnit.path || `Level ${selectedOrgUnit.level} Organization Unit`;
                 document.getElementById('facilityPopulationInput').value = facilityPopulation || '';
                 document.getElementById('btnProceedWithFacility').disabled = !facilityPopulation;
-                modal.style.display = 'flex';
+                modal.style.cssText = 'display: flex !important; visibility: visible; pointer-events: auto;';
 
                 // Focus on input
                 setTimeout(() => document.getElementById('facilityPopulationInput').focus(), 100);
             }
 
             function hideFacilityPopulationModal() {
-                document.getElementById('facilityPopulationModal').style.display = 'none';
+                document.getElementById('facilityPopulationModal').style.cssText = 'display: none !important; visibility: hidden; pointer-events: none;';
             }
 
             function setFacilityPopulation(value) {
@@ -5726,8 +5734,10 @@
                         selectedDistrict = district.name.toUpperCase().replace(' DISTRICT', '').trim();
                         const pop = ubosPopulation[selectedDistrict] || 0;
                         if (pop) {
-                            document.getElementById('ubosPopulation').textContent = pop.toLocaleString();
-                            document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
+                            const ubosEl = document.getElementById('ubosPopulation');
+                            const popInfoEl = document.getElementById('populationInfo');
+                            if (ubosEl) ubosEl.textContent = pop.toLocaleString();
+                            if (popInfoEl) popInfoEl.style.display = currentSection === 'analytics' ? 'inline' : 'none';
                         }
                         
                         // Load sub-counties for this district (via county if it exists)
