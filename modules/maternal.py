@@ -67,8 +67,24 @@ ANC_INDICATORS = [
     {'code': '105-AN21', 'name': 'Iron/Folic Acid', 'key': 'ironFolic'},
 ]
 
+# Intrapartum Data Element patterns
+INTRAPARTUM_INDICATORS = {
+    'totalDeliveries': ['105-MA04', '105-MA04.', 'Total deliveries in the unit'],
+    'liveBirthsTotal': ['105-MA05a1', '105-MA05a1.', 'Births in the unit - Live births Total'],
+    'liveBirthsLBW': ['105-MA05a2', '105-MA05a2.', 'Births in the unit - Live births < 2.5 Kg'],
+    'freshStillBirth': ['105-MA05b1', '105-MA05b1.', 'Births in the unit - Fresh Still birth Total'],
+    'maceratedStillBirth': ['105-MA05c1', '105-MA05c1.', 'Births in the unit - Macerated still birth Total'],
+    'kmcInitiated': ['105-MA08', '105-MA08.', 'low birth weight babies (<2.5 Kg) initiated on kangaroo (KMC)'],
+    'newbornDeaths0_7': ['105-MA12', '105-MA12.', 'Newborn deaths 0-7 days'],
+    'newbornDeaths8_28': ['105-MA12', '105-MA12.', 'Newborn deaths 8-28 days'],
+    'maternalDeaths': ['105-MA13', '105-MA13.', 'Maternal deaths'],
+    'birthAsphyxia': ['105-MA23', '105-MA23.', 'babies with Birth asphyxia'],
+    'resuscitated': ['105-MA24', '105-MA24.', 'Live babies Successfully Resuscitated'],
+}
+
 # Cache for data element IDs
 _data_element_cache = {}
+_intrapartum_cache = {}
 
 
 def clean_district_name(name):
@@ -473,6 +489,311 @@ def get_anc_data():
         return jsonify({'error': 'Request timeout - try a smaller time period'})
     except Exception as e:
         logger.error(f"Error in get_anc_data: {e}")
+        return jsonify({'error': str(e)})
+
+
+def fetch_intrapartum_elements(auth):
+    """Fetch all Intrapartum data element IDs from DHIS2"""
+    global _intrapartum_cache
+    
+    if _intrapartum_cache:
+        return _intrapartum_cache
+    
+    try:
+        # Search for all Maternity data elements (105-MA prefix)
+        response = http_session.get(
+            f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth,
+            params={
+                'filter': 'name:ilike:105-MA',
+                'fields': 'id,displayName,code,name',
+                'paging': 'false'
+            },
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            elements = response.json().get('dataElements', [])
+            for elem in elements:
+                code = elem.get('code', '')
+                name = elem.get('name', '')
+                display_name = elem.get('displayName', '')
+                
+                if code:
+                    _intrapartum_cache[code] = elem['id']
+                if name:
+                    _intrapartum_cache[name] = elem['id']
+                if display_name:
+                    _intrapartum_cache[display_name] = elem['id']
+            
+            logger.info(f"Cached {len(elements)} Intrapartum data elements")
+        
+        return _intrapartum_cache
+    except Exception as e:
+        logger.error(f"Error fetching intrapartum data elements: {e}")
+        return {}
+
+
+@maternal_bp.route('/api/intrapartum-data')
+def get_intrapartum_data():
+    """
+    Fetch Intrapartum data from DHIS2 and calculate all indicators
+    
+    Formulas:
+    - Deliveries Coverage = (Total deliveries / Deliveries catchment) × 100
+    - % Low Birth Weight = (Live births <2.5kg / Total live births) × 100
+    - % LBW on KMC = (KMC initiated / Live births <2.5kg) × 100
+    - Birth Asphyxia Rate = (Babies with asphyxia / Total deliveries) × 100
+    - Resuscitation Rate = (Babies with asphyxia / Successfully resuscitated) × 100
+    - Fresh Still Births = (Fresh still births / Total deliveries) × 1000
+    - Neonatal Mortality = ((Deaths 0-7 + Deaths 8-28) / Live births) × 1000
+    - Perinatal Mortality = ((Fresh still + Deaths 0-7 + Macerated) / Live births) × 1000
+    - Maternal Mortality Ratio = (Maternal deaths / Live births) × 100,000
+    """
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'})
+    
+    org_unit = request.args.get('orgUnit')
+    period = request.args.get('period', 'LAST_12_MONTHS')
+    custom_population = request.args.get('customPopulation', type=int)
+    custom_catchment = request.args.get('deliveriesCatchment', type=int)
+    
+    if not org_unit:
+        return jsonify({'error': 'Organization unit is required'})
+    
+    try:
+        # Get organization unit details
+        org_response = http_session.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{org_unit}",
+            auth=auth,
+            params={'fields': 'id,displayName,level,ancestors[displayName,level]'},
+            timeout=30
+        )
+        
+        if org_response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch organization unit details'})
+        
+        org_data = org_response.json()
+        org_name = org_data.get('displayName', '')
+        org_level = org_data.get('level', 5)
+        
+        # Find district name
+        district_name = ''
+        if org_level == 3:
+            district_name = org_name
+        elif org_data.get('ancestors'):
+            for ancestor in org_data['ancestors']:
+                if ancestor.get('level') == 3:
+                    district_name = ancestor.get('displayName', '')
+                    break
+        
+        # Calculate deliveries catchment (4.85% of population)
+        if custom_catchment and custom_catchment > 0:
+            population = custom_population or 0
+            deliveries_catchment = custom_catchment
+        elif custom_population and custom_population > 0:
+            population = custom_population
+            deliveries_catchment = round(population * 0.0485)
+        elif org_level <= 3:
+            population = get_ubos_population(district_name or org_name)
+            deliveries_catchment = round(population * 0.0485) if population > 0 else 0
+        else:
+            population = 0
+            deliveries_catchment = 0
+        
+        # Get data element IDs
+        de_ids = fetch_intrapartum_elements(auth)
+        
+        if not de_ids:
+            return jsonify({
+                'error': 'No Intrapartum data elements found in DHIS2',
+                'tip': 'Check if you have access to HMIS 105 Maternity data elements'
+            })
+        
+        # Element patterns for matching
+        element_patterns = {
+            'totalDeliveries': ['105-MA04', '105-MA04.', 'Total deliveries in the unit',
+                                '105-MA04. Total deliveries in the unit'],
+            'liveBirthsTotal': ['105-MA05a1', '105-MA05a1.', 'Live births Total',
+                                '105-MA05a1. Births in the unit - Live births Total'],
+            'liveBirthsLBW': ['105-MA05a2', '105-MA05a2.', 'Live births < 2.5 Kg',
+                              '105-MA05a2. Births in the unit - Live births < 2.5 Kg'],
+            'freshStillBirth': ['105-MA05b1', '105-MA05b1.', 'Fresh Still birth',
+                                '105-MA05b1. Births in the unit - Fresh Still birth Total'],
+            'maceratedStillBirth': ['105-MA05c1', '105-MA05c1.', 'Macerated still birth',
+                                    '105-MA05c1. Births in the unit - Macerated still birth Total'],
+            'kmcInitiated': ['105-MA08', '105-MA08.', 'kangaroo (KMC)',
+                             '105-MA08. No. of low birth weight babies (<2.5 Kg) initiated on kangaroo (KMC)'],
+            'newbornDeaths0_7': ['105-MA12a', '105-MA12a.', 'Newborn deaths 0-7 days',
+                                 '105-MA12. Newborn deaths 0-7 days',
+                                 '105-MA12a. Newborn deaths 0-7 days'],
+            'newbornDeaths8_28': ['105-MA12b', '105-MA12b.', 'Newborn deaths 8-28 days',
+                                  '105-MA12. Newborn deaths 8-28 days',
+                                  '105-MA12b. Newborn deaths 8-28 days'],
+            'maternalDeaths': ['105-MA13', '105-MA13.', 'Maternal deaths',
+                               '105-MA13. Maternal deaths'],
+            'birthAsphyxia': ['105-MA23', '105-MA23.', 'Birth asphyxia',
+                              '105-MA23. No.of babies with Birth asphyxia'],
+            'resuscitated': ['105-MA24', '105-MA24.', 'Successfully Resuscitated',
+                             '105-MA24. No. of Live babies Successfully Resuscitated'],
+        }
+        
+        ids_to_fetch = []
+        code_to_key = {}
+        found_elements = {}
+        
+        for key, patterns in element_patterns.items():
+            for pattern in patterns:
+                if pattern in de_ids:
+                    elem_id = de_ids[pattern]
+                    if elem_id not in ids_to_fetch:
+                        ids_to_fetch.append(elem_id)
+                        code_to_key[elem_id] = key
+                        found_elements[key] = pattern
+                    break
+        
+        logger.info(f"Found Intrapartum elements: {found_elements}")
+        
+        if not ids_to_fetch:
+            sample_codes = list(de_ids.keys())[:30]
+            return jsonify({
+                'error': 'Could not find Intrapartum data element IDs',
+                'availableCodes': sample_codes
+            })
+        
+        # Fetch analytics data
+        dx_dimension = ";".join(ids_to_fetch)
+        
+        analytics_response = http_session.get(
+            f"{DHIS2_BASE_URL}/analytics.json",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{dx_dimension}'),
+                ('dimension', f'pe:{period}'),
+                ('dimension', f'ou:{org_unit}'),
+                ('displayProperty', 'NAME'),
+                ('skipMeta', 'false'),
+            ],
+            timeout=60
+        )
+        
+        if analytics_response.status_code != 200:
+            return jsonify({
+                'error': f'Analytics API error: {analytics_response.status_code}',
+                'details': analytics_response.text[:200]
+            })
+        
+        analytics_data = analytics_response.json()
+        rows = analytics_data.get('rows', [])
+        headers = analytics_data.get('headers', [])
+        
+        dx_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'dx'), 0)
+        val_idx = next((i for i, h in enumerate(headers) if h.get('name') == 'value'), len(headers) - 1)
+        
+        totals = {}
+        for row in rows:
+            if len(row) > max(dx_idx, val_idx):
+                dx_id = row[dx_idx]
+                try:
+                    value = float(row[val_idx])
+                except (ValueError, TypeError):
+                    value = 0
+                totals[dx_id] = totals.get(dx_id, 0) + value
+        
+        # Initialize raw values
+        raw_values = {
+            'totalDeliveries': 0,
+            'liveBirthsTotal': 0,
+            'liveBirthsLBW': 0,
+            'freshStillBirth': 0,
+            'maceratedStillBirth': 0,
+            'kmcInitiated': 0,
+            'newbornDeaths0_7': 0,
+            'newbornDeaths8_28': 0,
+            'maternalDeaths': 0,
+            'birthAsphyxia': 0,
+            'resuscitated': 0,
+        }
+        
+        for de_id, value in totals.items():
+            key = code_to_key.get(de_id, '')
+            if key and key in raw_values:
+                raw_values[key] = int(value)
+        
+        logger.info(f"Intrapartum raw values: {raw_values}")
+        
+        # Calculate indicators
+        deliveries = raw_values['totalDeliveries']
+        live_births = raw_values['liveBirthsTotal']
+        lbw = raw_values['liveBirthsLBW']
+        
+        # Deliveries coverage (%)
+        deliveries_coverage = round((deliveries / deliveries_catchment * 100), 1) if deliveries_catchment > 0 else 0
+        
+        # % Low Birth Weight
+        lbw_rate = round((lbw / live_births * 100), 1) if live_births > 0 else 0
+        
+        # % LBW initiated on KMC
+        kmc_rate = round((raw_values['kmcInitiated'] / lbw * 100), 1) if lbw > 0 else 0
+        
+        # Birth Asphyxia rate (%)
+        asphyxia_rate = round((raw_values['birthAsphyxia'] / deliveries * 100), 1) if deliveries > 0 else 0
+        
+        # Resuscitation rate (%)
+        resuscitation_rate = round((raw_values['resuscitated'] / raw_values['birthAsphyxia'] * 100), 1) if raw_values['birthAsphyxia'] > 0 else 0
+        
+        # Fresh still births per 1000 deliveries
+        fresh_still_rate = round((raw_values['freshStillBirth'] / deliveries * 1000), 1) if deliveries > 0 else 0
+        
+        # Neonatal mortality rate per 1000 live births
+        neonatal_deaths = raw_values['newbornDeaths0_7'] + raw_values['newbornDeaths8_28']
+        neonatal_mortality = round((neonatal_deaths / live_births * 1000), 1) if live_births > 0 else 0
+        
+        # Perinatal mortality rate per 1000 births
+        perinatal_deaths = raw_values['freshStillBirth'] + raw_values['newbornDeaths0_7'] + raw_values['maceratedStillBirth']
+        perinatal_mortality = round((perinatal_deaths / live_births * 1000), 1) if live_births > 0 else 0
+        
+        # Maternal mortality ratio per 100,000 live births
+        mmr = round((raw_values['maternalDeaths'] / live_births * 100000), 1) if live_births > 0 else 0
+        
+        result = {
+            # Context
+            'population': population,
+            'deliveriesCatchment': deliveries_catchment,
+            'orgUnit': org_name,
+            'orgLevel': org_level,
+            'districtName': district_name,
+            'period': period,
+            
+            # Raw values
+            **raw_values,
+            
+            # Calculated indicators
+            'deliveriesCoverage': deliveries_coverage,
+            'lbwRate': lbw_rate,
+            'kmcRate': kmc_rate,
+            'asphyxiaRate': asphyxia_rate,
+            'resuscitationRate': resuscitation_rate,
+            'freshStillRate': fresh_still_rate,
+            'neonatalMortality': neonatal_mortality,
+            'perinatalMortality': perinatal_mortality,
+            'maternalMortalityRatio': mmr,
+            
+            # Debug info
+            'dataElementsFound': len(ids_to_fetch),
+            'rowsReturned': len(rows),
+            'elementsMatched': list(found_elements.keys()),
+        }
+        
+        logger.info(f"Returning Intrapartum data: deliveries={deliveries}, catchment={deliveries_catchment}")
+        
+        return jsonify(result)
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timeout - try a smaller time period'})
+    except Exception as e:
+        logger.error(f"Error in get_intrapartum_data: {e}")
         return jsonify({'error': str(e)})
 
 

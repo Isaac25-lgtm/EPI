@@ -1069,6 +1069,42 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Intrapartum Section -->
+            <div id="intrapartumSection" class="card" style="margin-top: 24px; display: none;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin: 0;">🏥 Intrapartum Indicators</h2>
+                        <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 13px;">
+                            Deliveries Catchment (4.85%): <span id="deliveriesCatchment">--</span>
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="downloadIntrapartumExcel()">📊 Excel</button>
+                        <button class="btn btn-secondary" onclick="downloadIntrapartumJPG()">📷 JPG</button>
+                    </div>
+                </div>
+                <div style="padding: 20px;">
+                    <table id="intrapartumTable" class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Indicator</th>
+                                <th style="text-align: right;">Numerator</th>
+                                <th style="text-align: right;">Denominator</th>
+                                <th style="text-align: right;">Value</th>
+                                <th style="text-align: center;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intrapartumTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                                    📊 Intrapartum data will appear after loading ANC data
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Analysis Tab -->
@@ -1252,6 +1288,110 @@
                     </div>
                 </div>
 
+                <!-- ==================== INTRAPARTUM FORMULAS ==================== -->
+                <h3 style="margin-top: 32px; margin-bottom: 16px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">🏥 Intrapartum Formulas</h3>
+
+                <!-- Deliveries Catchment -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Deliveries Catchment:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (4.85% × UBOS Population) for Districts<br>
+                        = (4.85% × Catchment Population) for Facilities
+                    </div>
+                </div>
+
+                <!-- Deliveries Coverage -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Deliveries Coverage:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA04. Total deliveries / Deliveries Catchment) × 100
+                    </div>
+                </div>
+
+                <!-- Low Birth Weight -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>% Low Birth Weight:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA05a2. Live births &lt;2.5 Kg / 105-MA05a1. Live births Total) × 100
+                    </div>
+                </div>
+
+                <!-- KMC Initiated -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>% LBW Initiated on KMC:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA08. LBW babies on KMC / 105-MA05a2. Live births &lt;2.5 Kg) × 100
+                    </div>
+                </div>
+
+                <!-- Birth Asphyxia -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Birth Asphyxia Rate:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA23. Babies with Birth Asphyxia / 105-MA04. Total deliveries) × 100
+                    </div>
+                </div>
+
+                <!-- Resuscitation Rate -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Asphyxia Resuscitation Rate:</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA24. Successfully Resuscitated / 105-MA23. Babies with Asphyxia) × 100
+                    </div>
+                </div>
+
+                <!-- Fresh Still Births -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Fresh Still Births (per 1,000):</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA05b1. Fresh Still births / 105-MA04. Total deliveries) × 1,000
+                    </div>
+                </div>
+
+                <!-- Neonatal Mortality -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Neonatal Mortality Rate (per 1,000):</strong>
+                    </div>
+                    <div class="formula-content">
+                        = ((105-MA12. Deaths 0-7 days + Deaths 8-28 days) / 105-MA05a1. Live births) × 1,000
+                    </div>
+                </div>
+
+                <!-- Perinatal Mortality -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Perinatal Mortality Rate (per 1,000):</strong>
+                    </div>
+                    <div class="formula-content">
+                        = ((Fresh Still births + Deaths 0-7 days + Macerated Still births) / Live births) × 1,000
+                    </div>
+                </div>
+
+                <!-- Maternal Mortality -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Maternal Mortality Ratio (per 100,000):</strong>
+                    </div>
+                    <div class="formula-content">
+                        = (105-MA13. Maternal deaths / 105-MA05a1. Live births) × 100,000
+                    </div>
+                </div>
+
                 <h3 style="margin-top: 32px; margin-bottom: 16px;">🎨 Color Coding Targets</h3>
                 
                 <!-- ANC 1 Targets -->
@@ -1387,6 +1527,99 @@
                         <label style="margin-left: 12px;">Yellow ≤</label> <input type="number" step="0.1" value="19.9" id="yellow-teenage" style="width: 80px;">%
                         <button class="btn btn-primary" onclick="saveTarget('teenage')" style="margin-left: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEditTarget('teenage')" style="margin-left: 4px;">❌ Cancel</button>
+                    </div>
+                </div>
+
+                <!-- ==================== INTRAPARTUM TARGETS ==================== -->
+                <h3 style="margin-top: 32px; margin-bottom: 16px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">🏥 Intrapartum Targets</h3>
+
+                <!-- Deliveries Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Deliveries Coverage:</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≥70% | 🟡 Yellow 50-69.9% | 🔴 Red &lt;50%
+                    </div>
+                </div>
+
+                <!-- LBW Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Low Birth Weight (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤5% | 🟡 Yellow 5.1-10% | 🔴 Red &gt;10%
+                    </div>
+                </div>
+
+                <!-- KMC Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>LBW Initiated on KMC:</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≥90% | 🟡 Yellow 75-89.9% | 🔴 Red &lt;75%
+                    </div>
+                </div>
+
+                <!-- Birth Asphyxia Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Birth Asphyxia (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤1% | 🟡 Yellow 1.1-5% | 🔴 Red &gt;5%
+                    </div>
+                </div>
+
+                <!-- Resuscitation Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Asphyxia Resuscitation:</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≥90% | 🟡 Yellow 70-89.9% | 🔴 Red &lt;70%
+                    </div>
+                </div>
+
+                <!-- Fresh Still Birth Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Fresh Still Births per 1,000 (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤5 | 🟡 Yellow 5.1-10 | 🔴 Red &gt;10
+                    </div>
+                </div>
+
+                <!-- Neonatal Mortality Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Neonatal Mortality per 1,000 (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤5 | 🟡 Yellow 5.1-10 | 🔴 Red &gt;10
+                    </div>
+                </div>
+
+                <!-- Perinatal Mortality Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Perinatal Mortality per 1,000 (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤12 | 🟡 Yellow 12.1-20 | 🔴 Red &gt;20
+                    </div>
+                </div>
+
+                <!-- Maternal Mortality Target -->
+                <div class="formula" style="border-left-color: #6366f1;">
+                    <div class="formula-header">
+                        <strong>Maternal Mortality per 100,000 (lower is better):</strong>
+                    </div>
+                    <div class="formula-content">
+                        🟢 Green ≤182 | 🟡 Yellow 182.1-300 | 🔴 Red &gt;300
                     </div>
                 </div>
             </div>
@@ -2414,12 +2647,257 @@
                 renderCharts(data);
                 
                 document.getElementById('dataDisplay').classList.remove('hidden');
+                
+                // Also fetch Intrapartum data
+                await fetchIntrapartumData(period, customPopulation);
+                
             } catch (error) {
                 console.error('Error fetching data:', error);
                 alert('Failed to fetch data. Please try again.');
             } finally {
                 spinner.classList.add('hidden');
             }
+        }
+
+        // Intrapartum data
+        let intrapartumData = null;
+
+        async function fetchIntrapartumData(period, customPopulation) {
+            try {
+                let url = `/maternal/api/intrapartum-data?orgUnit=${selectedOrgUnit.id}&period=${encodeURIComponent(period)}`;
+                if (customPopulation > 0) {
+                    const deliveriesCatchment = Math.round(customPopulation * 0.0485);
+                    url += `&customPopulation=${customPopulation}&deliveriesCatchment=${deliveriesCatchment}`;
+                }
+
+                console.log('Fetching Intrapartum data from:', url);
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.warn('Intrapartum error:', data.error);
+                    document.getElementById('intrapartumSection').style.display = 'block';
+                    document.getElementById('intrapartumTableBody').innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                                ⚠️ ${data.error}
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                console.log('Received Intrapartum data:', data);
+                intrapartumData = data;
+                renderIntrapartumTable(data);
+                document.getElementById('intrapartumSection').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error fetching Intrapartum data:', error);
+            }
+        }
+
+        function getIntrapartumColor(indicator, value) {
+            // Color coding based on targets
+            switch(indicator) {
+                case 'DELIVERIES':
+                    // Target: ≥70% green, 50-69.9% yellow, <50% red
+                    if (value >= 70) return 'green';
+                    if (value >= 50) return 'yellow';
+                    return 'red';
+                case 'LBW':
+                    // Target: ≤5% green, 5.1-10% yellow, >10% red (lower is better)
+                    if (value <= 5) return 'green';
+                    if (value <= 10) return 'yellow';
+                    return 'red';
+                case 'KMC':
+                    // Target: ≥90% green, 75-89.9% yellow, <75% red
+                    if (value >= 90) return 'green';
+                    if (value >= 75) return 'yellow';
+                    return 'red';
+                case 'ASPHYXIA':
+                    // Target: ≤1% green, 1.1-5% yellow, >5% red (lower is better)
+                    if (value <= 1) return 'green';
+                    if (value <= 5) return 'yellow';
+                    return 'red';
+                case 'RESUSCITATION':
+                    // Target: ≥90% green, 70-89.9% yellow, <70% red
+                    if (value >= 90) return 'green';
+                    if (value >= 70) return 'yellow';
+                    return 'red';
+                case 'FRESH_STILL':
+                    // Target: ≤5 green, 5.1-10 yellow, >10 red (per 1000)
+                    if (value <= 5) return 'green';
+                    if (value <= 10) return 'yellow';
+                    return 'red';
+                case 'NEONATAL':
+                    // Target: ≤5 green, 5.1-10 yellow, >10 red (per 1000)
+                    if (value <= 5) return 'green';
+                    if (value <= 10) return 'yellow';
+                    return 'red';
+                case 'PERINATAL':
+                    // Target: ≤12 green, 12.1-20 yellow, >20 red (per 1000)
+                    if (value <= 12) return 'green';
+                    if (value <= 20) return 'yellow';
+                    return 'red';
+                case 'MMR':
+                    // Target: ≤182 green, 182.1-300 yellow, >300 red (per 100,000)
+                    if (value <= 182) return 'green';
+                    if (value <= 300) return 'yellow';
+                    return 'red';
+                default:
+                    return 'gray';
+            }
+        }
+
+        function renderIntrapartumTable(data) {
+            const tbody = document.getElementById('intrapartumTableBody');
+            tbody.innerHTML = '';
+            
+            // Update deliveries catchment display
+            document.getElementById('deliveriesCatchment').textContent = 
+                (data.deliveriesCatchment || 0).toLocaleString();
+            
+            const indicators = [
+                {
+                    name: 'Deliveries Coverage',
+                    numerator: data.totalDeliveries || 0,
+                    denominator: data.deliveriesCatchment || 0,
+                    value: data.deliveriesCoverage || 0,
+                    unit: '%',
+                    indicator: 'DELIVERIES'
+                },
+                {
+                    name: 'Low Birth Weight (<2.5kg)',
+                    numerator: data.liveBirthsLBW || 0,
+                    denominator: data.liveBirthsTotal || 0,
+                    value: data.lbwRate || 0,
+                    unit: '%',
+                    indicator: 'LBW'
+                },
+                {
+                    name: 'LBW Initiated on KMC',
+                    numerator: data.kmcInitiated || 0,
+                    denominator: data.liveBirthsLBW || 0,
+                    value: data.kmcRate || 0,
+                    unit: '%',
+                    indicator: 'KMC'
+                },
+                {
+                    name: 'Birth Asphyxia Rate',
+                    numerator: data.birthAsphyxia || 0,
+                    denominator: data.totalDeliveries || 0,
+                    value: data.asphyxiaRate || 0,
+                    unit: '%',
+                    indicator: 'ASPHYXIA'
+                },
+                {
+                    name: 'Asphyxia Successfully Resuscitated',
+                    numerator: data.resuscitated || 0,
+                    denominator: data.birthAsphyxia || 0,
+                    value: data.resuscitationRate || 0,
+                    unit: '%',
+                    indicator: 'RESUSCITATION'
+                },
+                {
+                    name: 'Fresh Still Births (per 1,000)',
+                    numerator: data.freshStillBirth || 0,
+                    denominator: data.totalDeliveries || 0,
+                    value: data.freshStillRate || 0,
+                    unit: '',
+                    indicator: 'FRESH_STILL'
+                },
+                {
+                    name: 'Neonatal Mortality Rate (per 1,000)',
+                    numerator: (data.newbornDeaths0_7 || 0) + (data.newbornDeaths8_28 || 0),
+                    denominator: data.liveBirthsTotal || 0,
+                    value: data.neonatalMortality || 0,
+                    unit: '',
+                    indicator: 'NEONATAL'
+                },
+                {
+                    name: 'Perinatal Mortality Rate (per 1,000)',
+                    numerator: (data.freshStillBirth || 0) + (data.newbornDeaths0_7 || 0) + (data.maceratedStillBirth || 0),
+                    denominator: data.liveBirthsTotal || 0,
+                    value: data.perinatalMortality || 0,
+                    unit: '',
+                    indicator: 'PERINATAL'
+                },
+                {
+                    name: 'Maternal Mortality Ratio (per 100,000)',
+                    numerator: data.maternalDeaths || 0,
+                    denominator: data.liveBirthsTotal || 0,
+                    value: data.maternalMortalityRatio || 0,
+                    unit: '',
+                    indicator: 'MMR'
+                }
+            ];
+            
+            indicators.forEach(ind => {
+                const color = getIntrapartumColor(ind.indicator, ind.value);
+                const colorClass = color === 'green' ? '#10b981' : (color === 'yellow' ? '#f59e0b' : '#ef4444');
+                const emoji = color === 'green' ? '✅' : (color === 'yellow' ? '⚠️' : '❌');
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 500;">${ind.name}</td>
+                    <td style="text-align: right;">${ind.numerator.toLocaleString()}</td>
+                    <td style="text-align: right;">${ind.denominator.toLocaleString()}</td>
+                    <td style="text-align: right; font-weight: 600; color: ${colorClass};">
+                        ${ind.value}${ind.unit}
+                    </td>
+                    <td style="text-align: center; background-color: ${colorClass}; color: white; border-radius: 4px;">
+                        ${emoji}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function downloadIntrapartumExcel() {
+            if (!intrapartumData) {
+                alert('No Intrapartum data to download');
+                return;
+            }
+            // Similar to ANC Excel download - create XML spreadsheet
+            const data = intrapartumData;
+            const xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+    <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#1e3a5f" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF"/></Style>
+    <Style ss:ID="Green"><Interior ss:Color="#10b981" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Yellow"><Interior ss:Color="#f59e0b" ss:Pattern="Solid"/></Style>
+    <Style ss:ID="Red"><Interior ss:Color="#ef4444" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF"/></Style>
+</Styles>
+<Worksheet ss:Name="Intrapartum">
+<Table>
+    <Row><Cell ss:StyleID="Header"><Data ss:Type="String">Indicator</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Numerator</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Denominator</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Value</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Deliveries Coverage</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.deliveriesCatchment || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('DELIVERIES', data.deliveriesCoverage || 0) === 'green' ? 'Green' : (getIntrapartumColor('DELIVERIES', data.deliveriesCoverage || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.deliveriesCoverage || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Low Birth Weight</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsLBW || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('LBW', data.lbwRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('LBW', data.lbwRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.lbwRate || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">KMC Initiated</Data></Cell><Cell><Data ss:Type="Number">${data.kmcInitiated || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsLBW || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('KMC', data.kmcRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('KMC', data.kmcRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.kmcRate || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Birth Asphyxia</Data></Cell><Cell><Data ss:Type="Number">${data.birthAsphyxia || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('ASPHYXIA', data.asphyxiaRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('ASPHYXIA', data.asphyxiaRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.asphyxiaRate || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Resuscitation Rate</Data></Cell><Cell><Data ss:Type="Number">${data.resuscitated || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.birthAsphyxia || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('RESUSCITATION', data.resuscitationRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('RESUSCITATION', data.resuscitationRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.resuscitationRate || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Fresh Still Births (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${data.freshStillBirth || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('FRESH_STILL', data.freshStillRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('FRESH_STILL', data.freshStillRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.freshStillRate || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Neonatal Mortality (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${(data.newbornDeaths0_7 || 0) + (data.newbornDeaths8_28 || 0)}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('NEONATAL', data.neonatalMortality || 0) === 'green' ? 'Green' : (getIntrapartumColor('NEONATAL', data.neonatalMortality || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.neonatalMortality || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Perinatal Mortality (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${(data.freshStillBirth || 0) + (data.newbornDeaths0_7 || 0) + (data.maceratedStillBirth || 0)}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('PERINATAL', data.perinatalMortality || 0) === 'green' ? 'Green' : (getIntrapartumColor('PERINATAL', data.perinatalMortality || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.perinatalMortality || 0}</Data></Cell></Row>
+    <Row><Cell><Data ss:Type="String">Maternal Mortality (per 100,000)</Data></Cell><Cell><Data ss:Type="Number">${data.maternalDeaths || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('MMR', data.maternalMortalityRatio || 0) === 'green' ? 'Green' : (getIntrapartumColor('MMR', data.maternalMortalityRatio || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.maternalMortalityRatio || 0}</Data></Cell></Row>
+</Table>
+</Worksheet>
+</Workbook>`;
+            
+            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Intrapartum_${data.orgUnit || 'data'}_${new Date().toISOString().split('T')[0]}.xls`;
+            link.click();
+        }
+
+        function downloadIntrapartumJPG() {
+            downloadChartAsJPG('intrapartumSection', 'Intrapartum_Indicators');
         }
 
         function renderANCTable(data) {
