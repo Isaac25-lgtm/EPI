@@ -270,6 +270,31 @@
             line-height: 1.5;
         }
 
+        .privacy-notice {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .privacy-notice h4 {
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .privacy-notice p {
+            font-size: 12px;
+            line-height: 1.5;
+            opacity: 0.95;
+        }
+
+        .privacy-notice strong {
+            font-weight: 700;
+        }
+
         .spinner::after {
             content: "";
             display: inline-block;
@@ -371,6 +396,11 @@
             <h4>🔐 Secure Login</h4>
             <p>Use your official DHIS2 HMIS credentials. Your login grants access based on your assigned organization
                 units and user rights in the system.</p>
+        </div>
+
+        <div class="privacy-notice">
+            <h4>🔒 Aggregate Data Analysis Only</h4>
+            <p>This platform analyzes aggregate health data from DHIS2. <strong>No individual-level data or patient identifiers are accessed, stored, or displayed.</strong> All analytics are based on aggregated statistics to ensure privacy and confidentiality.</p>
         </div>
     </div>
 
