@@ -233,6 +233,7 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 10px var(--shadow-color);
             transition: background 0.3s ease;
+            border: 2px solid #000000;
         }
 
         .filters-card h3 {
@@ -266,7 +267,7 @@
         .filter-group select,
         .filter-group input {
             padding: 10px;
-            border: 2px solid var(--border-color);
+            border: 2px solid #000000;
             border-radius: 6px;
             font-size: 13px;
             transition: border-color 0.3s, background 0.3s;
@@ -294,6 +295,7 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+            border: 2px solid #000000;
         }
 
         .selected-info span {
@@ -312,7 +314,7 @@
         /* Buttons */
         .btn {
             padding: 10px 20px;
-            border: none;
+            border: 2px solid #000000;
             border-radius: 6px;
             cursor: pointer;
             font-weight: 600;
@@ -2900,6 +2902,12 @@
                     </select>
                 </div>
                 <div class="filter-group">
+                    <label for="level4">County</label>
+                    <select id="level4" onchange="loadChildren(4)" disabled>
+                        <option>--</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label for="level5">Sub-county</label>
                     <select id="level5" onchange="loadChildren(5)" disabled>
                         <option>--</option>
@@ -2910,37 +2918,66 @@
                     <select id="level6" onchange="selectFinalLevel(6)" disabled>
                         <option>--</option>
                     </select>
-            </div>
+                </div>
             </div>
 
-            <!-- Period Selection -->
-            <div class="filters-row" style="margin-top: 20px;">
+            <!-- Period Selection - Custom Only -->
+            <div class="filters-row" style="margin-top: 20px; align-items: end;">
                 <div class="filter-group">
-                    <label for="periodSelect">Period</label>
-                    <select id="periodSelect" onchange="handlePeriodChange()">
-                        <option value="">-- Select Period --</option>
-                        <option value="LAST_12_MONTHS">Last 12 Months</option>
-                            <option value="LAST_6_MONTHS">Last 6 Months</option>
-                            <option value="LAST_3_MONTHS">Last 3 Months</option>
-                            <option value="THIS_YEAR">This Year</option>
-                            <option value="LAST_YEAR">Last Year</option>
-                        <option value="CUSTOM">Custom Range</option>
-                    </select>
-            </div>
-                <div class="filter-group" id="epiStartDateGroup" style="display: none;">
-                    <label for="epiStartDate">Start Month</label>
-                    <input type="month" id="epiStartDate" onchange="updatePeriodDisplay()">
+                    <label>📅 Start Month</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="startYear" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <!-- Years populated by JS -->
+                        </select>
+                        <select id="startMonth" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="filter-group" id="epiEndDateGroup" style="display: none;">
-                    <label for="epiEndDate">End Month</label>
-                    <input type="month" id="epiEndDate" onchange="updatePeriodDisplay()">
+                <div class="filter-group">
+                    <label>📅 End Month</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="endYear" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <!-- Years populated by JS -->
+                        </select>
+                        <select id="endMonth" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="filter-group" id="populationInputGroup" style="display: none;">
+                    <label for="populationInput">Annual Population (for facilities)</label>
+                    <input type="number" id="populationInput" placeholder="Annual catchment population" min="0" onchange="recalculatePeriodCatchment()">
+                </div>
+                <input type="hidden" id="periodSelect" value="CUSTOM">
             </div>
 
             <div class="selected-info">
                 <span>Selected: <span class="highlight" id="selectedOrg">None</span></span>
-                <span>Period: <span class="highlight" id="selectedPeriod">Not selected</span></span>
-                </div>
+                <span>Period: <span class="highlight" id="selectedPeriod">-</span> (<span id="monthsCount">0</span> months)</span>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="loadData()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3877,12 +3914,21 @@
                         const pop = ubosPopulation[selectedDistrict] || 0;
                         document.getElementById('ubosPopulation').textContent = pop.toLocaleString();
                         document.getElementById('populationInfo').style.display = currentSection === 'analytics' ? 'inline' : 'none';
+                        // Hide population input for district level
+                        document.getElementById('populationInputGroup').style.display = 'none';
                     }
+
+                    // Show population input for sub-district levels (4, 5, 6)
+                    if (level >= 4) {
+                        document.getElementById('populationInputGroup').style.display = 'block';
+                    }
+
+                    // Recalculate catchment when org unit changes
+                    recalculatePeriodCatchment();
                 }
 
-                // Clear lower levels (skip level4 which doesn't exist in UI)
+                // Clear lower levels
                 for (let i = level + 1; i <= 6; i++) {
-                    if (i === 4) continue; // Skip County level
                     const s = document.getElementById(`level${i}`);
                     if (s) {
                         s.innerHTML = '<option>--</option>'; 
@@ -3893,9 +3939,8 @@
                 // Allow loading children up to level 6 (facility level)
                 if (!parentId || level >= 6) return;
 
-                // Determine next level (skip level 4 - County)
-                let nextLevel = level + 1;
-                if (nextLevel === 4) nextLevel = 5; // Skip County, go directly to Sub-county
+                // Determine next level
+                const nextLevel = level + 1;
                 
                 const nextSel = document.getElementById(`level${nextLevel}`);
                 if (!nextSel) return;
@@ -3908,28 +3953,6 @@
                     const r = await fetch(`/api/org-units?parent=${parentId}`);
                     const d = await r.json();
                     let children = (d.organisationUnits || d.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
-                    
-                    // If we're loading from District (level 3) to Sub-county (level 5),
-                    // the DHIS2 hierarchy has Counties in between, so we need to skip them
-                    // We load the children of the first child (County) to get Sub-counties
-                    if (level === 3 && children.length > 0) {
-                        // Check if first child is a County (level 4)
-                        // If so, we need to load Sub-counties from all Counties
-                        const allSubCounties = [];
-                        for (const county of children) {
-                            try {
-                                const subR = await fetch(`/api/org-units?parent=${county.id}`);
-                                const subD = await subR.json();
-                                const subChildren = subD.organisationUnits || subD.children || [];
-                                allSubCounties.push(...subChildren);
-                            } catch (e) {
-                                console.error('Error loading sub-counties from county:', e);
-                            }
-                        }
-                        if (allSubCounties.length > 0) {
-                            children = allSubCounties.sort((a, b) => a.displayName.localeCompare(b.displayName));
-                        }
-                    }
                     
                     nextSel.style.opacity = '1';
                     if (!children.length) {
@@ -3955,6 +3978,14 @@
 
                     // Reset facility population when changing org unit
                     facilityPopulation = null;
+                    
+                    // Show population input for facility level
+                    if (level >= 4) {
+                        document.getElementById('populationInputGroup').style.display = 'block';
+                    }
+                    
+                    // Recalculate catchment
+                    recalculatePeriodCatchment();
                 }
             }
 
@@ -3964,122 +3995,121 @@
                     const sel = document.getElementById(`level${l}`);
                     if (sel && sel.selectedIndex > 0) {
                         const name = sel.options[sel.selectedIndex].dataset.name || sel.options[sel.selectedIndex].text;
-                        parts.push(name);
+                        if (name && name !== '--') {
+                            parts.push(name);
+                        }
                     }
                 }
                 return parts.join(' > ');
             }
 
-            function togglePeriodInputs() {
-                const type = document.getElementById('periodType').value;
-                ['relativePeriodGroup', 'yearGroup', 'monthYearGroup', 'monthGroup', 'quarterYearGroup', 'quarterGroup', 'customStartGroup', 'customEndGroup'].forEach(id => document.getElementById(id).style.display = 'none');
-                if (type === 'relative') document.getElementById('relativePeriodGroup').style.display = 'flex';
-                else if (type === 'year') document.getElementById('yearGroup').style.display = 'flex';
-                else if (type === 'month') { document.getElementById('monthYearGroup').style.display = 'flex'; document.getElementById('monthGroup').style.display = 'flex'; }
-                else if (type === 'quarter') { document.getElementById('quarterYearGroup').style.display = 'flex'; document.getElementById('quarterGroup').style.display = 'flex'; }
-                else if (type === 'custom') { document.getElementById('customStartGroup').style.display = 'flex'; document.getElementById('customEndGroup').style.display = 'flex'; }
-            }
-
             function getSelectedPeriod() {
-                const periodSelect = document.getElementById('periodSelect');
-                if (!periodSelect) return 'LAST_12_MONTHS';
+                // Always use custom range from year/month dropdowns
+                const startYear = document.getElementById('startYear').value;
+                const startMonth = document.getElementById('startMonth').value;
+                const endYear = document.getElementById('endYear').value;
+                const endMonth = document.getElementById('endMonth').value;
                 
-                const periodValue = periodSelect.value;
-                
-                // Handle custom range
-                if (periodValue === 'CUSTOM') {
-                    const startDate = document.getElementById('epiStartDate').value;
-                    const endDate = document.getElementById('epiEndDate').value;
-                    
-                    if (!startDate || !endDate) {
-                        return null; // Will trigger validation error
-                    }
-                    
-                    // Build DHIS2 period format (e.g., 202301;202302;202303...)
-                    const start = new Date(startDate + '-01');
-                    const end = new Date(endDate + '-01');
-                    
-                    const periods = [];
-                    let current = new Date(start);
-                    
-                    while (current <= end) {
-                        const year = current.getFullYear();
-                        const month = String(current.getMonth() + 1).padStart(2, '0');
-                        periods.push(`${year}${month}`);
-                        current.setMonth(current.getMonth() + 1);
-                    }
-                    
-                    return periods.join(';');
+                if (!startYear || !startMonth || !endYear || !endMonth) {
+                    return null;
                 }
                 
-                return periodValue || null;
+                // Build DHIS2 period format (e.g., 202301;202302;202303...)
+                const startDate = new Date(parseInt(startYear), parseInt(startMonth) - 1, 1);
+                const endDate = new Date(parseInt(endYear), parseInt(endMonth) - 1, 1);
+                
+                const periods = [];
+                let current = new Date(startDate);
+                
+                while (current <= endDate) {
+                    const year = current.getFullYear();
+                    const month = String(current.getMonth() + 1).padStart(2, '0');
+                    periods.push(`${year}${month}`);
+                    current.setMonth(current.getMonth() + 1);
+                }
+                
+                return periods.join(';');
             }
 
-            function handlePeriodChange() {
-                const periodSelect = document.getElementById('periodSelect');
-                const isCustom = periodSelect.value === 'CUSTOM';
-                const startGroup = document.getElementById('epiStartDateGroup');
-                const endGroup = document.getElementById('epiEndDateGroup');
-                const startInput = document.getElementById('epiStartDate');
-                const endInput = document.getElementById('epiEndDate');
+            function getMonthCount() {
+                const startYear = parseInt(document.getElementById('startYear').value);
+                const startMonth = parseInt(document.getElementById('startMonth').value);
+                const endYear = parseInt(document.getElementById('endYear').value);
+                const endMonth = parseInt(document.getElementById('endMonth').value);
                 
-                if (isCustom) {
-                    // Show custom date inputs
-                    startGroup.style.display = 'block';
-                    endGroup.style.display = 'block';
-                    
-                    // Set default dates if empty
-                    if (!startInput.value || !endInput.value) {
-                        const now = new Date();
-                        const endMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                        const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-                        const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-                        
-                        startInput.value = startMonth;
-                        endInput.value = endMonth;
-                    }
-                } else {
-                    // Hide custom date inputs
-                    startGroup.style.display = 'none';
-                    endGroup.style.display = 'none';
+                if (!startYear || !startMonth || !endYear || !endMonth) return 0;
+                
+                return (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+            }
+
+            function recalculatePeriodCatchment() {
+                const monthCount = getMonthCount();
+                document.getElementById('monthsCount').textContent = monthCount;
+                
+                // Get population for facility level
+                const popInput = document.getElementById('populationInput');
+                if (popInput && popInput.value && parseInt(popInput.value) > 0) {
+                    facilityPopulation = parseInt(popInput.value);
                 }
-                
-                updatePeriodDisplay();
             }
 
             function updatePeriodDisplay() {
-                const periodSelect = document.getElementById('periodSelect');
+                const startYear = document.getElementById('startYear').value;
+                const startMonth = document.getElementById('startMonth').value;
+                const endYear = document.getElementById('endYear').value;
+                const endMonth = document.getElementById('endMonth').value;
                 const selectedPeriodSpan = document.getElementById('selectedPeriod');
                 
-                if (!periodSelect || !selectedPeriodSpan) return;
+                if (!selectedPeriodSpan) return;
                 
-                const periodValue = periodSelect.value;
-                
-                if (periodValue === 'CUSTOM') {
-                    const startDate = document.getElementById('epiStartDate').value;
-                    const endDate = document.getElementById('epiEndDate').value;
+                if (startYear && startMonth && endYear && endMonth) {
+                    const startDate = new Date(parseInt(startYear), parseInt(startMonth) - 1, 1);
+                    const endDate = new Date(parseInt(endYear), parseInt(endMonth) - 1, 1);
                     
-                    if (startDate && endDate) {
-                        // Format dates nicely (e.g., "Jan 2025 - Jul 2025")
-                        const start = new Date(startDate + '-01');
-                        const end = new Date(endDate + '-01');
-                        
-                        const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-                        
-                        const startFormatted = start.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-                        const endFormatted = end.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-                        
-                        selectedPeriodSpan.textContent = `${startFormatted} - ${endFormatted} (${months} month${months > 1 ? 's' : ''})`;
-                    } else {
-                        selectedPeriodSpan.textContent = 'Select dates';
-                    }
-                } else if (periodValue) {
-                    // Show the selected preset period text
-                    const selectedOption = periodSelect.options[periodSelect.selectedIndex];
-                    selectedPeriodSpan.textContent = selectedOption.text;
+                    const startFormatted = startDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+                    const endFormatted = endDate.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+                    
+                    selectedPeriodSpan.textContent = `${startFormatted} - ${endFormatted}`;
                 } else {
-                    selectedPeriodSpan.textContent = 'Not selected';
+                    selectedPeriodSpan.textContent = '-';
                 }
+                
+                recalculatePeriodCatchment();
+            }
+
+            function initializeYearDropdowns() {
+                const currentYear = new Date().getFullYear();
+                const currentMonth = new Date().getMonth() + 1;
+                const years = [];
+                
+                // Generate years from 2020 to current year + 1
+                for (let y = 2020; y <= currentYear + 1; y++) {
+                    years.push(y);
+                }
+                
+                const startYearSelect = document.getElementById('startYear');
+                const endYearSelect = document.getElementById('endYear');
+                const startMonthSelect = document.getElementById('startMonth');
+                const endMonthSelect = document.getElementById('endMonth');
+                
+                // Populate year dropdowns
+                const yearOptions = years.map(y => `<option value="${y}">${y}</option>`).join('');
+                startYearSelect.innerHTML = yearOptions;
+                endYearSelect.innerHTML = yearOptions;
+                
+                // Set defaults: last 12 months
+                const defaultEndYear = currentYear;
+                const defaultEndMonth = currentMonth;
+                const defaultStartDate = new Date(currentYear, currentMonth - 12, 1);
+                const defaultStartYear = defaultStartDate.getFullYear();
+                const defaultStartMonth = defaultStartDate.getMonth() + 1;
+                
+                startYearSelect.value = defaultStartYear;
+                startMonthSelect.value = String(defaultStartMonth).padStart(2, '0');
+                endYearSelect.value = defaultEndYear;
+                endMonthSelect.value = String(defaultEndMonth).padStart(2, '0');
+                
+                updatePeriodDisplay();
             }
 
             async function loadData() {
@@ -4089,23 +4119,21 @@
                     return;
                 }
                 
-                const periodSelectValue = document.getElementById('periodSelect').value;
-                
                 // Validate period selection
-                if (!periodSelectValue) {
-                    alert('Please select a period first');
+                const startYear = document.getElementById('startYear').value;
+                const startMonth = document.getElementById('startMonth').value;
+                const endYear = document.getElementById('endYear').value;
+                const endMonth = document.getElementById('endMonth').value;
+                
+                if (!startYear || !startMonth || !endYear || !endMonth) {
+                    alert('Please select start and end months');
                     return;
                 }
                 
-                // For custom range, validate dates are selected
-                if (periodSelectValue === 'CUSTOM') {
-                    const startDate = document.getElementById('epiStartDate').value;
-                    const endDate = document.getElementById('epiEndDate').value;
-                    
-                    if (!startDate || !endDate) {
-                        alert('Please select both start and end months for your custom range');
-                        return;
-                    }
+                // Check if custom population is needed for facility level
+                const popInput = document.getElementById('populationInput');
+                if (selectedOrgUnit.level >= 4 && popInput && popInput.value) {
+                    facilityPopulation = parseInt(popInput.value);
                 }
                 
                 const period = getSelectedPeriod();
@@ -4206,6 +4234,9 @@
 
             // Add input validation listener
             document.addEventListener('DOMContentLoaded', function () {
+                // Initialize year dropdowns for period selection
+                initializeYearDropdowns();
+                
                 // Initialize RED date inputs
                 initializeREDDates();
                 

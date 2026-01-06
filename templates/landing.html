@@ -175,6 +175,27 @@
             font-weight: 500;
         }
 
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
         /* Notification Dropdown */
         .notification-dropdown {
             position: absolute;
@@ -375,60 +396,6 @@
             margin-top: 4px;
         }
 
-        /* Quick Stats */
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 15px var(--shadow-color);
-            border: 2px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px var(--shadow-color);
-        }
-
-        .stat-info label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--stat-color-1), var(--stat-color-2));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            background: linear-gradient(135deg, var(--stat-color-1), var(--stat-color-2));
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        }
-
         /* Health Modules Grid */
         .modules-grid {
             display: grid;
@@ -486,6 +453,72 @@
         .module-card:hover .module-arrow {
             transform: translateX(8px);
             color: white;
+        }
+
+        /* Disabled module styles */
+        .module-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .module-card.disabled::before {
+            opacity: 0;
+        }
+
+        .coming-soon-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Privacy Notice */
+        .privacy-notice {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .privacy-notice-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .privacy-notice-content {
+            flex: 1;
+        }
+
+        .privacy-notice-content h4 {
+            margin: 0 0 4px 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .privacy-notice-content p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.95;
+            line-height: 1.5;
+        }
+
+        [data-theme="dark"] .privacy-notice {
+            background: linear-gradient(135deg, #1e40af, #4338ca);
+            border-color: rgba(255, 255, 255, 0.1);
         }
 
         .module-content {
@@ -653,7 +686,9 @@
                     <div class="user-avatar" id="userInitials">--</div>
                     <span class="user-name" id="userName">Loading...</span>
                 </div>
-                <a href="/logout" class="header-btn" title="Logout">🚪</a>
+                <a href="/logout" class="logout-btn" title="Logout">
+                    🚪 <span>Log out</span>
+                </a>
             </div>
         </div>
 
@@ -687,42 +722,19 @@
     </div>
 
     <main class="main">
+        <!-- Privacy Notice -->
+        <div class="privacy-notice">
+            <div class="privacy-notice-icon">🔒</div>
+            <div class="privacy-notice-content">
+                <h4>Aggregate Data Analysis Only</h4>
+                <p>This platform analyzes aggregate health data from DHIS2. <strong>No individual-level data or patient identifiers are accessed, stored, or displayed.</strong> All analytics are based on aggregated statistics to ensure privacy and confidentiality.</p>
+            </div>
+        </div>
+
         <!-- Welcome Section -->
         <div class="welcome">
             <h2>Welcome back, <span id="welcomeName">User</span> 👋</h2>
             <p>Select a health program module to view analytics and reports</p>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="quick-stats">
-            <div class="stat-card" style="--stat-color-1: #3b82f6; --stat-color-2: #6366f1;">
-                <div class="stat-info">
-                    <label>Total Facilities</label>
-                    <div class="stat-value" id="statFacilities">--</div>
-                </div>
-                <div class="stat-icon">🏥</div>
-            </div>
-            <div class="stat-card" style="--stat-color-1: #10b981; --stat-color-2: #059669;">
-                <div class="stat-info">
-                    <label>Districts Covered</label>
-                    <div class="stat-value" id="statDistricts">--</div>
-                </div>
-                <div class="stat-icon">📍</div>
-            </div>
-            <div class="stat-card" style="--stat-color-1: #f59e0b; --stat-color-2: #ef4444;">
-                <div class="stat-info">
-                    <label>Active Alerts</label>
-                    <div class="stat-value" id="statAlerts">0</div>
-                </div>
-                <div class="stat-icon">🚨</div>
-            </div>
-            <div class="stat-card" style="--stat-color-1: #8b5cf6; --stat-color-2: #a855f7;">
-                <div class="stat-info">
-                    <label>Reports Due</label>
-                    <div class="stat-value" id="statReports">--</div>
-                </div>
-                <div class="stat-icon">📋</div>
-            </div>
         </div>
 
         <!-- Health Modules Grid -->
@@ -764,7 +776,8 @@
             </a>
 
             <!-- WASH -->
-            <a href="#" class="module-card" style="--module-color-1: #06b6d4; --module-color-2: #14b8a6;">
+            <div class="module-card disabled" style="--module-color-1: #06b6d4; --module-color-2: #14b8a6;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -779,10 +792,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- Medicine Tracking -->
-            <a href="#" class="module-card" style="--module-color-1: #8b5cf6; --module-color-2: #a855f7;">
+            <div class="module-card disabled" style="--module-color-1: #8b5cf6; --module-color-2: #a855f7;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -797,10 +811,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- Nutrition -->
-            <a href="#" class="module-card" style="--module-color-1: #22c55e; --module-color-2: #10b981;">
+            <div class="module-card disabled" style="--module-color-1: #22c55e; --module-color-2: #10b981;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -815,10 +830,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- HIV -->
-            <a href="#" class="module-card" style="--module-color-1: #ef4444; --module-color-2: #f43f5e;">
+            <div class="module-card disabled" style="--module-color-1: #ef4444; --module-color-2: #f43f5e;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -833,10 +849,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- TB -->
-            <a href="#" class="module-card" style="--module-color-1: #f59e0b; --module-color-2: #f97316;">
+            <div class="module-card disabled" style="--module-color-1: #f59e0b; --module-color-2: #f97316;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -851,10 +868,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- RBF Assessment -->
-            <a href="#" class="module-card" style="--module-color-1: #6366f1; --module-color-2: #3b82f6;">
+            <div class="module-card disabled" style="--module-color-1: #6366f1; --module-color-2: #3b82f6;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -869,10 +887,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- PMTCT -->
-            <a href="#" class="module-card" style="--module-color-1: #d946ef; --module-color-2: #ec4899;">
+            <div class="module-card disabled" style="--module-color-1: #d946ef; --module-color-2: #ec4899;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -887,10 +906,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- Community Health -->
-            <a href="#" class="module-card" style="--module-color-1: #14b8a6; --module-color-2: #06b6d4;">
+            <div class="module-card disabled" style="--module-color-1: #14b8a6; --module-color-2: #06b6d4;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -905,10 +925,11 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
 
             <!-- Malaria -->
-            <a href="#" class="module-card" style="--module-color-1: #eab308; --module-color-2: #f59e0b;">
+            <div class="module-card disabled" style="--module-color-1: #eab308; --module-color-2: #f59e0b;">
+                <div class="coming-soon-badge">Coming Soon</div>
                 <div class="module-decor module-decor-1"></div>
                 <div class="module-decor module-decor-2"></div>
                 <div class="module-content">
@@ -923,7 +944,7 @@
                         <span class="module-arrow">→</span>
                     </div>
                 </div>
-            </a>
+            </div>
         </div>
     </main>
 
