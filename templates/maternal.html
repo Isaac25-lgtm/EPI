@@ -958,9 +958,10 @@
                         <thead>
                             <tr>
                                 <th style="text-align: left;">Indicator</th>
-                                <th style="text-align: right;">Data element</th>
-                                <th style="text-align: right;">Target</th>
+                                <th style="text-align: right;">Numerator</th>
+                                <th style="text-align: right;">Denominator</th>
                                 <th style="text-align: right;">Performance</th>
+                                <th style="text-align: right;">Target</th>
                             </tr>
                         </thead>
                         <tbody id="intrapartumTableBody">
@@ -2740,6 +2741,32 @@
             }
         }
 
+        function getIntrapartumTarget(indicator) {
+            // Return target text for each indicator
+            switch(indicator) {
+                case 'DELIVERIES':
+                    return '≥70%';
+                case 'LBW':
+                    return '≤5%';
+                case 'KMC':
+                    return '≥90%';
+                case 'ASPHYXIA':
+                    return '≤1%';
+                case 'RESUSCITATION':
+                    return '≥90%';
+                case 'FRESH_STILL':
+                    return '≤5 per 1,000';
+                case 'NEONATAL':
+                    return '≤5 per 1,000';
+                case 'PERINATAL':
+                    return '≤12 per 1,000';
+                case 'MMR':
+                    return '≤182 per 100,000';
+                default:
+                    return 'N/A';
+            }
+        }
+
         function renderIntrapartumTable(data) {
             const tbody = document.getElementById('intrapartumTableBody');
             tbody.innerHTML = '';
@@ -2826,6 +2853,7 @@
             indicators.forEach(ind => {
                 const color = getIntrapartumColor(ind.indicator, ind.value);
                 const colorBg = color === 'green' ? '#10b981' : (color === 'yellow' ? '#f59e0b' : '#ef4444');
+                const target = getIntrapartumTarget(ind.indicator);
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -2834,6 +2862,9 @@
                     <td style="text-align: right;">${ind.denominator.toLocaleString()}</td>
                     <td style="text-align: right; font-weight: 600; background-color: ${colorBg}; color: white; padding: 12px; border-radius: 4px;">
                         ${ind.value}${ind.unit}
+                    </td>
+                    <td style="text-align: right; font-weight: 500; color: var(--text-secondary);">
+                        ${target}
                     </td>
                 `;
                 tbody.appendChild(row);
