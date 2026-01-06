@@ -81,7 +81,7 @@
             padding: 10px 25px;
             background: rgba(255, 255, 255, 0.2);
             color: white;
-            border: none;
+            border: 2px solid #000000;
             border-radius: 8px 8px 0 0;
             cursor: pointer;
             font-weight: 600;
@@ -97,6 +97,7 @@
         .nav-tab.active {
             background: white;
             color: #11998e;
+            border: 2px solid #000000;
         }
 
         /* Analysis Section Styles */
@@ -2799,7 +2800,7 @@
         </div>
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchEpiTab('analytics')">📈 Analytics</button>
-            <button class="nav-tab" onclick="switchEpiTab('analysis')">🔬 Show Analysis</button>
+            <button class="nav-tab" onclick="switchEpiTab('analysis')">🔬 Show Calculation</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             <span class="user-badge" id="userBadge">Loading...</span>
@@ -2945,7 +2946,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                     </svg>
-                    Load Data
+                    Load analysis
                 </button>
                 <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
             </div>
@@ -3137,7 +3138,7 @@
                             <tbody id="coverageTableBody">
                                 <tr>
                                     <td colspan="5" style="text-align:center; padding:40px; color:var(--text-muted);">
-                                        Select filters and click "Load Data" to view coverage
+                                        Select filters and click "Load analysis" to view coverage
                                     </td>
                                 </tr>
                             </tbody>
@@ -7025,7 +7026,7 @@
 
             // ============ KEYBOARD SHORTCUTS ============
             const keyboardShortcuts = {
-                'ctrl+enter': { action: () => loadData(), description: 'Load Data' },
+                'ctrl+enter': { action: () => loadData(), description: 'Load analysis' },
                 'ctrl+d': { action: () => toggleDarkMode(), description: 'Toggle Dark Mode' },
                 'ctrl+s': { action: () => saveFilterPreset(), description: 'Save Filter Preset' },
                 'ctrl+f': { action: () => focusSearch(), description: 'Focus Search' },

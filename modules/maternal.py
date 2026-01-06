@@ -179,7 +179,7 @@ def fetch_data_element_ids(auth):
 def dashboard():
     """Maternal Health Dashboard page"""
     if not is_logged_in():
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('login'))
     return render_template('maternal.html')
 
 

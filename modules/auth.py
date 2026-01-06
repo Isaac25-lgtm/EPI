@@ -77,3 +77,6 @@ def get_user_info():
         'userId': session.get('user_id', '')
     })
 
+
+
+

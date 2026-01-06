@@ -55,3 +55,6 @@ jobs:
       #       -d '{"text":"Uganda eHMIS deployed successfully!"}' \
       #       ${{ secrets.SLACK_WEBHOOK }}
 
+
+
+

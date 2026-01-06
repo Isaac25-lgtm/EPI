@@ -150,7 +150,7 @@
             align-items: center;
             gap: 8px;
             padding: 10px 20px;
-            border: none;
+            border: 2px solid #000000;
             border-radius: 12px;
             font-weight: 600;
             font-size: 14px;
@@ -163,12 +163,14 @@
         [data-theme="dark"] .tab-btn {
             background: #374151;
             color: #9ca3af;
+            border: 2px solid #000000;
         }
 
         .tab-btn.active {
             background: linear-gradient(135deg, var(--accent-pink), var(--accent-rose));
             color: white;
             box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+            border: 2px solid #000000;
         }
 
         /* Container */
@@ -185,7 +187,7 @@
             border-radius: 16px;
             margin-bottom: 24px;
             box-shadow: 0 4px 20px var(--shadow);
-            border: 2px solid #f9a8d4;
+            border: 2px solid #000000;
         }
 
         .filters-card h3 {
@@ -220,7 +222,7 @@
         .filter-group select,
         .filter-group input {
             padding: 10px;
-            border: 2px solid var(--border-color);
+            border: 2px solid #000000;
             border-radius: 8px;
             font-size: 14px;
             background: var(--bg-card);
@@ -244,6 +246,7 @@
             flex-wrap: wrap;
             gap: 12px;
             margin-top: 16px;
+            border: 2px solid #000000;
         }
 
         [data-theme="dark"] .selected-info {
@@ -272,7 +275,7 @@
 
         .btn {
             padding: 10px 20px;
-            border: none;
+            border: 2px solid #000000;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
@@ -286,6 +289,7 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--accent-pink), var(--accent-rose));
             color: white;
+            border: 2px solid #000000;
         }
 
         .btn-primary:hover {
@@ -296,7 +300,7 @@
         .btn-secondary {
             background: var(--bg-card);
             color: var(--text-primary);
-            border: 2px solid var(--border-color);
+            border: 2px solid #000000;
         }
 
         .btn-secondary:hover {
@@ -330,7 +334,7 @@
             box-shadow: 0 4px 20px var(--shadow);
             overflow: hidden;
             margin-bottom: 24px;
-            border: 2px solid #f9a8d4;
+            border: 2px solid #000000;
         }
 
         .card-header {
@@ -361,12 +365,13 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            border: 2px solid #000000;
         }
 
         th, td {
             padding: 12px;
             text-align: center;
-            border: 2px solid var(--border-color);
+            border: 2px solid #000000;
         }
 
         th {
@@ -417,12 +422,12 @@
             padding: 20px;
             border-radius: 12px;
             margin-bottom: 24px;
-            border: 2px solid #fbbf24;
+            border: 2px solid #000000;
         }
 
         [data-theme="dark"] .analysis-section {
             background: #451a03;
-            border-color: #92400e;
+            border-color: #000000;
         }
 
         .analysis-section h3 {
@@ -442,7 +447,8 @@
             margin-bottom: 10px;
             font-family: 'Courier New', monospace;
             font-size: 13px;
-            border-left: 4px solid #fbbf24;
+            border-left: 4px solid #000000;
+            border: 2px solid #000000;
         }
 
         [data-theme="dark"] .formula {
@@ -565,7 +571,7 @@
             left: 0;
             right: 0;
             background: var(--bg-card);
-            border: 2px solid var(--accent-pink);
+            border: 2px solid #000000;
             border-top: none;
             border-radius: 0 0 8px 8px;
             max-height: 400px;
@@ -583,7 +589,7 @@
             padding: 12px 16px;
             cursor: pointer;
             transition: background 0.2s;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid #000000;
         }
 
         .search-result-item:hover {
@@ -628,7 +634,7 @@
             padding: 16px;
             box-shadow: 0 2px 8px var(--shadow);
             margin-top: 24px;
-            border: 2px solid var(--border-color);
+            border: 2px solid #000000;
         }
 
         .legend-content {
@@ -694,179 +700,9 @@
             }
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            display: none !important;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-overlay.show {
-            display: flex !important;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 24px;
-            color: var(--accent-pink);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(236, 72, 153, 0.1);
-            color: var(--accent-pink);
-        }
-
-        .modal-body {
-            margin-bottom: 24px;
-        }
-
-        .modal-body p {
-            margin-bottom: 16px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .modal-input-group {
-            margin-bottom: 16px;
-        }
-
-        .modal-input-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-
-        .modal-input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-
-        .modal-input-group input:focus {
-            outline: none;
-            border-color: var(--accent-pink);
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-
-        .modal-actions .btn {
-            padding: 12px 24px;
-        }
     </style>
 </head>
 <body data-theme="light">
-    <!-- Population Input Modal -->
-    <div id="populationModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🏥 Facility Information Required</h2>
-                <button class="modal-close" onclick="closePopulationModal()">×</button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Facility selected:</strong> <span id="modalFacilityName">-</span></p>
-                <p>Please enter the <strong>annual catchment population</strong> and select the reporting period.</p>
-                
-                <div class="modal-input-group">
-                    <label for="modalPopulationInput">Annual Catchment Population *</label>
-                    <input 
-                        type="number" 
-                        id="modalPopulationInput" 
-                        placeholder="Enter annual population (e.g., 15000)" 
-                        min="1"
-                        step="1"
-                    >
-                </div>
-                
-                <div style="border-top: 1px solid #e5e7eb; margin: 20px 0; padding-top: 20px;">
-                    <p style="font-weight: 600; margin-bottom: 12px;">📅 Select Reporting Period</p>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div class="modal-input-group">
-                            <label for="modalStartDate">Start Month *</label>
-                            <input type="month" id="modalStartDate" required>
-                        </div>
-                        <div class="modal-input-group">
-                            <label for="modalEndDate">End Month *</label>
-                            <input type="month" id="modalEndDate" required>
-                        </div>
-                    </div>
-                    <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-                        📊 <strong>Period Calculation:</strong> ANC Catchment = (Annual Population ÷ 12) × Months Selected × 5%
-                    </p>
-                </div>
-                
-                <div id="modalCalculationPreview" style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-top: 16px; display: none;">
-                    <p style="margin: 0; font-size: 14px; color: #166534;">
-                        <strong>Preview:</strong><br>
-                        <span id="modalPreviewText">-</span>
-                    </p>
-                </div>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closePopulationModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="submitPopulationModal()">Apply & Continue</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Header -->
     <header class="header">
         <div class="header-content">
@@ -897,13 +733,13 @@
     <nav class="tab-nav">
         <div class="tab-nav-content">
             <button class="tab-btn active" onclick="switchTab('data')">
-                📊 Data View
-            </button>
-            <button class="tab-btn" onclick="switchTab('analysis')">
-                🔬 Show Analysis
+                📊 Facility/District performance
             </button>
             <button class="tab-btn" onclick="switchTab('league')">
-                🏆 League Table
+                🏆 Compare Facility/District performance
+            </button>
+            <button class="tab-btn" onclick="switchTab('analysis')">
+                🔬 Show Calculation
             </button>
         </div>
     </nav>
@@ -949,6 +785,12 @@
                     </select>
                 </div>
                 <div class="filter-group">
+                    <label for="level4">County</label>
+                    <select id="level4" onchange="loadChildren(4)" disabled>
+                        <option>--</option>
+                    </select>
+                </div>
+                <div class="filter-group">
                     <label for="level5">Sub-county</label>
                     <select id="level5" onchange="loadChildren(5)" disabled>
                         <option>--</option>
@@ -962,50 +804,75 @@
                 </div>
             </div>
 
-            <!-- Period and Population -->
-            <div class="filters-row" style="margin-top: 20px;">
+            <!-- Period Selection - Custom Only -->
+            <div class="filters-row" style="margin-top: 20px; align-items: end;">
                 <div class="filter-group">
-                    <label for="periodSelect">Period</label>
-                    <select id="periodSelect">
-                        <option value="">-- Select Period --</option>
-                        <option value="LAST_12_MONTHS">Last 12 Months</option>
-                        <option value="LAST_6_MONTHS">Last 6 Months</option>
-                        <option value="LAST_3_MONTHS">Last 3 Months</option>
-                        <option value="THIS_YEAR">This Year</option>
-                        <option value="LAST_YEAR">Last Year</option>
-                        <option value="CUSTOM">Custom Range</option>
+                    <label>📅 Start Month</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="startYear" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <!-- Years populated by JS -->
+                        </select>
+                        <select id="startMonth" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
                     </select>
                 </div>
-                <div class="filter-group" id="startDateGroup" style="display: none;">
-                    <label for="startDateInput">Start Month</label>
-                    <input type="month" id="startDateInput" onchange="recalculatePeriodCatchment()">
                 </div>
-                <div class="filter-group" id="endDateGroup" style="display: none;">
-                    <label for="endDateInput">End Month</label>
-                    <input type="month" id="endDateInput" onchange="recalculatePeriodCatchment()">
+                <div class="filter-group">
+                    <label>📅 End Month</label>
+                    <div style="display: flex; gap: 8px;">
+                        <select id="endYear" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <!-- Years populated by JS -->
+                        </select>
+                        <select id="endMonth" onchange="recalculatePeriodCatchment(); updatePeriodDisplay();" style="flex: 1;">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="filter-group" id="populationInputGroup" style="display: none;">
-                    <label for="populationInput">Annual Population</label>
+                    <label for="populationInput">Annual Population (for facilities)</label>
                     <input type="number" id="populationInput" placeholder="Annual catchment population" min="0" onchange="recalculatePeriodCatchment()">
                 </div>
+                <input type="hidden" id="periodSelect" value="CUSTOM">
+                <input type="hidden" id="startDateInput" value="">
+                <input type="hidden" id="endDateInput" value="">
             </div>
 
             <div class="selected-info">
                 <span>Selected: <span class="highlight" id="selectedOrgUnit">None</span></span>
-                <span>Period: <span class="highlight" id="selectedPeriod">Last 12 Months</span></span>
-                <span>ANC Catchment (5%): <span class="highlight" id="ancCatchment">-</span></span>
+                <span>Period: <span class="highlight" id="selectedPeriod">-</span> (<span id="monthsCount">0</span> months)</span>
+                <span>ANC (5%): <span class="highlight" id="ancCatchment">-</span></span>
+                <span>Deliveries (4.85%): <span class="highlight" id="deliveriesTarget">-</span></span>
             </div>
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="fetchData()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                     </svg>
-                    Load Data
+                    Load analysis
                 </button>
                 <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
-                <button class="btn btn-secondary" onclick="downloadExcel()">
-                    📊 Download Excel
-                </button>
             </div>
         </div>
 
@@ -1021,6 +888,9 @@
                             <h2>ANC Indicators Performance</h2>
                             <p>Coverage and quality metrics for antenatal care</p>
                         </div>
+                        <button class="btn btn-secondary" onclick="downloadExcel()" style="background: white; color: var(--accent-pink); border: 2px solid white; padding: 8px 16px; font-size: 14px;">
+                            📊 Download Excel
+                        </button>
                     </div>
                     <div class="table-container">
                         <table id="ancTable">
@@ -1031,7 +901,6 @@
                                     <th>Target Pop.</th>
                                     <th>Coverage/Rate (%)</th>
                                     <th>Target (%)</th>
-                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="ancTableBody">
@@ -1076,7 +945,7 @@
                     <div>
                         <h2 style="margin: 0;">🏥 Intrapartum Indicators</h2>
                         <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 13px;">
-                            Deliveries Catchment (4.85%): <span id="deliveriesCatchment">--</span>
+                            Deliveries Target (4.85%): <span id="deliveriesCatchment">--</span>
                         </p>
                     </div>
                     <div style="display: flex; gap: 8px;">
@@ -1116,10 +985,10 @@
                     </button>
                 </div>
                 
-                <!-- ANC Catchment -->
+                <!-- ANC Target -->
                 <div class="formula editable-formula" data-indicator="anc_catchment">
                     <div class="formula-header">
-                        <strong>ANC Catchment:</strong>
+                        <strong>ANC Target (5%):</strong>
                         <button class="btn-edit" onclick="editFormula('anc_catchment')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-anc_catchment">
@@ -1141,11 +1010,11 @@
                         <button class="btn-edit" onclick="editFormula('anc1')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-anc1">
-                        = (105-AN01a. ANC 1st Visit / ANC Catchment) × 100
+                        = (105-AN01a. ANC 1st Visit / ANC Target) × 100
                     </div>
                     <div class="formula-edit hidden" id="edit-anc1">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-AN01a. ANC 1st Visit / ANC Catchment) × 100" id="input-anc1" style="width: 100%;">
+                        <input type="text" value="(105-AN01a. ANC 1st Visit / ANC Target) × 100" id="input-anc1" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveFormula('anc1')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEdit('anc1')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -1175,11 +1044,11 @@
                         <button class="btn-edit" onclick="editFormula('anc4')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-anc4">
-                        = (105-AN02. ANC 4th Visit / ANC Catchment) × 100
+                        = (105-AN02. ANC 4th Visit / ANC Target) × 100
                     </div>
                     <div class="formula-edit hidden" id="edit-anc4">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-AN02. ANC 4th Visit / ANC Catchment) × 100" id="input-anc4" style="width: 100%;">
+                        <input type="text" value="(105-AN02. ANC 4th Visit / ANC Target) × 100" id="input-anc4" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveFormula('anc4')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEdit('anc4')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -1192,11 +1061,11 @@
                         <button class="btn-edit" onclick="editFormula('anc8')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-anc8">
-                        = (105-AN03. ANC 8 Visits / ANC Catchment) × 100
+                        = (105-AN03. ANC 8 Visits / ANC Target) × 100
                     </div>
                     <div class="formula-edit hidden" id="edit-anc8">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-AN03. ANC 8 Visits / ANC Catchment) × 100" id="input-anc8" style="width: 100%;">
+                        <input type="text" value="(105-AN03. ANC 8 Visits / ANC Target) × 100" id="input-anc8" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveFormula('anc8')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEdit('anc8')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -1209,11 +1078,11 @@
                         <button class="btn-edit" onclick="editFormula('ipt3')">✏️ Edit</button>
                     </div>
                     <div class="formula-content" id="formula-ipt3">
-                        = (105-AN06c. IPT3 Recipients / ANC Catchment) × 100
+                        = (105-AN06c. IPT3 Recipients / ANC Target) × 100
                     </div>
                     <div class="formula-edit hidden" id="edit-ipt3">
                         <label>Custom Formula:</label>
-                        <input type="text" value="(105-AN06c. IPT3 Recipients / ANC Catchment) × 100" id="input-ipt3" style="width: 100%;">
+                        <input type="text" value="(105-AN06c. IPT3 Recipients / ANC Target) × 100" id="input-ipt3" style="width: 100%;">
                         <button class="btn btn-primary" onclick="saveFormula('ipt3')" style="margin-top: 8px;">💾 Save</button>
                         <button class="btn btn-secondary" onclick="cancelEdit('ipt3')" style="margin-left: 4px;">❌ Cancel</button>
                     </div>
@@ -1290,10 +1159,10 @@
                 <!-- ==================== INTRAPARTUM FORMULAS ==================== -->
                 <h3 style="margin-top: 32px; margin-bottom: 16px; border-bottom: 2px solid #6366f1; padding-bottom: 8px;">🏥 Intrapartum Formulas</h3>
 
-                <!-- Deliveries Catchment -->
+                <!-- Deliveries Target -->
                 <div class="formula" style="border-left-color: #6366f1;">
                     <div class="formula-header">
-                        <strong>Deliveries Catchment:</strong>
+                        <strong>Deliveries Target (4.85%):</strong>
                     </div>
                     <div class="formula-content">
                         = (4.85% × UBOS Population) for Districts<br>
@@ -1307,7 +1176,7 @@
                         <strong>Deliveries Coverage:</strong>
                     </div>
                     <div class="formula-content">
-                        = (105-MA04. Total deliveries / Deliveries Catchment) × 100
+                        = (105-MA04. Total deliveries / Deliveries Target) × 100
                     </div>
                 </div>
 
@@ -1630,7 +1499,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div>
-                            <h2>🏆 League Table Comparison</h2>
+                            <h2>🏆 Compare Facility/District performance</h2>
                             <p>Compare performance across facilities or districts</p>
                         </div>
                     </div>
@@ -1645,12 +1514,9 @@
                             <div style="flex: 1;">
                                 <div class="filter-group">
                                     <label>Period for Comparison</label>
-                                    <select id="leaguePeriodSelect">
-                                        <option value="LAST_12_MONTHS">Last 12 Months</option>
-                                        <option value="LAST_6_MONTHS">Last 6 Months</option>
-                                        <option value="LAST_3_MONTHS">Last 3 Months</option>
-                                        <option value="THIS_YEAR">This Year</option>
-                                    </select>
+                                    <p style="font-size: 13px; color: var(--text-secondary); margin-top: 8px;">
+                                        Uses the same period selected above: <strong id="leaguePeriodDisplay">-</strong>
+                                    </p>
                                 </div>
                                 <button class="btn btn-primary" style="margin-top: 16px;" onclick="loadLeagueTable()">
                                     Generate League Table
@@ -1732,6 +1598,37 @@
 
         // UBOS Population Data (will be populated from config)
         let UBOS_POPULATIONS = {};
+
+        // Uganda Regions and their Districts
+        const REGIONS = {
+            "ACHOLI": ["AGAGO", "AMURU", "GULU", "GULU CITY", "KITGUM", "LAMWO", "NWOYA", "OMORO", "PADER"],
+            "ANKOLE": ["BUHWEJU", "BUSHENYI", "IBANDA", "ISINGIRO", "KIRUHURA", "MBARARA", "MBARARA CITY", "MITOOMA", "NTUNGAMO", "RUBIRIZI", "RWAMPARA", "SHEEMA"],
+            "BUGANDA": ["BUIKWE", "BUKOMANSIMBI", "BUTAMBALA", "BUVUMA", "GOMBA", "KALANGALA", "KALUNGU", "KAMPALA", "KAYUNGA", "KIBOGA", "KYANKWANZI", "LUWEERO", "LWENGO", "LYANTONDE", "MASAKA", "MASAKA CITY", "MITYANA", "MPIGI", "MUBENDE", "MUKONO", "NAKASEKE", "NAKASONGOLA", "RAKAI", "SEMBABULE", "WAKISO", "KASSANDA", "KYOTERA"],
+            "BUKEDI": ["BUDAKA", "BUSIA", "BUTALEJA", "KIBUKU", "PALLISA", "TORORO", "BUTEBO"],
+            "BUNYORO": ["BULIISA", "HOIMA", "HOIMA CITY", "KIBAALE", "KAGADI", "KAKUMIRO", "KIKUUBE", "KIRYANDONGO", "MASINDI"],
+            "BUSOGA": ["BUGIRI", "BUGWERI", "BUYENDE", "IGANGA", "JINJA", "JINJA CITY", "KALIRO", "KAMULI", "LUUKA", "MAYUGE", "NAMAYINGO", "NAMUTUMBA"],
+            "ELGON": ["BUDUDA", "BUKWO", "BULAMBULI", "KAPCHORWA", "KWEEN", "MANAFWA", "MBALE", "MBALE CITY", "NAMISINDWA", "SIRONKO"],
+            "KARAMOJA": ["ABIM", "AMUDAT", "KAABONG", "KARENGA", "KOTIDO", "MOROTO", "NABILATUK", "NAKAPIRIPIRIT", "NAPAK"],
+            "KIGEZI": ["KABALE", "KANUNGU", "KISORO", "RUBANDA", "RUKIGA", "RUKUNGIRI"],
+            "LANGO": ["ALEBTONG", "AMOLATAR", "APAC", "DOKOLO", "KOLE", "KWANIA", "LIRA", "LIRA CITY", "OTUKE", "OYAM", "KABERAMAIDO", "KALAKI", "KAPELEBYONG"],
+            "SEBEI": ["BUKWO", "KAPCHORWA", "KWEEN"],
+            "TESO": ["AMURIA", "BUKEDEA", "KATAKWI", "KUMI", "NGORA", "SERERE", "SOROTI", "SOROTI CITY"],
+            "TOORO": ["BUNDIBUGYO", "BUNYANGABU", "FORT PORTAL CITY", "KABAROLE", "KAMWENGE", "KASESE", "KITAGWENDA", "KYEGEGWA", "KYENJOJO", "NTOROKO"],
+            "WEST NILE": ["ADJUMANI", "ARUA", "ARUA CITY", "KOBOKO", "MADI-OKOLLO", "MARACHA", "MOYO", "NEBBI", "OBONGI", "PAKWACH", "TEREGO", "YUMBE", "ZOMBO"]
+        };
+
+        // Calculate total population for a region
+        function getRegionPopulation(regionName) {
+            const districts = REGIONS[regionName.toUpperCase()];
+            if (!districts) return 0;
+            
+            let totalPop = 0;
+            districts.forEach(district => {
+                const pop = UBOS_POPULATIONS[district] || UBOS_POPULATIONS[district + ' CITY'] || 0;
+                totalPop += pop;
+            });
+            return totalPop;
+        }
 
         // Fetch UBOS populations on page load
         async function loadUBOSPopulations() {
@@ -2069,33 +1966,69 @@
             }
         }
 
-        // Load children for a given level
-        async function loadChildren(level) {
-            const sel = document.getElementById(`level${level}`);
+        // Load children for a given dropdown level
+        async function loadChildren(dropdownLevel) {
+            const sel = document.getElementById(`level${dropdownLevel}`);
             const parentId = sel.value;
             const parentName = sel.options[sel.selectedIndex]?.dataset?.name || sel.options[sel.selectedIndex]?.text || '';
+            // Get actual DHIS2 level from data attribute (if available)
+            const actualLevel = parseInt(sel.options[sel.selectedIndex]?.dataset?.level) || dropdownLevel;
 
             if (parentId) {
-                selectedOrgUnit = { id: parentId, name: parentName, level: level };
+                selectedOrgUnit = { id: parentId, name: parentName, level: actualLevel };
                 document.getElementById('selectedOrgUnit').textContent = parentName;
 
-                // Show/hide population input based on level
+                // Show/hide population input based on actual DHIS2 level (only for facility level 6)
                 const populationInputGroup = document.getElementById('populationInputGroup');
-                if (level > 3) {
-                    // Facility level (sub-county and below)
+                if (actualLevel >= 6) {
+                    // Facility level - need custom population
                     populationInputGroup.style.display = 'block';
-                    // Show modal for level 5 and 6 (sub-county and facilities)
-                    if (level >= 5) {
-                        showPopulationModal(parentName);
-                    }
+                    // Clear the date fields so user must select them
+                    document.getElementById('startYear').value = '';
+                    document.getElementById('startMonth').value = '';
+                    document.getElementById('endYear').value = '';
+                    document.getElementById('endMonth').value = '';
+                    document.getElementById('populationInput').value = '';
+                    ancCatchment = 0;
+                    document.getElementById('ancCatchment').textContent = '0';
                 } else {
-                    // District or above
+                    // District or above - use UBOS population
                     populationInputGroup.style.display = 'none';
                     document.getElementById('populationInput').value = ''; // Clear value
                 }
 
+                // Check if region (level 2) for aggregate population
+                if (actualLevel === 2 || dropdownLevel === 2) {
+                    // Region selected - aggregate all district populations
+                    const cleanName = parentName.toUpperCase().replace(' REGION', '').trim();
+                    const regionPop = getRegionPopulation(cleanName);
+                    
+                    if (regionPop > 0) {
+                        ubosPopulation = regionPop;
+                        recalculatePeriodCatchment();
+                        console.log(`✅ Region: ${cleanName} = ${regionPop.toLocaleString()} (aggregate of all districts)`);
+                    } else {
+                        // Try to calculate from matching districts in UBOS_POPULATIONS
+                        let calcPop = 0;
+                        const regionDistricts = REGIONS[cleanName] || [];
+                        regionDistricts.forEach(d => {
+                            if (UBOS_POPULATIONS[d]) calcPop += UBOS_POPULATIONS[d];
+                        });
+                        
+                        if (calcPop > 0) {
+                            ubosPopulation = calcPop;
+                            recalculatePeriodCatchment();
+                            console.log(`✅ Region: ${cleanName} = ${calcPop.toLocaleString()} (calculated from ${regionDistricts.length} districts)`);
+                        } else {
+                            console.warn(`⚠️ No population data for region: "${cleanName}"`);
+                            ubosPopulation = 0;
+                            ancCatchment = 0;
+                            document.getElementById('ancCatchment').textContent = 'Region not found';
+                        }
+                    }
+                }
                 // Check if district (level 3) for UBOS population
-                if (level === 3) {
+                else if (actualLevel === 3 || dropdownLevel === 3) {
                     // Try different name variations to match UBOS data
                     const cleanName = parentName.toUpperCase()
                         .replace(' DISTRICT', '')
@@ -2119,24 +2052,23 @@
                     if (pop) {
                         ubosPopulation = pop;
                         recalculatePeriodCatchment(); // Recalculate based on selected period
-                        console.log(`✅ Found district: ${cleanName} = ${pop.toLocaleString()} (ANC catchment: ${ancCatchment.toLocaleString()})`);
+                        console.log(`✅ Found district: ${cleanName} = ${pop.toLocaleString()}`);
                     } else {
                         console.warn(`⚠️ No UBOS population found for: "${cleanName}". Available districts:`, Object.keys(UBOS_POPULATIONS).slice(0, 10));
                         ubosPopulation = 0;
                         ancCatchment = 0;
                         document.getElementById('ancCatchment').textContent = 'Not found - enter custom';
                     }
-                } else if (level > 3) {
-                    // Facility level - clear and prompt for custom
+                } else if (actualLevel > 3) {
+                    // Sub-county/Facility level - clear and prompt for custom
                     ubosPopulation = 0;
                     ancCatchment = 0;
                     document.getElementById('ancCatchment').textContent = 'Enter population below';
                 }
             }
 
-            // Clear lower levels (skip level 4 - County)
-            for (let i = level + 1; i <= 6; i++) {
-                if (i === 4) continue; // Skip county level
+            // Clear all lower level dropdowns
+            for (let i = dropdownLevel + 1; i <= 6; i++) {
                 const s = document.getElementById(`level${i}`);
                 if (s) {
                     s.innerHTML = '<option>--</option>';
@@ -2144,11 +2076,10 @@
                 }
             }
 
-            // Load next level (skip level 4 - County)
-            if (!parentId || level >= 6) return;
+            // Load next level
+            if (!parentId || dropdownLevel >= 6) return;
 
-            let nextLevel = level + 1;
-            if (nextLevel === 4) nextLevel = 5; // Skip county, go straight to sub-county
+            const nextLevel = dropdownLevel + 1;
             const nextSel = document.getElementById(`level${nextLevel}`);
             nextSel.innerHTML = '<option>⏳ Loading...</option>';
             nextSel.disabled = false;
@@ -2164,9 +2095,13 @@
                     return;
                 }
                 
-                const levelNames = ['', '', 'Region', 'District', '', 'Sub-county', 'Facility'];
-                nextSel.innerHTML = `<option value="">-- Select ${levelNames[nextLevel] || 'Unit'} (${children.length}) --</option>` +
-                    children.map(u => `<option value="${u.id}" data-name="${u.displayName}">${u.displayName}</option>`).join('');
+                // Level names for display
+                const levelNames = ['', '', 'Region', 'District', 'County', 'Sub-county', 'Facility'];
+                const labelName = levelNames[nextLevel] || 'Unit';
+                
+                // Store actual level in data attribute for proper selection handling
+                nextSel.innerHTML = `<option value="">-- Select ${labelName} (${children.length}) --</option>` +
+                    children.map(u => `<option value="${u.id}" data-name="${u.displayName}" data-level="${u.level || nextLevel}">${u.displayName}</option>`).join('');
             } catch (error) {
                 console.error('Error loading children:', error);
                 nextSel.innerHTML = '<option>❌ Error loading</option>';
@@ -2174,22 +2109,31 @@
         }
 
         // Select final level (facility)
-        function selectFinalLevel(level) {
-            const sel = document.getElementById(`level${level}`);
+        function selectFinalLevel(dropdownLevel) {
+            const sel = document.getElementById(`level${dropdownLevel}`);
             if (sel.value) {
+                // Get actual DHIS2 level from data attribute
+                const actualLevel = parseInt(sel.options[sel.selectedIndex].dataset.level) || dropdownLevel;
+                
                 selectedOrgUnit = {
                     id: sel.value,
                     name: sel.options[sel.selectedIndex].dataset.name || sel.options[sel.selectedIndex].text,
-                    level: level
+                    level: actualLevel
                 };
                 document.getElementById('selectedOrgUnit').textContent = selectedOrgUnit.name;
                 
-                // Show population input for facilities (level 6)
+                // Show population input for facilities only (level 6)
                 const populationInputGroup = document.getElementById('populationInputGroup');
-                if (level === 6) {
+                if (actualLevel >= 6) {
                     populationInputGroup.style.display = 'block';
-                    // Show modal to prompt for population
-                    showPopulationModal(selectedOrgUnit.name);
+                    // Clear the date fields so user must select them
+                    document.getElementById('startYear').value = '';
+                    document.getElementById('startMonth').value = '';
+                    document.getElementById('endYear').value = '';
+                    document.getElementById('endMonth').value = '';
+                    document.getElementById('populationInput').value = '';
+                    ancCatchment = 0;
+                    document.getElementById('ancCatchment').textContent = '0';
                 } else {
                     populationInputGroup.style.display = 'none';
                 }
@@ -2292,15 +2236,14 @@
                 // Extract each level from hierarchy
                 const region = fullHierarchy.find(h => h.level === 2);
                 const district = fullHierarchy.find(h => h.level === 3);
-                const county = fullHierarchy.find(h => h.level === 4); // County (hidden in UI but needed for hierarchy)
+                const county = fullHierarchy.find(h => h.level === 4);
                 const subCounty = fullHierarchy.find(h => h.level === 5);
                 const facility = fullHierarchy.find(h => h.level === 6);
                 
-                // Reset all dropdowns first
-                for (let i = 2; i <= 6; i++) {
-                    if (i === 4) continue; // Skip county
+                // Reset all dropdowns first (levels 3-6)
+                for (let i = 3; i <= 6; i++) {
                     const sel = document.getElementById(`level${i}`);
-                    if (sel && i > 2) {
+                    if (sel) {
                         sel.innerHTML = '<option value="">-- Select --</option>';
                         sel.disabled = true;
                         sel.value = '';
@@ -2343,10 +2286,16 @@
                         document.getElementById('ancCatchment').textContent = 'Not found';
                     }
                     
-                    // Load sub-counties using COUNTY as parent (County is Level 4, children are Sub-counties Level 5)
-                    if (county) {
-                        await loadChildrenAndSelect(4, county.id, subCounty);
-                    }
+                    // Load counties for this district
+                    await loadChildrenAndSelect(3, district.id, county);
+                }
+                
+                // Populate Level 4 (County)
+                if (county) {
+                    console.log(`  ✅ County: ${county.name}`);
+                    
+                    // Load sub-counties for this county
+                    await loadChildrenAndSelect(4, county.id, subCounty);
                 }
                 
                 // Populate Level 5 (Sub-county)
@@ -2362,13 +2311,21 @@
                     console.log(`  ✅ Facility: ${facility.name}`);
                 }
                 
-                // Show/hide population input based on final level
+                // Show/hide population input based on final level (only for facility level 6)
                 const populationInputGroup = document.getElementById('populationInputGroup');
-                if (level > 3) {
-                    // Facility level
+                if (level >= 6) {
+                    // Facility level only
                     populationInputGroup.style.display = 'block';
+                    // Clear the date fields so user must select them
+                    document.getElementById('startYear').value = '';
+                    document.getElementById('startMonth').value = '';
+                    document.getElementById('endYear').value = '';
+                    document.getElementById('endMonth').value = '';
+                    document.getElementById('populationInput').value = '';
+                    ancCatchment = 0;
+                    document.getElementById('ancCatchment').textContent = '0';
                 } else {
-                    // District or above
+                    // Sub-county or above - hide population input
                     populationInputGroup.style.display = 'none';
                     document.getElementById('populationInput').value = '';
                 }
@@ -2388,17 +2345,22 @@
                 const data = await response.json();
                 const children = data.organisationUnits || [];
                 
-                // Determine which level to populate
+                // Determine which level to populate - simple sequential
                 // parentLevel 2 (Region) -> children are Level 3 (District)
+                // parentLevel 3 (District) -> children are Level 4 (County)
                 // parentLevel 4 (County) -> children are Level 5 (Sub-county)
                 // parentLevel 5 (Sub-county) -> children are Level 6 (Facility)
-                const targetLevel = parentLevel === 2 ? 3 : (parentLevel === 4 ? 5 : 6);
+                const targetLevel = parentLevel + 1;
                 const select = document.getElementById(`level${targetLevel}`);
                 
                 if (!select || children.length === 0) return;
                 
+                // Level names for display
+                const levelNames = ['', '', 'Region', 'District', 'County', 'Sub-county', 'Facility'];
+                const labelName = levelNames[targetLevel] || 'Unit';
+                
                 // Populate dropdown
-                select.innerHTML = '<option value="">-- Select --</option>';
+                select.innerHTML = `<option value="">-- Select ${labelName} (${children.length}) --</option>`;
                 children.forEach(child => {
                     const option = document.createElement('option');
                     option.value = child.id;
@@ -2437,138 +2399,153 @@
         });
 
         function setupEventListeners() {
-            document.getElementById('periodSelect').addEventListener('change', (e) => {
-                const isCustom = e.target.value === 'CUSTOM';
-                const startGroup = document.getElementById('startDateGroup');
-                const endGroup = document.getElementById('endDateGroup');
-                const startInput = document.getElementById('startDateInput');
-                const endInput = document.getElementById('endDateInput');
-                
-                if (isCustom) {
-                    // Show and enable custom date inputs
-                    startGroup.style.display = 'block';
-                    endGroup.style.display = 'block';
-                    
-                    // Set default dates if empty
-                    if (!startInput.value || !endInput.value) {
-                        const now = new Date();
-                        const endMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                        const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-                        const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-                        startInput.value = startMonth;
-                        endInput.value = endMonth;
-                    }
-                } else {
-                    // Hide custom date inputs when using preset
-                    startGroup.style.display = 'none';
-                    endGroup.style.display = 'none';
-                }
-                
-                // Update period display and recalculate catchment
-                updatePeriodDisplay();
-                recalculatePeriodCatchment();
-            });
-
+            // Population input listener for facilities
             document.getElementById('populationInput').addEventListener('input', recalculatePeriodCatchment);
-            document.getElementById('startDateInput').addEventListener('change', () => {
-                recalculatePeriodCatchment();
-                updatePeriodDisplay();
-            });
-            document.getElementById('endDateInput').addEventListener('change', () => {
-                recalculatePeriodCatchment();
-                updatePeriodDisplay();
-            });
+            
+            // Initialize year dropdowns on setup
+            initializeYearDropdowns();
         }
 
-        function updatePeriodDisplay() {
-            const periodSelect = document.getElementById('periodSelect');
-            const periodValue = periodSelect.value;
-            const periodDisplay = document.getElementById('selectedPeriod');
+        // Initialize year dropdowns
+        function initializeYearDropdowns() {
+            const currentYear = new Date().getFullYear();
+            const startYear = 2018;
+            const yearsHtml = [];
             
-            if (periodValue === 'CUSTOM') {
-                const startDate = document.getElementById('startDateInput').value;
-                const endDate = document.getElementById('endDateInput').value;
-                
-                if (startDate && endDate) {
-                    // Format dates nicely (e.g., "Jan 2025 - Jul 2025")
-                    const start = new Date(startDate + '-01');
-                    const end = new Date(endDate + '-01');
-                    
+            for (let y = currentYear; y >= startYear; y--) {
+                yearsHtml.push(`<option value="${y}">${y}</option>`);
+            }
+            
+            document.getElementById('startYear').innerHTML = yearsHtml.join('');
+            document.getElementById('endYear').innerHTML = yearsHtml.join('');
+            
+            // Set default: Last 12 months
+                        const now = new Date();
+            const endYear = now.getFullYear();
+            const endMonth = now.getMonth() + 1; // 1-12
+            
+            // Calculate start date (12 months ago)
+            let startYearVal = endYear;
+            let startMonthVal = endMonth - 11;
+            if (startMonthVal <= 0) {
+                startMonthVal += 12;
+                startYearVal -= 1;
+            }
+            
+            document.getElementById('startYear').value = startYearVal;
+            document.getElementById('startMonth').value = String(startMonthVal).padStart(2, '0');
+            document.getElementById('endYear').value = endYear;
+            document.getElementById('endMonth').value = String(endMonth).padStart(2, '0');
+            
+            // Update hidden inputs
+            updateHiddenDateInputs();
+                updatePeriodDisplay();
+        }
+        
+        function updateHiddenDateInputs() {
+            const startY = document.getElementById('startYear').value;
+            const startM = document.getElementById('startMonth').value;
+            const endY = document.getElementById('endYear').value;
+            const endM = document.getElementById('endMonth').value;
+            
+            document.getElementById('startDateInput').value = `${startY}-${startM}`;
+            document.getElementById('endDateInput').value = `${endY}-${endM}`;
+        }
+        
+        function updatePeriodDisplay() {
+            const startY = document.getElementById('startYear').value;
+            const startM = document.getElementById('startMonth').value;
+            const endY = document.getElementById('endYear').value;
+            const endM = document.getElementById('endMonth').value;
+            
+            if (!startY || !startM || !endY || !endM) {
+                document.getElementById('selectedPeriod').textContent = 'Select period';
+                document.getElementById('monthsCount').textContent = '0';
+                return;
+            }
+            
+            const start = new Date(startY, parseInt(startM) - 1, 1);
+            const end = new Date(endY, parseInt(endM) - 1, 1);
                     const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
                     
-                    const startFormatted = start.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-                    const endFormatted = end.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-                    
-                    periodDisplay.textContent = `${startFormatted} - ${endFormatted} (${months} month${months > 1 ? 's' : ''})`;
-                } else {
-                    periodDisplay.textContent = 'Custom Range (select dates)';
-                }
-            } else {
-                // Show the selected preset period text
-                const selectedOption = periodSelect.options[periodSelect.selectedIndex];
-                periodDisplay.textContent = selectedOption.text;
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const startFormatted = `${monthNames[parseInt(startM) - 1]} ${startY}`;
+            const endFormatted = `${monthNames[parseInt(endM) - 1]} ${endY}`;
+            
+            document.getElementById('selectedPeriod').textContent = `${startFormatted} - ${endFormatted}`;
+            document.getElementById('monthsCount').textContent = months > 0 ? months : 0;
+            
+            // Also update league table period display
+            const leaguePeriodDisplay = document.getElementById('leaguePeriodDisplay');
+            if (leaguePeriodDisplay) {
+                leaguePeriodDisplay.textContent = `${startFormatted} - ${endFormatted} (${months} months)`;
             }
+            
+            // Update hidden inputs
+            updateHiddenDateInputs();
+        }
+        
+        function getSelectedMonths() {
+            const startY = parseInt(document.getElementById('startYear').value);
+            const startM = parseInt(document.getElementById('startMonth').value);
+            const endY = parseInt(document.getElementById('endYear').value);
+            const endM = parseInt(document.getElementById('endMonth').value);
+            
+            if (!startY || !startM || !endY || !endM) return 12;
+            
+            const months = (endY - startY) * 12 + (endM - startM) + 1;
+            return months > 0 ? months : 1;
         }
 
         function recalculatePeriodCatchment() {
-            const periodSelect = document.getElementById('periodSelect').value;
             const annualPop = parseInt(document.getElementById('populationInput').value) || 0;
-            const startDate = document.getElementById('startDateInput').value;
-            const endDate = document.getElementById('endDateInput').value;
+            const months = getSelectedMonths();
             
-            let months = 12; // Default to 12 months
+            let ancTarget = 0;
+            let deliveriesTarget = 0;
             
-            // Determine number of months based on period selection
-            if (periodSelect === 'CUSTOM' && startDate && endDate) {
-                const start = new Date(startDate + '-01');
-                const end = new Date(endDate + '-01');
-                months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-                
-                if (months < 1) {
-                    months = 1;
-                }
-            } else if (periodSelect === 'LAST_6_MONTHS') {
-                months = 6;
-            } else if (periodSelect === 'LAST_3_MONTHS') {
-                months = 3;
-            } else if (periodSelect === 'THIS_YEAR' || periodSelect === 'LAST_YEAR') {
-                months = 12;
-            } else {
-                months = 12; // Default for LAST_12_MONTHS
-            }
-            
-            // Calculate catchment based on organization level
+            // Calculate targets based on organization level
             if (selectedOrgUnit) {
                 if (selectedOrgUnit.level <= 3 && ubosPopulation > 0) {
-                    // District level with UBOS population
-                    // Formula: (Annual UBOS Population / 12) × Months × 5%
+                    // District/Region level with UBOS population
+                    // Formula: (Annual Population ÷ 12) × Months × Percentage
                     const monthlyPop = Math.round(ubosPopulation / 12);
                     const periodPop = monthlyPop * months;
-                    ancCatchment = Math.round(periodPop * 0.05);
+                    ancTarget = Math.round(periodPop * 0.05);
+                    deliveriesTarget = Math.round(periodPop * 0.0485);
                     
-                    console.log(`📊 District catchment: UBOS ${ubosPopulation.toLocaleString()} → Monthly ${monthlyPop.toLocaleString()} × ${months} months = ${periodPop.toLocaleString()} → 5% = ${ancCatchment.toLocaleString()}`);
+                    console.log(`📊 Calculation: (${ubosPopulation.toLocaleString()} ÷ 12) × ${months} months = ${periodPop.toLocaleString()}`);
+                    console.log(`   → ANC Target (×5%): ${ancTarget.toLocaleString()}`);
+                    console.log(`   → Deliveries Target (×4.85%): ${deliveriesTarget.toLocaleString()}`);
                 } else if (annualPop > 0) {
-                    // Facility level with custom population
-                    // Formula: (Annual Population / 12) × Months × 5%
+                    // Facility/Sub-county level with custom population
+                    // Same formula: (Annual Population ÷ 12) × Months × Percentage
                     const monthlyPop = Math.round(annualPop / 12);
                     const periodPop = monthlyPop * months;
-                    ancCatchment = Math.round(periodPop * 0.05);
+                    ancTarget = Math.round(periodPop * 0.05);
+                    deliveriesTarget = Math.round(periodPop * 0.0485);
                     
-                    console.log(`📊 Facility catchment: ${annualPop.toLocaleString()} → Monthly ${monthlyPop.toLocaleString()} × ${months} months = ${periodPop.toLocaleString()} → 5% = ${ancCatchment.toLocaleString()}`);
+                    console.log(`📊 Calculation: (${annualPop.toLocaleString()} ÷ 12) × ${months} months = ${periodPop.toLocaleString()}`);
+                    console.log(`   → ANC Target (×5%): ${ancTarget.toLocaleString()}`);
+                    console.log(`   → Deliveries Target (×4.85%): ${deliveriesTarget.toLocaleString()}`);
                     
                     // Store facility period info
                     window.facilityPeriodInfo = {
                         annualPopulation: annualPop,
-                        startDate: startDate,
-                        endDate: endDate,
                         months: months,
                         periodPopulation: periodPop,
-                        ancCatchment: ancCatchment
+                        ancTarget: ancTarget,
+                        deliveriesTarget: deliveriesTarget
                     };
                 }
             }
             
-            document.getElementById('ancCatchment').textContent = ancCatchment > 0 ? ancCatchment.toLocaleString() : '-';
+            // Update global variable for backward compatibility
+            ancCatchment = ancTarget;
+            
+            // Update UI
+            document.getElementById('ancCatchment').textContent = ancTarget > 0 ? ancTarget.toLocaleString() : '-';
+            document.getElementById('deliveriesTarget').textContent = deliveriesTarget > 0 ? deliveriesTarget.toLocaleString() : '-';
         }
 
         function updateCatchmentFromInput() {
@@ -2581,30 +2558,45 @@
                 return;
             }
 
-            const periodSelectValue = document.getElementById('periodSelect').value;
+            // Check if facility or sub-county level (level >= 5) requires population
+            const orgLevel = selectedOrgUnit.level || 0;
+            const populationInput = document.getElementById('populationInput');
+            const customPopulation = parseInt(populationInput.value) || 0;
             
-            // Require period selection
-            if (!periodSelectValue) {
-                alert('Please select a period first');
+            if (orgLevel >= 5 && customPopulation <= 0) {
+                alert('⚠️ Annual Population Required\n\nFor Sub-county and Facility levels, please complete the "Annual Population (for facilities)" section before loading analysis.');
+                populationInput.focus();
+                return;
+            }
+
+            // Get period from year/month dropdowns
+            const startY = document.getElementById('startYear').value;
+            const startM = document.getElementById('startMonth').value;
+            const endY = document.getElementById('endYear').value;
+            const endM = document.getElementById('endMonth').value;
+            
+            // Require valid period selection
+            if (!startY || !startM || !endY || !endM) {
+                alert('Please select start and end months');
                 return;
             }
             
-            const customPopulation = parseInt(document.getElementById('populationInput').value) || 0;
-            let period = periodSelectValue;
+            // Generate period string for the selected date range
+            const startDate = `${startY}-${startM}`;
+            const endDate = `${endY}-${endM}`;
             
-            // Check if using custom date range
-            if (periodSelectValue === 'CUSTOM') {
-                const startDate = document.getElementById('startDateInput').value;
-                const endDate = document.getElementById('endDateInput').value;
-                
-                if (!startDate || !endDate) {
-                    alert('Please select both start and end dates for custom range');
+            // Update hidden inputs for backward compatibility
+            document.getElementById('startDateInput').value = startDate;
+            document.getElementById('endDateInput').value = endDate;
+            
+            const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
+            const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
+            
+            // Validate dates
+            if (start > end) {
+                alert('Start date must be before or equal to end date');
                     return;
                 }
-                
-                // Generate period string for custom date range
-                const start = new Date(startDate + '-01');
-                const end = new Date(endDate + '-01');
                 
                 // Create DHIS2 period format (e.g., 202301;202302;202303...)
                 const periods = [];
@@ -2615,9 +2607,8 @@
                     periods.push(`${year}${month}`);
                     current.setMonth(current.getMonth() + 1);
                 }
-                period = periods.join(';');
-                console.log('Using custom period:', period);
-            }
+            const period = periods.join(';');
+            console.log('📅 Using period:', period, `(${periods.length} months)`);
             
             const spinner = document.getElementById('loadingSpinner');
             spinner.classList.remove('hidden');
@@ -2850,45 +2841,152 @@
         }
 
         function downloadIntrapartumExcel() {
+            console.log('📊 Intrapartum Excel Download v2.0 - Using SheetJS for .xlsx format');
             if (!intrapartumData) {
                 alert('No Intrapartum data to download');
                 return;
             }
-            // Similar to ANC Excel download - create XML spreadsheet
-            const data = intrapartumData;
-            const xml = `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-<Styles>
-    <Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#1e3a5f" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF"/></Style>
-    <Style ss:ID="Green"><Interior ss:Color="#10b981" ss:Pattern="Solid"/></Style>
-    <Style ss:ID="Yellow"><Interior ss:Color="#f59e0b" ss:Pattern="Solid"/></Style>
-    <Style ss:ID="Red"><Interior ss:Color="#ef4444" ss:Pattern="Solid"/><Font ss:Color="#FFFFFF"/></Style>
-</Styles>
-<Worksheet ss:Name="Intrapartum">
-<Table>
-    <Row><Cell ss:StyleID="Header"><Data ss:Type="String">Indicator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Numerator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Denominator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Value</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Deliveries Coverage</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.deliveriesCatchment || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('DELIVERIES', data.deliveriesCoverage || 0) === 'green' ? 'Green' : (getIntrapartumColor('DELIVERIES', data.deliveriesCoverage || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.deliveriesCoverage || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Low Birth Weight</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsLBW || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('LBW', data.lbwRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('LBW', data.lbwRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.lbwRate || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">KMC Initiated</Data></Cell><Cell><Data ss:Type="Number">${data.kmcInitiated || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsLBW || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('KMC', data.kmcRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('KMC', data.kmcRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.kmcRate || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Birth Asphyxia</Data></Cell><Cell><Data ss:Type="Number">${data.birthAsphyxia || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('ASPHYXIA', data.asphyxiaRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('ASPHYXIA', data.asphyxiaRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.asphyxiaRate || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Resuscitation Rate</Data></Cell><Cell><Data ss:Type="Number">${data.resuscitated || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.birthAsphyxia || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('RESUSCITATION', data.resuscitationRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('RESUSCITATION', data.resuscitationRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.resuscitationRate || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Fresh Still Births (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${data.freshStillBirth || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.totalDeliveries || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('FRESH_STILL', data.freshStillRate || 0) === 'green' ? 'Green' : (getIntrapartumColor('FRESH_STILL', data.freshStillRate || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.freshStillRate || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Neonatal Mortality (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${(data.newbornDeaths0_7 || 0) + (data.newbornDeaths8_28 || 0)}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('NEONATAL', data.neonatalMortality || 0) === 'green' ? 'Green' : (getIntrapartumColor('NEONATAL', data.neonatalMortality || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.neonatalMortality || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Perinatal Mortality (per 1000)</Data></Cell><Cell><Data ss:Type="Number">${(data.freshStillBirth || 0) + (data.newbornDeaths0_7 || 0) + (data.maceratedStillBirth || 0)}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('PERINATAL', data.perinatalMortality || 0) === 'green' ? 'Green' : (getIntrapartumColor('PERINATAL', data.perinatalMortality || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.perinatalMortality || 0}</Data></Cell></Row>
-    <Row><Cell><Data ss:Type="String">Maternal Mortality (per 100,000)</Data></Cell><Cell><Data ss:Type="Number">${data.maternalDeaths || 0}</Data></Cell><Cell><Data ss:Type="Number">${data.liveBirthsTotal || 0}</Data></Cell><Cell ss:StyleID="${getIntrapartumColor('MMR', data.maternalMortalityRatio || 0) === 'green' ? 'Green' : (getIntrapartumColor('MMR', data.maternalMortalityRatio || 0) === 'yellow' ? 'Yellow' : 'Red')}"><Data ss:Type="Number">${data.maternalMortalityRatio || 0}</Data></Cell></Row>
-</Table>
-</Worksheet>
-</Workbook>`;
             
-            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `Intrapartum_${data.orgUnit || 'data'}_${new Date().toISOString().split('T')[0]}.xls`;
-            link.click();
+            const data = intrapartumData;
+            
+            // Create workbook using SheetJS
+            const wb = XLSX.utils.book_new();
+            
+            // Prepare data for worksheet
+            const wsData = [];
+            
+            // Title and metadata rows
+            wsData.push([`Intrapartum & Newborn Indicators - ${data.orgUnit || 'Unknown'}`]);
+            wsData.push([`Period: ${data.period || 'N/A'}`]);
+            wsData.push([`Population: ${(data.population || 0).toLocaleString()}`]);
+            wsData.push([]);
+            
+            // Header row
+            wsData.push(['Indicator', 'Numerator', 'Denominator', 'Value']);
+            
+            // Build indicators array
+            const indicators = [
+                { name: 'Deliveries Coverage', numerator: data.totalDeliveries || 0, denominator: data.deliveriesCatchment || 0, value: (data.deliveriesCoverage || 0) + '%', indicator: 'DELIVERIES', coverage: data.deliveriesCoverage || 0 },
+                { name: 'Low Birth Weight', numerator: data.liveBirthsLBW || 0, denominator: data.liveBirthsTotal || 0, value: (data.lbwRate || 0) + '%', indicator: 'LBW', coverage: data.lbwRate || 0 },
+                { name: 'KMC Initiated', numerator: data.kmcInitiated || 0, denominator: data.liveBirthsLBW || 0, value: (data.kmcRate || 0) + '%', indicator: 'KMC', coverage: data.kmcRate || 0 },
+                { name: 'Birth Asphyxia', numerator: data.birthAsphyxia || 0, denominator: data.totalDeliveries || 0, value: (data.asphyxiaRate || 0) + '%', indicator: 'ASPHYXIA', coverage: data.asphyxiaRate || 0 },
+                { name: 'Resuscitation Rate', numerator: data.resuscitated || 0, denominator: data.birthAsphyxia || 0, value: (data.resuscitationRate || 0) + '%', indicator: 'RESUSCITATION', coverage: data.resuscitationRate || 0 },
+                { name: 'Fresh Still Births (per 1000)', numerator: data.freshStillBirth || 0, denominator: data.totalDeliveries || 0, value: data.freshStillRate || 0, indicator: 'FRESH_STILL', coverage: data.freshStillRate || 0 },
+                { name: 'Neonatal Mortality (per 1000)', numerator: (data.newbornDeaths0_7 || 0) + (data.newbornDeaths8_28 || 0), denominator: data.liveBirthsTotal || 0, value: data.neonatalMortality || 0, indicator: 'NEONATAL', coverage: data.neonatalMortality || 0 },
+                { name: 'Perinatal Mortality (per 1000)', numerator: (data.freshStillBirth || 0) + (data.newbornDeaths0_7 || 0) + (data.maceratedStillBirth || 0), denominator: data.liveBirthsTotal || 0, value: data.perinatalMortality || 0, indicator: 'PERINATAL', coverage: data.perinatalMortality || 0 },
+                { name: 'Maternal Mortality (per 100,000)', numerator: data.maternalDeaths || 0, denominator: data.liveBirthsTotal || 0, value: data.maternalMortalityRatio || 0, indicator: 'MMR', coverage: data.maternalMortalityRatio || 0 }
+            ];
+            
+            // Data rows
+            indicators.forEach(ind => {
+                wsData.push([ind.name, ind.numerator, ind.denominator, ind.value]);
+            });
+            
+            // Legend
+            wsData.push([]);
+            wsData.push(['Performance Legend']);
+            wsData.push(['GREEN', 'Target Achieved']);
+            wsData.push(['YELLOW', 'Needs Improvement']);
+            wsData.push(['RED', 'Below Target']);
+            wsData.push([]);
+            wsData.push([`Generated: ${new Date().toLocaleString()}`]);
+            wsData.push(['Source: Uganda HMIS (DHIS2)']);
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 35 },  // Indicator
+                { wch: 12 },  // Numerator
+                { wch: 12 },  // Denominator
+                { wch: 15 }   // Value
+            ];
+            
+            // Define styles
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+                fill: { fgColor: { rgb: "1E3A5F" } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+            
+            const titleStyle = { font: { bold: true, sz: 14 } };
+            
+            const cellBorder = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            };
+            
+            // Apply title style
+            if (ws['A1']) ws['A1'].s = titleStyle;
+            
+            // Apply header styles (row 5)
+            ['A5', 'B5', 'C5', 'D5'].forEach(cell => {
+                if (ws[cell]) ws[cell].s = headerStyle;
+            });
+            
+            // Apply data row styles with color coding
+            indicators.forEach((ind, idx) => {
+                const rowNum = idx + 6; // Data starts at row 6
+                const colorResult = getIntrapartumColor(ind.indicator, ind.coverage);
+                
+                // Get colors based on performance
+                let bgColor, fontColor;
+                if (colorResult === 'green') {
+                    bgColor = '10B981';
+                    fontColor = 'FFFFFF';
+                } else if (colorResult === 'yellow') {
+                    bgColor = 'F59E0B';
+                    fontColor = '000000';
+                } else {
+                    bgColor = 'EF4444';
+                    fontColor = 'FFFFFF';
+                }
+                
+                // Style for indicator name (bold, border)
+                if (ws[`A${rowNum}`]) {
+                    ws[`A${rowNum}`].s = {
+                        font: { bold: true },
+                        border: cellBorder
+                    };
+                }
+                
+                // Style for numerator and denominator (center, border)
+                ['B', 'C'].forEach(col => {
+                    if (ws[`${col}${rowNum}`]) {
+                        ws[`${col}${rowNum}`].s = {
+                            alignment: { horizontal: "center" },
+                            border: cellBorder
+                        };
+                    }
+                });
+                
+                // Style for value (colored background)
+                if (ws[`D${rowNum}`]) {
+                    ws[`D${rowNum}`].s = {
+                        font: { bold: true, color: { rgb: fontColor } },
+                        fill: { fgColor: { rgb: bgColor } },
+                        alignment: { horizontal: "center", vertical: "center" },
+                        border: cellBorder
+                    };
+                }
+            });
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Intrapartum');
+            
+            // Generate and download
+            const orgName = (data.orgUnit || 'data').replace(/[^a-zA-Z0-9]/g, '_');
+            const fileName = `Intrapartum_${orgName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
         }
 
         function downloadIntrapartumJPG() {
@@ -3046,17 +3144,6 @@
                 // Target
                 const targetText = ind.indicator === 'TEEN_PREG' ? `≤${ind.targetPct}%` : `≥${ind.targetPct}%`;
                 row.insertCell().textContent = targetText;
-                
-                // Status
-                const statusCell = row.insertCell();
-                if (ind.denominator === 0) {
-                    statusCell.textContent = '⏳ Awaiting';
-                } else {
-                    const colorClass = getColorClass(parseFloat(ind.coverage), ind.indicator);
-                    if (colorClass === 'cell-green') statusCell.textContent = '✅ Met';
-                    else if (colorClass === 'cell-yellow') statusCell.textContent = '⚠️ Near';
-                    else statusCell.textContent = '❌ Below';
-                }
             });
 
             // Show debug info in console
@@ -3343,7 +3430,7 @@
                 renderANCTable(currentData);
             }
             
-            alert('Adjustments applied! Click "Load Data" to recalculate with new parameters.');
+            alert('Adjustments applied! Click "Load analysis" to recalculate with new parameters.');
         }
 
         async function clearCache() {
@@ -3356,6 +3443,7 @@
         }
 
         function downloadExcel() {
+            console.log('📊 ANC Excel Download v2.0 - Using SheetJS for .xlsx format');
             if (!currentData) {
                 alert('Please load data first');
                 return;
@@ -3378,190 +3466,153 @@
                 { name: 'Teenage Pregnancies', numerator: (currentData.teenUnder15 || 0) + (currentData.teen15_19 || 0), denominator: anc1, coverage: currentData.teenPregRate || 0, target: '≤13%', indicator: 'TEEN_PREG' }
             ];
             
-            // Create Excel XML Spreadsheet format
-            let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Styles>
-  <Style ss:ID="Default" ss:Name="Normal">
-   <Alignment ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10"/>
-  </Style>
-  <Style ss:ID="Header">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#1E293B" ss:Pattern="Solid"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Title">
-   <Font ss:FontName="Arial" ss:Size="14" ss:Bold="1"/>
-  </Style>
-  <Style ss:ID="Info">
-   <Font ss:FontName="Arial" ss:Size="10"/>
-  </Style>
-  <Style ss:ID="TextBold">
-   <Alignment ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Number">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10"/>
-   <NumberFormat ss:Format="#,##0"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Green">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#22C55E" ss:Pattern="Solid"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Yellow">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#000000"/>
-   <Interior ss:Color="#EAB308" ss:Pattern="Solid"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Red">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10" ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#EF4444" ss:Pattern="Solid"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
-  <Style ss:ID="Center">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
-   <Font ss:FontName="Arial" ss:Size="10"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
-    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-  </Style>
- </Styles>
- <Worksheet ss:Name="ANC Indicators">
-  <Table ss:DefaultColumnWidth="100">
-   <Column ss:Width="180"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="100"/>
-   <Column ss:Width="80"/>
-   <Column ss:Width="140"/>
-   <Row>
-    <Cell ss:StyleID="Title"><Data ss:Type="String">ANC Quality Indicators - ${currentData.orgUnit || 'Unknown'}</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Period: ${currentData.period || 'N/A'}</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Population: ${(currentData.population || 0).toLocaleString()}</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">ANC Catchment (5%): ${(currentData.ancCatchment || ancCatch).toLocaleString()}</Data></Cell>
-   </Row>
-   <Row></Row>
-   <Row>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Indicator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Numerator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Denominator</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Coverage (%)</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Target</Data></Cell>
-    <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
-   </Row>`;
+            // Create workbook using SheetJS
+            const wb = XLSX.utils.book_new();
             
+            // Prepare data for worksheet
+            const wsData = [];
+            
+            // Title and metadata rows
+            wsData.push([`ANC Quality Indicators - ${currentData.orgUnit || 'Unknown'}`]);
+            wsData.push([`Period: ${currentData.period || 'N/A'}`]);
+            wsData.push([`Population: ${(currentData.population || 0).toLocaleString()}`]);
+            wsData.push([`ANC Catchment (5%): ${(currentData.ancCatchment || ancCatch).toLocaleString()}`]);
+            wsData.push([]);
+            
+            // Header row
+            wsData.push(['Indicator', 'Value', 'Target Pop.', 'Coverage/Rate (%)', 'Target (%)']);
+            
+            // Data rows
             indicators.forEach(ind => {
-                const colorClass = getColorClass(ind.coverage, ind.indicator);
-                // Map cell-* classes to Excel style IDs
-                const styleId = colorClass === 'cell-green' ? 'Green' : 
-                               colorClass === 'cell-yellow' ? 'Yellow' : 'Red';
-                const status = getStatusText(ind.coverage, ind.indicator);
-                
-                // Debug logging
-                console.log(`Excel: ${ind.name} - Coverage: ${ind.coverage}%, Indicator: ${ind.indicator}, ColorClass: ${colorClass}, StyleId: ${styleId}`);
-                
-                xml += `
-   <Row>
-    <Cell ss:StyleID="TextBold"><Data ss:Type="String">${ind.name}</Data></Cell>
-    <Cell ss:StyleID="Number"><Data ss:Type="Number">${ind.numerator}</Data></Cell>
-    <Cell ss:StyleID="Number"><Data ss:Type="Number">${ind.denominator}</Data></Cell>
-    <Cell ss:StyleID="${styleId}"><Data ss:Type="String">${ind.coverage.toFixed(1)}%</Data></Cell>
-    <Cell ss:StyleID="Center"><Data ss:Type="String">${ind.target}</Data></Cell>
-    <Cell ss:StyleID="${styleId}"><Data ss:Type="String">${status}</Data></Cell>
-   </Row>`;
+                wsData.push([
+                    ind.name,
+                    ind.numerator,
+                    ind.denominator,
+                    ind.coverage.toFixed(1) + '%',
+                    ind.target
+                ]);
             });
             
-            xml += `
-   <Row></Row>
-   <Row>
-    <Cell ss:StyleID="Title"><Data ss:Type="String">Performance Legend</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Green"><Data ss:Type="String">GREEN</Data></Cell>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Target Achieved</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Yellow"><Data ss:Type="String">YELLOW</Data></Cell>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Needs Improvement</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Red"><Data ss:Type="String">RED</Data></Cell>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Below Target</Data></Cell>
-   </Row>
-   <Row></Row>
-   <Row>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Generated: ${new Date().toLocaleString()}</Data></Cell>
-   </Row>
-   <Row>
-    <Cell ss:StyleID="Info"><Data ss:Type="String">Source: Uganda HMIS (DHIS2)</Data></Cell>
-   </Row>
-  </Table>
- </Worksheet>
-</Workbook>`;
+            // Legend
+            wsData.push([]);
+            wsData.push(['Performance Legend']);
+            wsData.push(['GREEN', 'Target Achieved']);
+            wsData.push(['YELLOW', 'Needs Improvement']);
+            wsData.push(['RED', 'Below Target']);
+            wsData.push([]);
+            wsData.push([`Generated: ${new Date().toLocaleString()}`]);
+            wsData.push(['Source: Uganda HMIS (DHIS2)']);
             
-            // Create downloadable file
-            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 30 },  // Indicator
+                { wch: 12 },  // Value
+                { wch: 15 },  // Target Pop
+                { wch: 18 },  // Coverage
+                { wch: 12 }   // Target
+            ];
+            
+            // Apply styles
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+                fill: { fgColor: { rgb: "1E293B" } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+            
+            const titleStyle = {
+                font: { bold: true, sz: 14 }
+            };
+            
+            const cellBorder = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            };
+            
+            // Apply title style
+            if (ws['A1']) ws['A1'].s = titleStyle;
+            
+            // Apply header styles (row 6)
+            ['A6', 'B6', 'C6', 'D6', 'E6'].forEach(cell => {
+                if (ws[cell]) ws[cell].s = headerStyle;
+            });
+            
+            // Apply data row styles with color coding
+            indicators.forEach((ind, idx) => {
+                const rowNum = idx + 7; // Data starts at row 7
+                const colorClass = getColorClass(ind.coverage, ind.indicator);
+                
+                // Get colors based on performance
+                let bgColor, fontColor;
+                if (colorClass === 'cell-green') {
+                    bgColor = '22C55E';
+                    fontColor = 'FFFFFF';
+                } else if (colorClass === 'cell-yellow') {
+                    bgColor = 'EAB308';
+                    fontColor = '000000';
+                } else {
+                    bgColor = 'EF4444';
+                    fontColor = 'FFFFFF';
+                }
+                
+                // Style for indicator name (bold, border)
+                if (ws[`A${rowNum}`]) {
+                    ws[`A${rowNum}`].s = {
+                        font: { bold: true },
+                        border: cellBorder
+                    };
+                }
+                
+                // Style for value and target pop (center, border)
+                ['B', 'C'].forEach(col => {
+                    if (ws[`${col}${rowNum}`]) {
+                        ws[`${col}${rowNum}`].s = {
+                            alignment: { horizontal: "center" },
+                            border: cellBorder
+                        };
+                    }
+                });
+                
+                // Style for coverage (colored background)
+                if (ws[`D${rowNum}`]) {
+                    ws[`D${rowNum}`].s = {
+                        font: { bold: true, color: { rgb: fontColor } },
+                        fill: { fgColor: { rgb: bgColor } },
+                        alignment: { horizontal: "center", vertical: "center" },
+                        border: cellBorder
+                    };
+                }
+                
+                // Style for target
+                if (ws[`E${rowNum}`]) {
+                    ws[`E${rowNum}`].s = {
+                        alignment: { horizontal: "center" },
+                        border: cellBorder
+                    };
+                }
+            });
+            
+            // Style legend
+            const legendStartRow = indicators.length + 9;
+            if (ws[`A${legendStartRow}`]) ws[`A${legendStartRow}`].s = { font: { bold: true } };
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'ANC Indicators');
+            
+            // Generate and download
             const orgName = (currentData.orgUnit || 'ANC_Data').replace(/[^a-zA-Z0-9]/g, '_');
-            a.href = url;
-            a.download = `ANC_Indicators_${orgName}_${new Date().toISOString().split('T')[0]}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const fileName = `ANC_Indicators_${orgName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, fileName);
         }
         
         function getStatusText(coverage, indicator) {
@@ -3607,169 +3658,6 @@
             alert('League table calculation in progress...');
             document.getElementById('leagueTableDisplay').classList.remove('hidden');
         }
-
-        // Population Modal Functions
-        function showPopulationModal(facilityName) {
-            document.getElementById('modalFacilityName').textContent = facilityName;
-            document.getElementById('modalPopulationInput').value = '';
-            document.getElementById('modalStartDate').value = '';
-            document.getElementById('modalEndDate').value = '';
-            document.getElementById('modalCalculationPreview').style.display = 'none';
-            
-            // Set default dates (current month for end, 12 months ago for start)
-            const now = new Date();
-            const endMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-            const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-            
-            document.getElementById('modalStartDate').value = startMonth;
-            document.getElementById('modalEndDate').value = endMonth;
-            
-            // Add event listeners for live preview
-            document.getElementById('modalPopulationInput').oninput = updateModalPreview;
-            document.getElementById('modalStartDate').onchange = updateModalPreview;
-            document.getElementById('modalEndDate').onchange = updateModalPreview;
-            
-            // Show modal by adding the 'show' class
-            const modal = document.getElementById('populationModal');
-            modal.classList.add('show');
-            
-            // Focus on input after a brief delay
-            setTimeout(() => {
-                document.getElementById('modalPopulationInput').focus();
-            }, 100);
-        }
-
-        function updateModalPreview() {
-            const annualPop = parseInt(document.getElementById('modalPopulationInput').value) || 0;
-            const startDate = document.getElementById('modalStartDate').value;
-            const endDate = document.getElementById('modalEndDate').value;
-            
-            const previewDiv = document.getElementById('modalCalculationPreview');
-            const previewText = document.getElementById('modalPreviewText');
-            
-            if (annualPop <= 0) {
-                previewDiv.style.display = 'none';
-                return;
-            }
-            
-            let months = 12;
-            let periodLabel = '12 months (full year)';
-            
-            if (startDate && endDate) {
-                const start = new Date(startDate + '-01');
-                const end = new Date(endDate + '-01');
-                months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-                
-                if (months < 1) {
-                    previewText.innerHTML = '<span style="color: red;">⚠️ End date must be after start date</span>';
-                    previewDiv.style.display = 'block';
-                    previewDiv.style.background = '#fef2f2';
-                    return;
-                }
-                
-                periodLabel = `${months} month${months > 1 ? 's' : ''}`;
-            }
-            
-            const monthlyPop = Math.round(annualPop / 12);
-            const periodPop = monthlyPop * months;
-            const periodCatchment = Math.round(periodPop * 0.05);
-            
-            previewText.innerHTML = `
-                Annual Population: <strong>${annualPop.toLocaleString()}</strong><br>
-                Monthly Population: ${monthlyPop.toLocaleString()} (÷ 12)<br>
-                Period: <strong>${periodLabel}</strong><br>
-                Period Population: ${periodPop.toLocaleString()} (× ${months})<br>
-                <span style="font-size: 16px; color: #15803d;">ANC Catchment (5%): <strong>${periodCatchment.toLocaleString()}</strong></span>
-            `;
-            previewDiv.style.display = 'block';
-            previewDiv.style.background = '#f0fdf4';
-        }
-
-        function closePopulationModal() {
-            const modal = document.getElementById('populationModal');
-            modal.classList.remove('show');
-        }
-
-        function submitPopulationModal() {
-            const modalInput = document.getElementById('modalPopulationInput');
-            const annualPopulation = parseInt(modalInput.value);
-            const startDate = document.getElementById('modalStartDate').value;
-            const endDate = document.getElementById('modalEndDate').value;
-            
-            if (!annualPopulation || annualPopulation <= 0) {
-                alert('Please enter a valid annual population number (greater than 0)');
-                modalInput.focus();
-                return;
-            }
-            
-            if (!startDate || !endDate) {
-                alert('Please select both start and end dates');
-                return;
-            }
-            
-            // Calculate months in period
-            const start = new Date(startDate + '-01');
-            const end = new Date(endDate + '-01');
-            const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-            
-            if (months < 1) {
-                alert('End date must be after or equal to start date');
-                return;
-            }
-            
-            // Calculate period catchment
-            // Formula: (Annual Population / 12) × Months × 5%
-            const monthlyPop = Math.round(annualPopulation / 12);
-            const periodPop = monthlyPop * months;
-            ancCatchment = Math.round(periodPop * 0.05);
-            ubosPopulation = annualPopulation;
-            
-            // Store the period info for data fetching
-            window.facilityPeriodInfo = {
-                annualPopulation: annualPopulation,
-                startDate: startDate,
-                endDate: endDate,
-                months: months,
-                periodPopulation: periodPop,
-                ancCatchment: ancCatchment
-            };
-            
-            // Update UI
-            document.getElementById('populationInput').value = annualPopulation;
-            document.getElementById('startDateInput').value = startDate;
-            document.getElementById('endDateInput').value = endDate;
-            document.getElementById('ancCatchment').textContent = ancCatchment.toLocaleString();
-            
-            // Set Period dropdown to "CUSTOM" and show custom date fields
-            const periodSelect = document.getElementById('periodSelect');
-            periodSelect.value = 'CUSTOM';
-            
-            // Show the date input groups
-            document.getElementById('startDateGroup').style.display = 'block';
-            document.getElementById('endDateGroup').style.display = 'block';
-            
-            console.log(`✅ Facility Period Info:`, window.facilityPeriodInfo);
-            
-            // Close modal
-            closePopulationModal();
-            
-            // Show success message
-            alert(`✅ Population & Period Set!\n\n` +
-                  `Annual Population: ${annualPopulation.toLocaleString()}\n` +
-                  `Period: ${months} month${months > 1 ? 's' : ''} (${startDate} to ${endDate})\n` +
-                  `Period Population: ${periodPop.toLocaleString()}\n` +
-                  `ANC Catchment (5%): ${ancCatchment.toLocaleString()}\n\n` +
-                  `Click "Load Data" to view indicators.`);
-        }
-
-        // Close modal when clicking outside
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('populationModal');
-            if (e.target === modal) {
-                closePopulationModal();
-            }
-        });
     </script>
 </body>
 </html>
