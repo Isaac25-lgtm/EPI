@@ -1365,15 +1365,6 @@
             const selectedValue = document.getElementById('comparePeriodSelect')?.value || '';
             return getPeriodFromQuarter(selectedValue);
         }
-            
-            const periods = [];
-            let current = new Date(start);
-            while (current <= end) {
-                periods.push(`${current.getFullYear()}${(current.getMonth() + 1).toString().padStart(2, '0')}`);
-                current.setMonth(current.getMonth() + 1);
-            }
-            return periods.join(';');
-        }
 
         async function runCompareDistricts() {
             const regionId = document.getElementById('compareRegionSelect').value;
