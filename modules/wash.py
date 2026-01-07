@@ -12,7 +12,7 @@ from .core import (
     DHIS2_BASE_URL, DHIS2_TIMEOUT, UBOS_POPULATION,
     get_auth, is_logged_in, login_required, http_session,
     analytics_cache, org_units_cache,
-    get_period_divisor, generate_monthly_periods, clean_district_name
+    get_period_divisor, generate_monthly_periods, generate_quarterly_periods, clean_district_name
 )
 
 # Create Blueprint
@@ -167,12 +167,13 @@ def get_analytics_data():
         return jsonify(cached)
     
     try:
-        # First get the indicator IDs
+        # First get the indicator IDs with more flexible search
         indicators_response = http_session.get(
             f"{DHIS2_BASE_URL}/indicators",
             auth=auth,
             params={
-                'filter': 'displayName:ilike:CHW - proportion of households',
+                'filter': 'displayName:ilike:CHW',
+                'filter': 'displayName:ilike:household',
                 'fields': 'id,displayName,code',
                 'paging': 'false'
             },
@@ -180,14 +181,17 @@ def get_analytics_data():
         )
         
         if indicators_response.status_code != 200:
-            return jsonify({'error': 'Failed to fetch indicators'})
+            logger.error(f"Failed to fetch indicators: {indicators_response.status_code}")
+            return jsonify({'error': 'Failed to fetch indicators', 'status': indicators_response.status_code})
         
         all_indicators = indicators_response.json().get('indicators', [])
+        logger.info(f"Found {len(all_indicators)} CHW household indicators in DHIS2")
         
-        # Map indicators to our config
+        # Map indicators to our config with flexible matching
         indicator_map = {}
         for config in WASH_INDICATORS:
             pattern = config['search_pattern'].lower()
+            # Try exact match first
             for ind in all_indicators:
                 if pattern in ind['displayName'].lower():
                     indicator_map[ind['id']] = {
@@ -195,22 +199,28 @@ def get_analytics_data():
                         'dhis2_id': ind['id'],
                         'dhis2_name': ind['displayName']
                     }
+                    logger.info(f"Matched: {config['name']} -> {ind['displayName']}")
                     break
         
         if not indicator_map:
+            # Return a helpful response showing what indicators ARE available
+            chw_indicators = [ind['displayName'] for ind in all_indicators if 'CHW' in ind['displayName'].upper()]
             return jsonify({
                 'error': 'No WASH indicators found in DHIS2',
-                'tip': 'Check if CHW indicators are available in your DHIS2 instance'
+                'tip': 'The expected CHW household indicators are not available',
+                'available_chw_indicators': chw_indicators[:10],  # Show first 10
+                'total_chw_indicators': len(chw_indicators)
             })
         
         # Build analytics query
         indicator_ids = list(indicator_map.keys())
         dx_dimension = ";".join(indicator_ids)
         
-        # Handle period
+        # Handle period - USE QUARTERLY PERIODS FOR WASH DATA
         if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
             start, end = period.split('-')
-            periods = generate_monthly_periods(start, end)
+            periods = generate_quarterly_periods(start, end)  # QUARTERLY for WASH
+            logger.info(f"Generated quarterly periods: {periods}")
         elif ';' in period:
             periods = period
         else:
@@ -224,6 +234,8 @@ def get_analytics_data():
             ('skipMeta', 'false')
         ]
         
+        logger.info(f"Fetching WASH analytics for {org_unit}, period: {periods}")
+        
         data_response = http_session.get(
             f"{DHIS2_BASE_URL}/analytics",
             auth=auth,
@@ -232,10 +244,12 @@ def get_analytics_data():
         )
         
         if data_response.status_code != 200:
-            logger.error(f"DHIS2 Analytics error: {data_response.status_code}")
+            logger.error(f"DHIS2 Analytics error: {data_response.status_code} - {data_response.text}")
             return jsonify({'error': f'Analytics error: {data_response.status_code}'})
         
         data = data_response.json()
+        rows_returned = len(data.get('rows', []))
+        logger.info(f"DHIS2 returned {rows_returned} data rows for WASH")
         
         # Parse results
         headers = data.get('headers', [])
@@ -270,6 +284,8 @@ def get_analytics_data():
             total = indicator_values.get(ind_id, 0)
             avg_value = round(total / count, 1) if count > 0 else None
             
+            logger.info(f"{config['name']}: {avg_value}% (from {count} periods)")
+            
             results.append({
                 'id': ind_id,
                 'name': config['name'],
@@ -302,7 +318,7 @@ def get_analytics_data():
             'period': period,
             'indicators': results,
             'indicatorsFound': len(indicator_map),
-            'rowsReturned': len(data.get('rows', [])),
+            'rowsReturned': rows_returned,
             '_cached': False
         }
         
@@ -312,7 +328,7 @@ def get_analytics_data():
     except requests.exceptions.Timeout:
         return jsonify({'error': 'Request timeout - try a smaller time period'})
     except Exception as e:
-        logger.error(f"Error in get_analytics_data: {e}")
+        logger.error(f"Error in get_analytics_data: {e}", exc_info=True)
         return jsonify({'error': str(e)})
 
 
@@ -363,12 +379,13 @@ def get_compare_data():
         indicator_ids = list(indicator_map.keys())
         dx_dimension = ";".join(indicator_ids)
         
-        # Handle period
+        # Handle period - USE QUARTERLY PERIODS FOR WASH DATA
         if ';' in period:
             periods = period
         elif '-' in period and not period.startswith('LAST'):
             start, end = period.split('-')
-            periods = generate_monthly_periods(start, end)
+            periods = generate_quarterly_periods(start, end)  # QUARTERLY for WASH
+            logger.info(f"Compare: Generated quarterly periods: {periods}")
         else:
             periods = period
         

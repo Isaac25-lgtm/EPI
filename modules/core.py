@@ -238,6 +238,32 @@ def generate_monthly_periods(start, end):
     return ";".join(periods)
 
 
+def generate_quarterly_periods(start, end):
+    """
+    Generate quarterly period string from date range (DHIS2 format: 2025Q1, 2025Q2, etc.)
+    start/end format: YYYYMM
+    Quarters: Q1=Jan-Mar (1-3), Q2=Apr-Jun (4-6), Q3=Jul-Sep (7-9), Q4=Oct-Dec (10-12)
+    """
+    start_year, start_month = int(start[:4]), int(start[4:6])
+    end_year, end_month = int(end[:4]), int(end[4:6])
+    
+    # Convert months to quarters
+    start_quarter = (start_month - 1) // 3 + 1
+    end_quarter = (end_month - 1) // 3 + 1
+    
+    periods = []
+    y, q = start_year, start_quarter
+    
+    while y < end_year or (y == end_year and q <= end_quarter):
+        periods.append(f"{y}Q{q}")
+        q += 1
+        if q > 4:
+            q = 1
+            y += 1
+    
+    return ";".join(periods)
+
+
 def detect_outliers_zscore(values, periods=None, threshold=2):
     """Detect outliers using z-score method"""
     if len(values) < 3: return []
