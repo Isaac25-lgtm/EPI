@@ -964,8 +964,17 @@
 
         // Convert quarter value (2025Q1) to period string for backend
         function getPeriodFromQuarter(quarterValue) {
+            console.log('getPeriodFromQuarter input:', quarterValue);
+            if (!quarterValue) {
+                console.warn('No quarter value provided, using LAST_12_MONTHS');
+                return 'LAST_12_MONTHS';
+            }
+            
             const match = quarterValue.match(/(\d{4})Q(\d)/);
-            if (!match) return 'LAST_12_MONTHS';
+            if (!match) {
+                console.warn('Quarter value does not match pattern:', quarterValue);
+                return 'LAST_12_MONTHS';
+            }
             
             const year = match[1];
             const quarter = parseInt(match[2]);
@@ -976,12 +985,15 @@
             const startMonth = quarterStartMonth[quarter];
             const endMonth = quarterEndMonth[quarter];
             
-            return `${year}${startMonth}-${year}${endMonth}`;
+            const period = `${year}${startMonth}-${year}${endMonth}`;
+            console.log('Generated period:', period);
+            return period;
         }
 
         // Initialize period dropdowns with quarters list
         function initPeriodYears() {
             const quarters = generateQuartersList();
+            console.log('Generated quarters list:', quarters);
             
             // Populate Analytics period dropdown
             const periodSelect = document.getElementById('periodSelect');
@@ -989,8 +1001,11 @@
                 periodSelect.innerHTML = quarters.map(q => 
                     `<option value="${q.value}">${q.label}</option>`
                 ).join('');
-                // Default: Most recent complete quarter (2nd in list, index 1)
+                // Default: Most recent quarter
                 periodSelect.selectedIndex = 0;
+                console.log('Period select initialized with', quarters.length, 'options');
+            } else {
+                console.error('periodSelect element not found!');
             }
             
             // Populate Compare period dropdown
@@ -1000,6 +1015,9 @@
                     `<option value="${q.value}">${q.label}</option>`
                 ).join('');
                 comparePeriodSelect.selectedIndex = 0;
+                console.log('Compare period select initialized');
+            } else {
+                console.error('comparePeriodSelect element not found!');
             }
             
             updatePeriodDisplay();
@@ -1189,8 +1207,15 @@
 
         // ============ ANALYTICS TAB ============
         async function loadAnalytics() {
+            if (!selectedOrgUnit.id) {
+                showToast('Please select a location first', 'error');
+                return;
+            }
+            
             const orgUnit = selectedOrgUnit.id;
             const period = getSelectedPeriod();
+            
+            console.log('Loading WASH analytics for:', orgUnit, 'period:', period);
             
             document.getElementById('analyticsResults').classList.add('hidden');
             document.getElementById('loadingSpinner').classList.remove('hidden');
@@ -1219,8 +1244,17 @@
         }
 
         function renderAnalyticsResults(data) {
+            console.log('Rendering WASH results:', data);
+            
             // Update title
             document.getElementById('tableTitle').textContent = `📊 WASH Indicators - ${data.orgUnit || 'Uganda'}`;
+            
+            // Check if indicators exist
+            if (!data.indicators || data.indicators.length === 0) {
+                document.getElementById('summaryCards').innerHTML = '<div style="color: #ef4444; padding: 20px;">No WASH indicators found for this location/period.</div>';
+                document.getElementById('analyticsTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">No data available</td></tr>';
+                return;
+            }
             
             // Render summary cards
             const summaryContainer = document.getElementById('summaryCards');
@@ -1369,6 +1403,7 @@
                 
                 document.getElementById('compareTableTitle').textContent = 'Districts in Region - WASH Comparison';
                 renderCompareTable(units);
+                document.getElementById('compareTableDisplay').classList.remove('hidden');
                 
             } catch (e) {
                 console.error('Compare error:', e);
@@ -1442,6 +1477,7 @@
                 
                 document.getElementById('compareTableTitle').textContent = `Facilities in ${districtName} - WASH Comparison`;
                 renderCompareTable(units);
+                document.getElementById('compareTableDisplay').classList.remove('hidden');
                 
             } catch (e) {
                 console.error('Compare error:', e);
