@@ -61,9 +61,11 @@ ANC_INDICATORS = [
     {'code': '105-AN01b', 'name': 'ANC 1st Visit 1st Trimester', 'key': 'anc1stTrimester'},
     {'code': '105-AN02', 'name': 'ANC 4th Visit', 'key': 'anc4'},
     {'code': '105-AN03', 'name': 'ANC 8+ Visits', 'key': 'anc8'},
+    {'code': '105-AN04', 'name': 'Total ANC Contacts/Visits', 'key': 'totalANCContacts'},
     {'code': '105-AN06c', 'name': 'IPT3', 'key': 'ipt3'},
     {'code': '105-AN08', 'name': 'Hb Test', 'key': 'hbTest'},
     {'code': '105-AN11', 'name': 'LLIN at ANC 1', 'key': 'llin'},
+    {'code': '105-AN12a', 'name': 'Obstetric Ultrasound Scan', 'key': 'ultrasoundScan'},
     {'code': '105-AN21', 'name': 'Iron/Folic Acid', 'key': 'ironFolic'},
 ]
 
@@ -85,6 +87,74 @@ INTRAPARTUM_INDICATORS = {
 # Cache for data element IDs
 _data_element_cache = {}
 _intrapartum_cache = {}
+
+
+def _normalize_text(value):
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
+
+def _match_data_element_id(de_ids: dict, patterns: list):
+    """
+    Match a DHIS2 data element id from a dict of {code|name|displayName: id}.
+
+    Why: DHIS2 often has blank `code`, so the best identifier (e.g. "105-AN12a")
+    may only appear inside `name` / `displayName`. The original logic required
+    exact-key matches, which misses those cases and returns zeros.
+
+    Returns: (elem_id, matched_key) or (None, None)
+    """
+    if not de_ids or not patterns:
+        return None, None
+
+    # 1) Exact match first (fast path)
+    for pattern in patterns:
+        if pattern in de_ids:
+            return de_ids[pattern], pattern
+
+    # 2) Case-insensitive exact match
+    norm_to_key = {_normalize_text(k): k for k in de_ids.keys()}
+    for pattern in patterns:
+        p_norm = _normalize_text(pattern)
+        if p_norm in norm_to_key:
+            k = norm_to_key[p_norm]
+            return de_ids[k], k
+
+    # 3) Contains / startswith match (prefer codes like "105-AN12a")
+    keys = list(de_ids.keys())
+    keys_norm = [(_normalize_text(k), k) for k in keys]
+
+    for pattern in patterns:
+        p_norm = _normalize_text(pattern)
+        if not p_norm:
+            continue
+
+        is_code_like = "105-" in p_norm or p_norm.startswith("an") or p_norm.startswith("ma")
+
+        # For short non-code tokens like "obstetric", avoid overly-broad matches
+        if not is_code_like and len(p_norm) < 8:
+            continue
+
+        candidates = []
+        for k_norm, k_raw in keys_norm:
+            if p_norm in k_norm:
+                candidates.append(k_raw)
+
+        if not candidates:
+            continue
+
+        # Prefer keys that start with the pattern (common for "105-AN12a.")
+        start_candidates = [k for k in candidates if _normalize_text(k).startswith(p_norm)]
+        chosen = None
+        if start_candidates:
+            chosen = sorted(start_candidates, key=lambda x: len(str(x)))[0]
+        else:
+            chosen = sorted(candidates, key=lambda x: len(str(x)))[0]
+
+        return de_ids[chosen], chosen
+
+    return None, None
 
 
 def clean_district_name(name):
@@ -264,12 +334,16 @@ def get_anc_data():
                      '105-AN02. ANC 4th Visit for women'],
             'anc8': ['105-AN03', '105-AN03.', 'ANC 8', 
                      '105-AN03. ANC 8 contacts/ visits for Women'],
+            'totalANCContacts': ['105-AN04', '105-AN04.', 'Total ANC contacts',
+                                 '105-AN04. Total ANC contacts/ visits for women'],
             'ipt3': ['105-AN06c', '105-AN06c.', 'IPT3',
                      '105-AN06c. No. of pregnant women who received IPT3'],
             'hbTest': ['105-AN08', '105-AN08.', 'Hb Test', 'Anaemia',
                        '105-AN08. No. of pregnant women who were tested for Anaemia'],
             'llin': ['105-AN11', '105-AN11.', 'LLIN',
                      '105-AN11. Pregnant Women receiving LLINs at ANC 1st visit'],
+            'ultrasoundScan': ['105-AN12a', '105-AN12a.', 'ultrasound', 'ultra sound', 'Obstetric',
+                               '105-AN12a. No. of pregnant women who received obstetric-ultra sound scan'],
             'ironFolic': ['105-AN21', '105-AN21_2019', '105-AN21a', 'Iron/Folic',
                           '105-AN21_2019 Pregnant Women receiving atleast 30 tablets of Iron/Folic Acid'],
             # Teenage pregnancy - under 15 years
@@ -287,14 +361,13 @@ def get_anc_data():
         found_elements = {}
         
         for key, patterns in element_patterns.items():
-            for pattern in patterns:
-                if pattern in de_ids:
-                    elem_id = de_ids[pattern]
-                    if elem_id not in ids_to_fetch:
-                        ids_to_fetch.append(elem_id)
-                        code_to_key[elem_id] = key
-                        found_elements[key] = pattern
-                    break
+            elem_id, matched_pattern = _match_data_element_id(de_ids, patterns)
+            if not elem_id:
+                continue
+            if elem_id not in ids_to_fetch:
+                ids_to_fetch.append(elem_id)
+                code_to_key[elem_id] = key
+                found_elements[key] = matched_pattern
         
         logger.info(f"Found elements: {found_elements}")
         
@@ -358,9 +431,11 @@ def get_anc_data():
             'anc1stTrimester': 0,
             'anc4': 0,
             'anc8': 0,
+            'totalANCContacts': 0,
             'ipt3': 0,
             'hbTest': 0,
             'llin': 0,
+            'ultrasoundScan': 0,
             'ironFolic': 0,
             'teenUnder15': 0,
             'teen15_19': 0,
@@ -434,6 +509,7 @@ def get_anc_data():
         
         # Calculate indicators
         # (anc1 already defined above)
+        total_anc_contacts = raw_values['totalANCContacts']
         
         # Population-based indicators (use ANC catchment)
         anc1_coverage = round((anc1 / anc_catchment * 100), 1) if anc_catchment > 0 else 0
@@ -447,6 +523,9 @@ def get_anc_data():
         llin_rate = round((raw_values['llin'] / anc1 * 100), 1) if anc1 > 0 else 0
         iron_folic_rate = round((raw_values['ironFolic'] / anc1 * 100), 1) if anc1 > 0 else 0
         teen_preg_rate = round(((raw_values['teenUnder15'] + raw_values['teen15_19']) / anc1 * 100), 1) if anc1 > 0 else 0
+        
+        # Ultrasound scan rate (use Total ANC Contacts as denominator per specification)
+        ultrasound_rate = round((raw_values['ultrasoundScan'] / total_anc_contacts * 100), 1) if total_anc_contacts > 0 else 0
         
         result = {
             # Context
@@ -468,6 +547,7 @@ def get_anc_data():
             'ipt3Coverage': ipt3_coverage,
             'hbTestRate': hb_test_rate,
             'llinRate': llin_rate,
+            'ultrasoundRate': ultrasound_rate,
             'ironFolicRate': iron_folic_rate,
             'teenPregRate': teen_preg_rate,
             

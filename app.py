@@ -463,6 +463,81 @@ def search_org_units():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+
+@app.route('/api/org-units-descendants')
+def get_org_units_descendants():
+    """
+    Fetch descendant org units under a parent, optionally filtered by level.
+
+    Use-case: list all facilities (level 6) within a selected district (level 3),
+    without manually drilling down county/sub-county.
+    """
+    auth = get_auth()
+    if not auth:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    parent_id = request.args.get('parent')
+    level = request.args.get('level', type=int)  # e.g. 6 for facilities
+
+    if not parent_id:
+        return jsonify({'error': 'parent is required'}), 400
+
+    cache_key = org_units_cache._make_key('org_units_descendants', parent_id, level or '')
+    cached = org_units_cache.get(cache_key)
+    if cached:
+        return jsonify(cached)
+
+    try:
+        # Get parent path first
+        parent_resp = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{parent_id}",
+            auth=auth,
+            params={'fields': 'id,displayName,path,level'},
+            timeout=30
+        )
+        if parent_resp.status_code != 200:
+            return jsonify({'error': 'Failed to fetch parent org unit', 'status': parent_resp.status_code}), 502
+
+        parent = parent_resp.json()
+        parent_path = parent.get('path')
+        if not parent_path:
+            return jsonify({'error': 'Parent org unit has no path (unexpected)', 'parent': parent}), 502
+
+        params = {
+            'fields': 'id,displayName,level,parent[id,displayName]',
+            'paging': 'false',
+        }
+
+        # DHIS2 filter syntax supports multiple filter params.
+        # Example: filter=path:like:/...&filter=level:eq:6
+        filters = [f"path:like:{parent_path}"]
+        if level:
+            filters.append(f"level:eq:{level}")
+        params['filter'] = filters
+
+        resp = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits",
+            auth=auth,
+            params=params,
+            timeout=60
+        )
+
+        if resp.status_code != 200:
+            return jsonify({'error': 'Failed to fetch descendants', 'status': resp.status_code, 'details': resp.text[:200]}), 502
+
+        data = resp.json()
+        # Normalise return shape for frontend consumption
+        result = {
+            'parent': {'id': parent.get('id'), 'displayName': parent.get('displayName'), 'level': parent.get('level')},
+            'organisationUnits': data.get('organisationUnits', []),
+        }
+        org_units_cache.set(cache_key, result, ttl=3600)
+        return jsonify(result)
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Connection timeout - try again'}), 504
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 def fetch_data_elements_cached(auth, pattern='105-CL'):
     """Fetch data elements with caching"""
     cache_key = data_elements_cache._make_key('data_elements', pattern)

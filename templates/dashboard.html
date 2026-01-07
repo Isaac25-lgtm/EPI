@@ -198,6 +198,11 @@
             display: none;
         }
 
+        /* Global hidden class for any element */
+        .hidden {
+            display: none !important;
+        }
+
         .editable-formula.editing {
             border-left-color: #10b981;
             background: #f0fdf4;
@@ -828,6 +833,25 @@
             color: #e74c3c;
         }
 
+        /* Compare Table Color Coding (same as Maternal) */
+        .cell-green {
+            background-color: #10b981 !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
+        .cell-yellow {
+            background-color: #fbbf24 !important;
+            color: #111827 !important;
+            font-weight: 700;
+        }
+
+        .cell-red {
+            background-color: #ef4444 !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
         /* RED Categorization Tool Styles */
         .red-table {
             font-size: 12px;
@@ -1212,6 +1236,55 @@
             top: 0;
             color: var(--text-primary);
             border-bottom: 2px solid var(--border-color);
+        }
+
+        /* Compare Tables Styling (same as Maternal) */
+        .compare-styled-table {
+            border: 2px solid #1f2937;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .compare-styled-table thead th {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            font-weight: 600;
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #4b5563;
+            font-size: 12px;
+        }
+
+        .compare-styled-table tbody td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            font-size: 12px;
+        }
+
+        .compare-styled-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .compare-styled-table tbody tr:hover {
+            background-color: #f3f4f6;
+        }
+
+        [data-theme="dark"] .compare-styled-table thead th {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d4a6f 100%);
+            border-color: #4b5563;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody td {
+            border-color: #374151;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody tr:nth-child(even) {
+            background-color: #1f2937;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody tr:hover {
+            background-color: #374151;
         }
 
         .badge {
@@ -2801,7 +2874,8 @@
             <h1>💉 EPI - Child Immunization Dashboard</h1>
         </div>
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchEpiTab('analytics')">📈 Analytics</button>
+            <button class="nav-tab active" onclick="switchEpiTab('analytics')">📊 Facility/District performance</button>
+            <button class="nav-tab" onclick="switchEpiTab('compare')">🏆 Compare Facility/District performance</button>
             <button class="nav-tab" onclick="switchEpiTab('analysis')">🔬 Show Calculation</button>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -3594,6 +3668,169 @@
             </div>
         </div>
 
+        <!-- Compare Tab Content -->
+        <div id="compareTab" class="tab-content hidden">
+            <div class="analysis-section">
+                <h2 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                    🏆 Compare Facility/District performance
+                </h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    Compare EPI performance across districts in a region, or facilities in a district.
+                </p>
+
+                <div style="border: 2px solid #000; border-radius: 12px; padding: 18px;">
+                    <div style="display:flex; flex-direction: column; gap: 14px;">
+
+                        <!-- Compare Mode -->
+                        <div style="display:flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                            <label style="font-weight: 700;">Compare type:</label>
+                            <label style="display:flex; gap:6px; align-items:center; font-weight: 600;">
+                                <input type="radio" name="compareMode" value="districts" checked onchange="onCompareModeChange()">
+                                Compare Districts in a Region
+                            </label>
+                            <label style="display:flex; gap:6px; align-items:center; font-weight: 600;">
+                                <input type="radio" name="compareMode" value="facilities" onchange="onCompareModeChange()">
+                                Compare Facilities in a District
+                            </label>
+                        </div>
+
+                        <!-- Period for Comparison (same as Maternal) -->
+                        <div style="border: 1px solid var(--border-color); padding: 14px; border-radius: 10px;">
+                            <h4 style="margin-bottom: 10px;">📅 Period for Comparison</h4>
+                            <div style="display:flex; gap: 14px; flex-wrap: wrap; align-items: end;">
+                                <div style="flex: 1; min-width: 180px;">
+                                    <label style="font-size: 13px; font-weight: 600;">Start Month</label>
+                                    <div style="display:flex; gap: 8px;">
+                                        <select id="compareStartYear" style="flex: 1;"></select>
+                                        <select id="compareStartMonth" style="flex: 1;">
+                                            <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                                            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                                            <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                                            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="flex: 1; min-width: 180px;">
+                                    <label style="font-size: 13px; font-weight: 600;">End Month</label>
+                                    <div style="display:flex; gap: 8px;">
+                                        <select id="compareEndYear" style="flex: 1;"></select>
+                                        <select id="compareEndMonth" style="flex: 1;">
+                                            <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                                            <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                                            <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                                            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Districts panel -->
+                        <div id="compareDistrictsPanel">
+                            <div class="filter-group">
+                                <label>Select Region</label>
+                                <select id="compareRegionSelect">
+                                    <option value="">⏳ Loading...</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="runCompareDistricts()">Compare Districts</button>
+                        </div>
+
+                        <!-- Facilities panel -->
+                        <div id="compareFacilitiesPanel" class="hidden">
+                            <div class="filter-group">
+                                <label>Select District</label>
+                                <select id="compareDistrictSelect">
+                                    <option value="">⏳ Loading...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Clear Instruction Box -->
+                            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 12px 0;">
+                                <div style="display: flex; align-items: start; gap: 10px;">
+                                    <span style="font-size: 20px;">💡</span>
+                                    <div>
+                                        <strong style="color: #92400e; font-size: 14px;">How to Calculate Facility Coverage:</strong>
+                                        <ol style="margin: 8px 0 0 0; padding-left: 20px; color: #78350f; font-size: 13px; line-height: 1.6;">
+                                            <li>Click <strong>"Load Facilities"</strong> - table loads with dropout rates and quality indicators</li>
+                                            <li><strong>Fill annual population</strong> for each facility in the "Annual Pop." column</li>
+                                            <li>Click <strong>"Update Coverage"</strong> to calculate coverage based on populations</li>
+                                        </ol>
+                                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #92400e; font-style: italic;">
+                                            Coverage requires catchment population; dropout rates (%) are calculated directly from DHIS2 data.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn btn-primary" onclick="runCompareFacilities()">Load Facilities</button>
+                                <button class="btn btn-secondary" onclick="applyFacilityPopulations()">Update Coverage (from populations)</button>
+                            </div>
+                        </div>
+
+                        <!-- Tables -->
+                        <div id="compareTableDisplay" class="hidden" style="margin-top: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h3 id="compareTableTitle">Comparison</h3>
+                                <button onclick="downloadCompareExcel()" class="btn-download" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                    📥 Download Excel (Color-coded)
+                                </button>
+                            </div>
+                            
+                            <!-- Coverage Indicators Table -->
+                            <h4 style="margin: 0 0 12px 0; color: #11998e;">💉 Coverage Indicators</h4>
+                            <div class="table-container">
+                                <table id="compareTable" class="compare-styled-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Org Unit</th>
+                                            <th class="facility-only hidden">Annual Pop.</th>
+                                            <th class="facility-only hidden">Target (period)</th>
+                                            <th>BCG (%)</th>
+                                            <th>OPV3 (%)</th>
+                                            <th>DPT1 (%)</th>
+                                            <th>DPT3 (%)</th>
+                                            <th>PCV3 (%)</th>
+                                            <th>MR1 (%)</th>
+                                            <th>MR2 (%)</th>
+                                            <th>Fully Imm 1yr (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="compareTableBody">
+                                        <!-- rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Dropout Indicators Table -->
+                            <h4 style="margin: 24px 0 12px 0; color: #6366f1;">📉 Dropout & Quality Indicators</h4>
+                            <div class="table-container">
+                                <table id="compareDropoutTable" class="compare-styled-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Org Unit</th>
+                                            <th>DPT1→DPT3 (%)</th>
+                                            <th>BCG→MR1 (%)</th>
+                                            <th>Polio1→Polio3 (%)</th>
+                                            <th>PCV1→PCV3 (%)</th>
+                                            <th>Malaria1→4 (%)</th>
+                                            <th>Zero Dose</th>
+                                            <th>Under Immunized</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="compareDropoutTableBody">
+                                        <!-- rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
             // Register Chart.js datalabels plugin
             Chart.register(ChartDataLabels);
@@ -3753,15 +3990,22 @@
                 document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
                 event.target.classList.add('active');
                 
+                // Hide all sections first
+                document.getElementById('analyticsSection').style.display = 'none';
+                document.getElementById('analysisTab').classList.add('hidden');
+                document.getElementById('compareTab').classList.add('hidden');
+                
                 // Toggle sections
                 if (tab === 'analytics') {
                     document.getElementById('analyticsSection').style.display = 'block';
-                    document.getElementById('analysisTab').classList.add('hidden');
                     document.querySelector('.filters-card').style.display = 'block';
                 } else if (tab === 'analysis') {
-                    document.getElementById('analyticsSection').style.display = 'none';
                     document.getElementById('analysisTab').classList.remove('hidden');
                     document.querySelector('.filters-card').style.display = 'none';
+                } else if (tab === 'compare') {
+                    document.getElementById('compareTab').classList.remove('hidden');
+                    document.querySelector('.filters-card').style.display = 'none';
+                    initCompareOnce();
                 }
             }
 
@@ -8233,6 +8477,707 @@
                 const filename = `Dropout_Analysis_${selectedOrgUnit.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
                 XLSX.writeFile(wb, filename);
                 toastSuccess('Dropout Excel downloaded!');
+            }
+
+            // =========================
+            // 🏆 Compare (Districts / Facilities) - same setup as Maternal
+            // =========================
+            let _compareInitialized = false;
+            let compareContext = {
+                mode: 'districts', // 'districts' | 'facilities'
+                units: [],         // [{id, displayName, level}]
+                resultsById: {},   // { [id]: epiResult }
+                facilityPopulations: {} // { [facilityId]: annualPopulation }
+            };
+
+            function initCompareOnce() {
+                if (_compareInitialized) return;
+                initializeCompareYearDropdowns();
+                loadCompareDropdowns();
+                onCompareModeChange();
+                _compareInitialized = true;
+            }
+
+            function initializeCompareYearDropdowns() {
+                const year = new Date().getFullYear();
+                const month = new Date().getMonth() + 1;
+                const startYearSel = document.getElementById('compareStartYear');
+                const endYearSel = document.getElementById('compareEndYear');
+                if (!startYearSel || !endYearSel) return;
+
+                startYearSel.innerHTML = '';
+                endYearSel.innerHTML = '';
+                for (let y = year; y >= 2015; y--) {
+                    startYearSel.innerHTML += `<option value="${y}">${y}</option>`;
+                    endYearSel.innerHTML += `<option value="${y}">${y}</option>`;
+                }
+
+                document.getElementById('compareEndYear').value = String(year);
+                document.getElementById('compareEndMonth').value = String(month).padStart(2, '0');
+                const startMonth = month === 1 ? 12 : month - 1;
+                const startYear = month === 1 ? year - 1 : year;
+                document.getElementById('compareStartYear').value = String(startYear);
+                document.getElementById('compareStartMonth').value = String(startMonth).padStart(2, '0');
+            }
+
+            function onCompareModeChange() {
+                const selected = document.querySelector('input[name="compareMode"]:checked')?.value || 'districts';
+                compareContext.mode = selected;
+                document.getElementById('compareDistrictsPanel').classList.toggle('hidden', selected !== 'districts');
+                document.getElementById('compareFacilitiesPanel').classList.toggle('hidden', selected !== 'facilities');
+
+                document.querySelectorAll('.facility-only').forEach(el => {
+                    el.classList.toggle('hidden', selected !== 'facilities');
+                });
+
+                document.getElementById('compareTableDisplay').classList.add('hidden');
+                document.getElementById('compareTableBody').innerHTML = '';
+                compareContext.resultsById = {};
+            }
+
+            function getCompareSelectedMonths() {
+                const startY = parseInt(document.getElementById('compareStartYear')?.value);
+                const startM = parseInt(document.getElementById('compareStartMonth')?.value);
+                const endY = parseInt(document.getElementById('compareEndYear')?.value);
+                const endM = parseInt(document.getElementById('compareEndMonth')?.value);
+                if (!startY || !startM || !endY || !endM) return 12;
+                const months = (endY - startY) * 12 + (endM - startM) + 1;
+                return months > 0 ? months : 1;
+            }
+
+            function getComparisonPeriodOrAlert() {
+                const startY = document.getElementById('compareStartYear')?.value;
+                const startM = document.getElementById('compareStartMonth')?.value;
+                const endY = document.getElementById('compareEndYear')?.value;
+                const endM = document.getElementById('compareEndMonth')?.value;
+
+                if (!startY || !startM || !endY || !endM) {
+                    alert('Please select Start Month and End Month in the Compare tab (period section).');
+                    return null;
+                }
+
+                const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
+                const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
+                if (start > end) {
+                    alert('Start date must be before or equal to end date.');
+                    return null;
+                }
+
+                const periods = [];
+                let current = new Date(start);
+                while (current <= end) {
+                    const year = current.getFullYear();
+                    const month = String(current.getMonth() + 1).padStart(2, '0');
+                    periods.push(`${year}${month}`);
+                    current.setMonth(current.getMonth() + 1);
+                }
+                return periods.join(';');
+            }
+
+            function computeTargetPopForPeriod(annualPop, targetPct = 4.3) {
+                const months = getCompareSelectedMonths();
+                if (!annualPop || annualPop <= 0) return 0;
+                return Math.round((annualPop * (targetPct / 100)) * (months / 12));
+            }
+
+            async function loadCompareDropdowns() {
+                const compareRegionSel = document.getElementById('compareRegionSelect');
+                const compareDistrictSel = document.getElementById('compareDistrictSelect');
+
+                try {
+                    const top = await fetch('/api/org-units').then(r => r.json());
+                    const countryId = (top.organisationUnits || [])[0]?.id;
+                    if (!countryId) throw new Error('No top level org unit');
+                    const regionsData = await fetch(`/api/org-units?parent=${countryId}`).then(r => r.json());
+                    const regions = (regionsData.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    compareRegionSel.innerHTML = `<option value="">-- Select Region (${regions.length}) --</option>` +
+                        regions.map(u => `<option value="${u.id}">${u.displayName}</option>`).join('');
+                } catch (e) {
+                    compareRegionSel.innerHTML = '<option value="">Error loading regions</option>';
+                }
+
+                const districtNames = Object.keys(ubosPopulation || {}).sort((a, b) => a.localeCompare(b));
+                compareDistrictSel.innerHTML = `<option value="">-- Select District (search list) --</option>` +
+                    districtNames.map(name => `<option value="${name}">${name}</option>`).join('');
+            }
+
+            async function resolveDistrictIdByName(districtName) {
+                const q = (districtName || '').trim();
+                if (!q) return null;
+                const data = await fetch(`/api/search-org-units?query=${encodeURIComponent(q)}`).then(r => r.json());
+                const units = data.organisationUnits || [];
+                const target = q.toLowerCase();
+                const district = units.find(u => (u.level === 3) && (u.displayName || '').toLowerCase() === target)
+                    || units.find(u => (u.level === 3) && (u.displayName || '').toLowerCase().includes(target))
+                    || units.find(u => (u.level === 3));
+                return district ? { id: district.id, displayName: district.displayName, level: district.level } : null;
+            }
+
+            function getEpiCompareSelectedMonths() {
+                const startY = parseInt(document.getElementById('compareStartYear')?.value);
+                const startM = parseInt(document.getElementById('compareStartMonth')?.value);
+                const endY = parseInt(document.getElementById('compareEndYear')?.value);
+                const endM = parseInt(document.getElementById('compareEndMonth')?.value);
+                if (!startY || !startM || !endY || !endM) return 12;
+                const months = (endY - startY) * 12 + (endM - startM) + 1;
+                return months > 0 ? months : 1;
+            }
+
+            function computeTargetPopForPeriod(annualPop, targetPct) {
+                const months = getEpiCompareSelectedMonths();
+                if (!annualPop || annualPop <= 0) return 0;
+                const monthlyPop = annualPop / 12;
+                const periodPop = monthlyPop * months;
+                return Math.round(periodPop * (targetPct / 100));
+            }
+
+            async function fetchEpiForUnit(orgUnitId, period, customPopulation, districtName) {
+                let url = `/epi/api/analytics-data?orgUnit=${orgUnitId}&period=${encodeURIComponent(period)}`;
+                if (districtName) url += `&districtName=${encodeURIComponent(districtName)}`;
+                if (customPopulation && customPopulation > 0) url += `&customPopulation=${customPopulation}`;
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json?.error) return { _error: json.error };
+
+                const indicators = json.indicators || [];
+                const find = (code) => indicators.find(i => i.code === code);
+                
+                // Get doses for dropout calculations
+                const bcgDoses = find('105-CL01')?.doses || 0;
+                const dpt1Doses = find('105-CL10')?.doses || 0;
+                const dpt3Doses = find('105-CL12')?.doses || 0;
+                const opv1Doses = find('105-CL05')?.doses || 0;
+                const opv3Doses = find('105-CL07')?.doses || 0;
+                const pcv1Doses = find('105-CL13')?.doses || 0;  // Fixed: PCV1 is 105-CL13, not 105-CL15
+                const pcv3Doses = find('105-CL15')?.doses || 0;  // PCV3 is 105-CL15
+                const mr1Doses = find('105-CL23')?.doses || 0;
+                const malaria1Doses = find('105-CL19')?.doses || 0;  // Fixed: Malaria1 is 105-CL19
+                const malaria4Doses = find('105-CL26')?.doses || 0;  // Fixed: Malaria4 is 105-CL26
+                
+                // Calculate dropouts (lower is better, negative means improvement)
+                const calcDropout = (first, last) => first > 0 ? ((first - last) / first) * 100 : null;
+                
+                // Under immunized = DPT1 but no DPT3
+                const underImmunized = dpt1Doses > 0 ? dpt1Doses - dpt3Doses : null;
+
+                // Debug log for troubleshooting
+                if (indicators.length === 0) {
+                    console.warn(`⚠️ No EPI data for ${districtName || orgUnitId} in period ${period}`);
+                }
+
+                return {
+                    // Store population for reference
+                    population: json.population || 0,
+                    hasData: indicators.length > 0,
+                    
+                    // Coverage indicators
+                    bcgCoverage: find('105-CL01')?.coverage ?? null,
+                    opv3Coverage: find('105-CL07')?.coverage ?? null,
+                    dpt1Coverage: find('105-CL10')?.coverage ?? null,
+                    dpt3Coverage: find('105-CL12')?.coverage ?? null,
+                    pcv3Coverage: find('105-CL15')?.coverage ?? null,
+                    mr1Coverage: find('105-CL23')?.coverage ?? null,
+                    mr2Coverage: find('105-CL27')?.coverage ?? null,
+                    fic1yCoverage: find('105-CL24')?.coverage ?? null,
+                    
+                    // Dropout indicators
+                    dpt1Dpt3Dropout: calcDropout(dpt1Doses, dpt3Doses),
+                    bcgMr1Dropout: calcDropout(bcgDoses, mr1Doses),
+                    polio1Polio3Dropout: calcDropout(opv1Doses, opv3Doses),
+                    pcv1Pcv3Dropout: calcDropout(pcv1Doses, pcv3Doses),
+                    malaria1Malaria4Dropout: calcDropout(malaria1Doses, malaria4Doses),
+                    
+                    // Quality metrics
+                    underImmunized: underImmunized
+                };
+            }
+
+            async function mapWithConcurrency(items, limit, fn) {
+                const results = new Array(items.length);
+                let idx = 0;
+                const workers = new Array(Math.min(limit, items.length)).fill(null).map(async () => {
+                    while (idx < items.length) {
+                        const currentIndex = idx++;
+                        results[currentIndex] = await fn(items[currentIndex], currentIndex);
+                    }
+                });
+                await Promise.all(workers);
+                return results;
+            }
+
+            function getEpiCellClass(value, inverse = false) {
+                const v = Number(value);
+                if (!Number.isFinite(v)) return '';
+                if (inverse) {
+                    if (v <= 10) return 'cell-green';
+                    if (v <= 20) return 'cell-yellow';
+                    return 'cell-red';
+                }
+                if (v >= 90) return 'cell-green';
+                if (v >= 80) return 'cell-yellow';
+                return 'cell-red';
+            }
+
+            function renderCompareTable(units, mode) {
+                const coverageTbody = document.getElementById('compareTableBody');
+                const dropoutTbody = document.getElementById('compareDropoutTableBody');
+                coverageTbody.innerHTML = '';
+                dropoutTbody.innerHTML = '';
+
+                // Track how many units have data
+                let unitsWithData = 0;
+
+                units.forEach((u) => {
+                    const data = compareContext.resultsById[u.id] || {};
+                    const isFacility = (mode === 'facilities');
+                    const annualPop = compareContext.facilityPopulations[u.id] || 0;
+                    const targetPop = isFacility ? computeTargetPopForPeriod(annualPop, 4.3) : 0;
+                    const missingFacilityPop = isFacility && (!annualPop || annualPop <= 0);
+                    const hasData = data.hasData !== false && (
+                        data.bcgCoverage !== null || data.dpt3Coverage !== null || data.mr1Coverage !== null
+                    );
+                    
+                    if (hasData) unitsWithData++;
+
+                    // Helper for coverage cells (higher is better: ≥90 green, ≥80 yellow, <80 red)
+                    function addCoverageCell(value) {
+                        const td = document.createElement('td');
+                        if (value === null || value === undefined || (isFacility && missingFacilityPop)) {
+                            td.textContent = '—';
+                            td.style.color = '#9ca3af';
+                            return td;
+                        }
+                        const v = Number(value);
+                        if (Number.isFinite(v)) {
+                            td.textContent = `${v.toFixed(1)}%`;
+                            if (v >= 90) td.classList.add('cell-green');
+                            else if (v >= 80) td.classList.add('cell-yellow');
+                            else td.classList.add('cell-red');
+                        } else {
+                            td.textContent = '—';
+                            td.style.color = '#9ca3af';
+                        }
+                        return td;
+                    }
+
+                    // Helper for dropout cells (lower is better: ≤10 green, ≤20 yellow, >20 red)
+                    function addDropoutCell(value) {
+                        const td = document.createElement('td');
+                        if (value === null || value === undefined) {
+                            td.textContent = '—';
+                            td.style.color = '#9ca3af';
+                            return td;
+                        }
+                        const v = Number(value);
+                        if (Number.isFinite(v)) {
+                            td.textContent = `${v.toFixed(1)}%`;
+                            if (v <= 10) td.classList.add('cell-green');
+                            else if (v <= 20) td.classList.add('cell-yellow');
+                            else td.classList.add('cell-red');
+                        } else {
+                            td.textContent = '—';
+                            td.style.color = '#9ca3af';
+                        }
+                        return td;
+                    }
+
+                    // Helper for count cells (no color coding)
+                    function addCountCell(value) {
+                        const td = document.createElement('td');
+                        if (value === null || value === undefined) {
+                            td.textContent = '—';
+                            td.style.color = '#9ca3af';
+                            return td;
+                        }
+                        const v = Number(value);
+                        td.textContent = Number.isFinite(v) ? v.toLocaleString() : '—';
+                        return td;
+                    }
+
+                    // ===== COVERAGE TABLE =====
+                    const coverageTr = document.createElement('tr');
+                    coverageTr.dataset.id = u.id;
+                    if (!hasData) coverageTr.style.opacity = '0.6';
+
+                    const coverageTdName = document.createElement('td');
+                    coverageTdName.textContent = u.displayName || u.name || u.id;
+                    coverageTdName.style.textAlign = 'left';
+                    coverageTdName.style.fontWeight = '500';
+                    if (!hasData) {
+                        coverageTdName.innerHTML = `${u.displayName || u.name || u.id} <span style="color: #ef4444; font-size: 10px;">(no data)</span>`;
+                    }
+                    coverageTr.appendChild(coverageTdName);
+
+                    if (isFacility) {
+                        const tdPop = document.createElement('td');
+                        tdPop.className = 'facility-only';
+                        tdPop.innerHTML = `<input type="number" min="0" style="width: 100px;" placeholder="Annual pop" value="${annualPop || ''}" oninput="onFacilityPopulationChange('${u.id}', this.value)">`;
+                        coverageTr.appendChild(tdPop);
+
+                        const tdTarget = document.createElement('td');
+                        tdTarget.className = 'facility-only';
+                        tdTarget.textContent = targetPop > 0 ? targetPop.toLocaleString() : '—';
+                        coverageTr.appendChild(tdTarget);
+                    }
+
+                    coverageTr.appendChild(addCoverageCell(data.bcgCoverage));
+                    coverageTr.appendChild(addCoverageCell(data.opv3Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.dpt1Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.dpt3Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.pcv3Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.mr1Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.mr2Coverage));
+                    coverageTr.appendChild(addCoverageCell(data.fic1yCoverage));
+
+                    coverageTbody.appendChild(coverageTr);
+
+                    // ===== DROPOUT TABLE =====
+                    const dropoutTr = document.createElement('tr');
+                    dropoutTr.dataset.id = u.id;
+                    if (!hasData) dropoutTr.style.opacity = '0.6';
+
+                    const dropoutTdName = document.createElement('td');
+                    dropoutTdName.textContent = u.displayName || u.name || u.id;
+                    dropoutTdName.style.textAlign = 'left';
+                    dropoutTdName.style.fontWeight = '500';
+                    if (!hasData) {
+                        dropoutTdName.innerHTML = `${u.displayName || u.name || u.id} <span style="color: #ef4444; font-size: 10px;">(no data)</span>`;
+                    }
+                    dropoutTr.appendChild(dropoutTdName);
+
+                    dropoutTr.appendChild(addDropoutCell(data.dpt1Dpt3Dropout));
+                    dropoutTr.appendChild(addDropoutCell(data.bcgMr1Dropout));
+                    dropoutTr.appendChild(addDropoutCell(data.polio1Polio3Dropout));
+                    dropoutTr.appendChild(addDropoutCell(data.pcv1Pcv3Dropout));
+                    dropoutTr.appendChild(addDropoutCell(data.malaria1Malaria4Dropout));
+                    dropoutTr.appendChild(addCountCell(null)); // Zero dose not calculated
+                    dropoutTr.appendChild(addCountCell(data.underImmunized));
+
+                    dropoutTbody.appendChild(dropoutTr);
+                });
+
+                // Show a note if some units have no data
+                const noDataCount = units.length - unitsWithData;
+                if (noDataCount > 0) {
+                    const note = document.createElement('tr');
+                    note.innerHTML = `<td colspan="11" style="text-align: center; color: #ef4444; font-size: 12px; padding: 8px;">
+                        ⚠️ ${noDataCount} of ${units.length} units have no EPI data for the selected period. Try selecting a longer time range or check if data has been reported in DHIS2.
+                    </td>`;
+                    coverageTbody.appendChild(note);
+                }
+
+                const tableDisplay = document.getElementById('compareTableDisplay');
+                tableDisplay.classList.remove('hidden');
+                tableDisplay.style.display = 'block';
+                
+                console.log(`📊 Rendered ${units.length} units, ${unitsWithData} with data`);
+            }
+
+            function onFacilityPopulationChange(facilityId, value) {
+                const num = parseInt(value) || 0;
+                compareContext.facilityPopulations[facilityId] = num;
+                const tr = document.querySelector(`#compareTableBody tr[data-id="${facilityId}"]`);
+                if (tr) {
+                    const targetCell = tr.querySelector('td:nth-child(3)');
+                    if (targetCell) {
+                        const targetPop = computeTargetPopForPeriod(num, 4.3);
+                        targetCell.textContent = targetPop > 0 ? targetPop.toLocaleString() : '—';
+                    }
+                }
+            }
+
+            async function runCompareDistricts() {
+                const regionId = document.getElementById('compareRegionSelect').value;
+                if (!regionId) {
+                    alert('Please select a region first.');
+                    return;
+                }
+                const period = getComparisonPeriodOrAlert();
+                if (!period) return;
+
+                const btn = document.querySelector('#compareDistrictsPanel button');
+                const originalText = btn ? btn.textContent : 'Compare Districts';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = '⏳ Loading districts...';
+                }
+
+                try {
+                    document.getElementById('compareTableTitle').textContent = 'Districts in Region - EPI Comparison';
+                    compareContext.resultsById = {};
+
+                    const regionChildren = await fetch(`/api/org-units?parent=${regionId}`).then(r => r.json());
+                    const candidates = (regionChildren.children || []).slice();
+                    const districts = candidates.filter(u => u.level === 3);
+                    const units = (districts.length ? districts : candidates).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    compareContext.units = units;
+
+                    if (units.length === 0) {
+                        alert('No districts found for this region.');
+                        return;
+                    }
+
+                    document.querySelectorAll('.facility-only').forEach(el => el.classList.add('hidden'));
+                    if (btn) btn.textContent = `⏳ Fetching data for ${units.length} districts...`;
+
+                    await mapWithConcurrency(units, 6, async (u) => {
+                        const data = await fetchEpiForUnit(u.id, period, null, u.displayName);
+                        compareContext.resultsById[u.id] = data;
+                        return data;
+                    });
+
+                    renderCompareTable(units, 'districts');
+                } catch (error) {
+                    console.error('Compare error:', error);
+                    alert('Error loading comparison: ' + error.message);
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                }
+            }
+
+            async function runCompareFacilities() {
+                const districtName = document.getElementById('compareDistrictSelect').value;
+                if (!districtName) {
+                    alert('Please select a district first.');
+                    return;
+                }
+                const period = getComparisonPeriodOrAlert();
+                if (!period) return;
+
+                const btn = document.querySelector('#compareFacilitiesPanel button.btn-primary');
+                const originalText = btn ? btn.textContent : 'Load Facilities';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = '⏳ Finding district...';
+                }
+
+                try {
+                    const district = await resolveDistrictIdByName(districtName);
+                    if (!district) {
+                        alert(`Could not find DHIS2 district for "${districtName}".`);
+                        return;
+                    }
+
+                    document.getElementById('compareTableTitle').textContent = `Facilities in ${district.displayName} - EPI Comparison`;
+                    compareContext.resultsById = {};
+                    compareContext.facilityPopulations = {};
+
+                    if (btn) btn.textContent = '⏳ Loading facilities...';
+                    const facilitiesResp = await fetch(`/api/org-units-descendants?parent=${district.id}&level=6`).then(r => r.json());
+                    const facilities = (facilitiesResp.organisationUnits || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+                    if (!facilities.length) {
+                        alert('No facilities found under this district (level 6).');
+                        return;
+                    }
+
+                    compareContext.units = facilities;
+                    document.querySelectorAll('.facility-only').forEach(el => el.classList.remove('hidden'));
+
+                    if (btn) btn.textContent = `⏳ Fetching data for ${facilities.length} facilities...`;
+                    await mapWithConcurrency(facilities, 6, async (u) => {
+                        const data = await fetchEpiForUnit(u.id, period);
+                        compareContext.resultsById[u.id] = data;
+                        return data;
+                    });
+
+                    renderCompareTable(facilities, 'facilities');
+                } catch (error) {
+                    console.error('Load facilities error:', error);
+                    alert('Error loading facilities: ' + error.message);
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    }
+                }
+            }
+
+            async function applyFacilityPopulations() {
+                if (compareContext.mode !== 'facilities') {
+                    alert('Switch to "Compare Facilities in a District" first.');
+                    return;
+                }
+                const period = getComparisonPeriodOrAlert();
+                if (!period) return;
+
+                const facilities = compareContext.units || [];
+                if (!facilities.length) {
+                    alert('Load facilities first.');
+                    return;
+                }
+
+                await mapWithConcurrency(facilities, 6, async (u) => {
+                    const annualPop = compareContext.facilityPopulations[u.id] || 0;
+                    if (!annualPop || annualPop <= 0) return null;
+                    const data = await fetchEpiForUnit(u.id, period, annualPop);
+                    compareContext.resultsById[u.id] = data;
+                    return data;
+                });
+
+                renderCompareTable(facilities, 'facilities');
+            }
+
+            function downloadCompareExcel() {
+                console.log('📥 Downloading EPI Compare Tables to Excel with colors and borders...');
+                
+                const coverageTable = document.getElementById('compareTable');
+                const dropoutTable = document.getElementById('compareDropoutTable');
+                
+                if (!coverageTable) {
+                    alert('No comparison table to download');
+                    return;
+                }
+                
+                const mode = compareContext.mode || 'districts';
+                
+                // Styling constants
+                const BORDER_THIN = {
+                    top: { style: 'thin', color: { rgb: '000000' } },
+                    bottom: { style: 'thin', color: { rgb: '000000' } },
+                    left: { style: 'thin', color: { rgb: '000000' } },
+                    right: { style: 'thin', color: { rgb: '000000' } }
+                };
+                
+                const BORDER_MEDIUM = {
+                    top: { style: 'medium', color: { rgb: '000000' } },
+                    bottom: { style: 'medium', color: { rgb: '000000' } },
+                    left: { style: 'medium', color: { rgb: '000000' } },
+                    right: { style: 'medium', color: { rgb: '000000' } }
+                };
+                
+                const HEADER_STYLE_COVERAGE = {
+                    fill: { fgColor: { rgb: '11998E' } },
+                    font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+                    border: BORDER_MEDIUM
+                };
+                
+                const HEADER_STYLE_DROPOUT = {
+                    fill: { fgColor: { rgb: '6366F1' } },
+                    font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+                    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+                    border: BORDER_MEDIUM
+                };
+                
+                const COLOR_MAP = {
+                    'cell-green': { fill: { fgColor: { rgb: '10B981' } }, font: { color: { rgb: 'FFFFFF' }, bold: true } },
+                    'cell-yellow': { fill: { fgColor: { rgb: 'FBBF24' } }, font: { color: { rgb: '000000' }, bold: true } },
+                    'cell-red': { fill: { fgColor: { rgb: 'EF4444' } }, font: { color: { rgb: 'FFFFFF' }, bold: true } }
+                };
+                
+                // Helper to extract table data with styling info
+                function extractTableData(table, headerStyle) {
+                    const data = [];
+                    const styles = [];
+                    
+                    // Header row
+                    const headerRow = [];
+                    const headerStyles = [];
+                    table.querySelectorAll('thead th').forEach(th => {
+                        if (!th.classList.contains('hidden')) {
+                            headerRow.push(th.textContent.trim());
+                            headerStyles.push(headerStyle);
+                        }
+                    });
+                    data.push(headerRow);
+                    styles.push(headerStyles);
+                    
+                    // Data rows
+                    table.querySelectorAll('tbody tr').forEach(tr => {
+                        const rowData = [];
+                        const rowStyles = [];
+                        tr.querySelectorAll('td').forEach((td, colIdx) => {
+                            if (!td.classList.contains('hidden')) {
+                                let value = td.textContent.trim();
+                                rowData.push(value);
+                                
+                                // Determine cell style
+                                let cellStyle = {
+                                    alignment: { horizontal: colIdx === 0 ? 'left' : 'center', vertical: 'center' },
+                                    border: BORDER_THIN
+                                };
+                                
+                                // Add color if present
+                                if (td.classList.contains('cell-green')) {
+                                    cellStyle = { ...cellStyle, ...COLOR_MAP['cell-green'] };
+                                } else if (td.classList.contains('cell-yellow')) {
+                                    cellStyle = { ...cellStyle, ...COLOR_MAP['cell-yellow'] };
+                                } else if (td.classList.contains('cell-red')) {
+                                    cellStyle = { ...cellStyle, ...COLOR_MAP['cell-red'] };
+                                } else {
+                                    // Alternating row background
+                                    cellStyle.fill = { fgColor: { rgb: 'F9FAFB' } };
+                                }
+                                
+                                rowStyles.push(cellStyle);
+                            }
+                        });
+                        data.push(rowData);
+                        styles.push(rowStyles);
+                    });
+                    
+                    return { data, styles };
+                }
+                
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                
+                // ===== Coverage Sheet =====
+                const coverageExtract = extractTableData(coverageTable, HEADER_STYLE_COVERAGE);
+                const wsCoverage = XLSX.utils.aoa_to_sheet(coverageExtract.data);
+                
+                // Apply styles to Coverage sheet
+                const coverageRange = XLSX.utils.decode_range(wsCoverage['!ref']);
+                for (let R = coverageRange.s.r; R <= coverageRange.e.r; R++) {
+                    for (let C = coverageRange.s.c; C <= coverageRange.e.c; C++) {
+                        const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                        if (wsCoverage[cellAddr] && coverageExtract.styles[R] && coverageExtract.styles[R][C]) {
+                            wsCoverage[cellAddr].s = coverageExtract.styles[R][C];
+                        }
+                    }
+                }
+                
+                // Set column widths for Coverage
+                wsCoverage['!cols'] = coverageExtract.data[0].map((_, i) => ({ wch: i === 0 ? 28 : 12 }));
+                wsCoverage['!rows'] = [{ hpt: 30 }];
+                
+                XLSX.utils.book_append_sheet(wb, wsCoverage, 'Coverage Indicators');
+                
+                // ===== Dropout Sheet =====
+                if (dropoutTable) {
+                    const dropoutExtract = extractTableData(dropoutTable, HEADER_STYLE_DROPOUT);
+                    const wsDropout = XLSX.utils.aoa_to_sheet(dropoutExtract.data);
+                    
+                    // Apply styles to Dropout sheet
+                    const dropoutRange = XLSX.utils.decode_range(wsDropout['!ref']);
+                    for (let R = dropoutRange.s.r; R <= dropoutRange.e.r; R++) {
+                        for (let C = dropoutRange.s.c; C <= dropoutRange.e.c; C++) {
+                            const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                            if (wsDropout[cellAddr] && dropoutExtract.styles[R] && dropoutExtract.styles[R][C]) {
+                                wsDropout[cellAddr].s = dropoutExtract.styles[R][C];
+                            }
+                        }
+                    }
+                    
+                    // Set column widths for Dropout
+                    wsDropout['!cols'] = dropoutExtract.data[0].map((_, i) => ({ wch: i === 0 ? 28 : 14 }));
+                    wsDropout['!rows'] = [{ hpt: 30 }];
+                    
+                    XLSX.utils.book_append_sheet(wb, wsDropout, 'Dropout Indicators');
+                }
+                
+                // Generate filename
+                const date = new Date().toISOString().split('T')[0];
+                const fileName = `EPI_Comparison_${mode}_${date}.xlsx`;
+                
+                // Download
+                XLSX.writeFile(wb, fileName);
+                toastSuccess('Excel downloaded!');
+                console.log('✅ Excel downloaded:', fileName);
             }
         </script>
 </body>

@@ -1,0 +1,98 @@
+# ============================================================================
+# Git Attributes Configuration
+# Sets proper line endings and merge strategies
+# ============================================================================
+
+# Auto detect text files and normalize line endings to LF in the repository
+* text=auto
+
+# Windows-specific line endings
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Unix-specific line endings
+*.sh text eol=lf
+
+# Web files - LF line endings
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.svg text eol=lf
+
+# Python files - LF line endings
+*.py text eol=lf
+*.pyx text eol=lf
+*.pyi text eol=lf
+
+# Configuration files
+*.yaml text eol=lf
+*.yml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+LICENSE text eol=lf
+README text eol=lf
+
+# Binary files (never normalize line endings)
+# ============================================================================
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.bz2 binary
+*.7z binary
+
+# Databases
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+
+# Other binary formats
+*.pdf binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Merge strategies for specific file types
+# ============================================================================
+
+# For HTML files, prefer ours during merge conflicts (keeps current branch)
+*.html merge=ours
+
+# For Python files, use default merge strategy
+*.py merge=union
+
+# For JSON config, prefer current branch
+*.json merge=ours
+
+# Diff settings for specific file types
+# ============================================================================
+
+# Better diff for Python
+*.py diff=python
+
+# Better diff for HTML
+*.html diff=html
+
+# Better diff for CSS
+*.css diff=css
+

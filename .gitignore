@@ -1,7 +1,148 @@
-.env
+# ============================================================================
+# Comprehensive .gitignore for Uganda eHMIS Analytics Dashboard
+# Prevents committing temporary, backup, and sensitive files
+# ============================================================================
+
+# Python
+# ----------------------------------------------------------------------------
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+# ----------------------------------------------------------------------------
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+virtualenv/
+
+# Database Files
+# ----------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Backup Files (CRITICAL - Prevents committing old versions)
+# ----------------------------------------------------------------------------
+*.bak
+*.backup
+*.old
+*_old.*
+*_backup.*
+*_copy.*
+*Copy.*
+*copy.*
+*.tmp
+*.temp
+*~
+*.swp
+*.swo
+*.orig
+
+# IDE and Editor Files
+# ----------------------------------------------------------------------------
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+
+# OS Files
+# ----------------------------------------------------------------------------
+Thumbs.db
+desktop.ini
+.DS_Store
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Logs and Temporary Files
+# ----------------------------------------------------------------------------
 *.log
+logs/
+*.log.*
+log/
+temp/
+tmp/
+.cache/
+
+# Environment and Configuration
+# ----------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+config.local.py
+secrets.py
+credentials.json
+
+# Flask/Python specific
+# ----------------------------------------------------------------------------
+instance/
+.webassets-cache
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Node modules (if using any JS build tools)
+# ----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and Distribution
+# ----------------------------------------------------------------------------
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Project-specific temporary files
+# ----------------------------------------------------------------------------
+landing_f37c5d4.html
+login_f37c5d4.html
+login_5377e13.html
+*_github.html
+
+# Keep important files (override patterns above)
+# ----------------------------------------------------------------------------
+!requirements.txt
+!README.md
+!.gitignore
+!.gitattributes

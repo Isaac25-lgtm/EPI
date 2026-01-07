@@ -5,6 +5,9 @@ Handles all immunization analytics, coverage, dropouts, RED categorization
 from flask import Blueprint, request, jsonify, render_template
 from calendar import month_abbr
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .core import (
     DHIS2_BASE_URL, DHIS2_TIMEOUT, UBOS_POPULATION,
@@ -76,9 +79,12 @@ def get_analytics_data():
     auth = get_auth()
     
     org_unit = request.args.get('orgUnit', 'akV6429SUqu')
-    district_name = request.args.get('districtName', '').upper()
+    district_name_raw = request.args.get('districtName', '')
     period = request.args.get('period', 'LAST_12_MONTHS')
     custom_population = request.args.get('customPopulation', None)
+    
+    # Clean district name for UBOS lookup (handles "Kampala District" -> "KAMPALA" etc)
+    district_name = clean_district_name(district_name_raw) if district_name_raw else ''
     
     # Check cache
     cache_key = analytics_cache._make_key('epi_analytics', org_unit, district_name, period, custom_population or '')
@@ -89,19 +95,48 @@ def get_analytics_data():
     
     divisor = get_period_divisor(period)
     
-    # Get population
+    # Get population with fuzzy matching
     if custom_population and custom_population.isdigit():
         population = int(custom_population)
+        print(f"🔍 EPI Compare: Using custom population {population} for {org_unit}")
     else:
-        population = UBOS_POPULATION.get(district_name, 0)
+        # Check if the raw name is a City - prefer CITY entry first
+        raw_upper = district_name_raw.upper()
+        is_city = 'CITY' in raw_upper
+        
+        if is_city:
+            # For cities, try with CITY suffix first
+            population = UBOS_POPULATION.get(f"{district_name} CITY", 0)
+            if population == 0:
+                population = UBOS_POPULATION.get(district_name, 0)
+        else:
+            # For districts, try exact match first
+            population = UBOS_POPULATION.get(district_name, 0)
+            # If no match, try with CITY suffix (in case it's a city without "City" in name)
+            if population == 0 and district_name:
+                population = UBOS_POPULATION.get(f"{district_name} CITY", 0)
+        
+        print(f"🔍 EPI Compare: District '{district_name_raw}' -> '{district_name}' (is_city={is_city}) -> pop={population}")
     
+    # Support custom period strings:
+    # - Range: "YYYYMM-YYYYMM"
+    # - List:  "YYYYMM;YYYYMM;..."
     if '-' in period and not period.startswith('LAST') and not period.startswith('THIS'):
         start, end = period.split('-')
         periods = generate_monthly_periods(start, end)
         period_count = len(periods.split(';'))
         divisor = 12 / period_count if period_count < 12 else 1
+    elif ';' in period:
+        # Semicolon-separated month list (used by Compare UI)
+        parts = [p.strip() for p in period.split(';') if p.strip()]
+        if parts and all(len(p) == 6 and p.isdigit() for p in parts):
+            period_count = len(parts)
+            divisor = 12 / period_count if period_count < 12 else 1
+            print(f"🔍 EPI Compare: Period has {period_count} months, divisor={divisor}")
+        periods = period
     else:
         periods = period
+        print(f"🔍 EPI Compare: Using period type '{period}', divisor={divisor}")
     
     try:
         elements_data = fetch_data_elements(auth, '105-CL')
@@ -156,13 +191,18 @@ def get_analytics_data():
                 code = code_map.get(dx_id, '')
                 target_key = CODE_TO_TARGET.get(code, 'DEFAULT')
                 target_pct = TARGET_PERCENTAGES.get(target_key, 4.3)
+                target_pop = round((population * target_pct / 100) / divisor) if population > 0 else 0
                 coverage = calculate_coverage(total, population, target_pct, divisor)
+                
+                # Log key indicators for debugging
+                if code in ['105-CL10', '105-CL12', '105-CL23']:  # DPT1, DPT3, MR1
+                    print(f"📊 EPI {code}: doses={total}, pop={population}, target_pct={target_pct}, divisor={divisor}, target_pop={target_pop}, coverage={coverage}%")
                 
                 analytics_result['indicators'].append({
                     'id': dx_id, 'code': code,
                     'name': data.get('metaData', {}).get('items', {}).get(dx_id, {}).get('name', code),
                     'doses': total,
-                    'target_population': round((population * target_pct / 100) / divisor),
+                    'target_population': target_pop,
                     'coverage': coverage,
                     'color': get_coverage_color(coverage)
                 })
@@ -541,6 +581,7 @@ def trend_analysis():
         return jsonify({'error': f'Error: {response.status_code}'})
     except Exception as e:
         return jsonify({'error': str(e)})
+
 
 
 
