@@ -19,8 +19,10 @@ CORS(app)
 # Register Blueprints
 from modules.maternal import maternal_bp
 from modules.epi import epi_bp
+from modules.wash import wash_bp
 app.register_blueprint(maternal_bp)
 app.register_blueprint(epi_bp)
+app.register_blueprint(wash_bp)
 
 # ============ CACHING SYSTEM ============
 class SimpleCache:

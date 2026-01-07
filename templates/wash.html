@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASH Analytics - Uganda eHMIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #0891b2;
+            --accent-hover: #0e7490;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --table-header-bg: #f1f5f9;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --table-header-bg: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-primary);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: block;
+        }
+
+        .tab-content.hidden {
+            display: none !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Filters */
+        .filters-card {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--bg-primary);
+        }
+
+        tbody tr:hover {
+            background: #f0f9ff;
+        }
+
+        [data-theme="dark"] tbody tr:hover {
+            background: #1e3a5f;
+        }
+
+        /* Color Coding */
+        .cell-green {
+            background-color: #10b981 !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
+        .cell-yellow {
+            background-color: #fbbf24 !important;
+            color: #111827 !important;
+            font-weight: 700;
+        }
+
+        .cell-red {
+            background-color: #ef4444 !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
+        .cell-blue {
+            background-color: #3b82f6 !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
+        /* Compare Styled Table */
+        .compare-styled-table {
+            border: 2px solid #1f2937;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .compare-styled-table thead th {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+            font-weight: 600;
+            padding: 14px 12px;
+            text-align: center;
+            border: 1px solid #0e7490;
+            font-size: 12px;
+        }
+
+        .compare-styled-table tbody td {
+            padding: 12px 10px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        .compare-styled-table tbody tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .compare-styled-table tbody tr:hover {
+            background-color: #ecfeff;
+        }
+
+        [data-theme="dark"] .compare-styled-table thead th {
+            background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
+            border-color: #155e75;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody td {
+            border-color: #374151;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody tr:nth-child(even) {
+            background-color: #1f2937;
+        }
+
+        [data-theme="dark"] .compare-styled-table tbody tr:hover {
+            background-color: #164e63;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            text-align: center;
+        }
+
+        .summary-card.green { border-color: #10b981; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
+        .summary-card.yellow { border-color: #f59e0b; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); }
+        .summary-card.red { border-color: #ef4444; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+        .summary-card.blue { border-color: #3b82f6; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+
+        [data-theme="dark"] .summary-card.green { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); }
+        [data-theme="dark"] .summary-card.yellow { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); }
+        [data-theme="dark"] .summary-card.red { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%); }
+        [data-theme="dark"] .summary-card.blue { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%); }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Filters Row */
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        /* Search Dropdown */
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .search-dropdown.hidden {
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-primary);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .search-result-path {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .search-loading, .search-no-results {
+            padding: 16px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* Selected Info */
+        .selected-info strong {
+            color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .nav-tabs {
+                flex-wrap: wrap;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🚿 WASH Analytics Dashboard</h1>
+        <div class="header-actions">
+            <a href="/" class="btn-back">← Back to Home</a>
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="/logout" class="btn-back">Log out</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('analytics')">📊 Facility/District Performance</button>
+            <button class="nav-tab" onclick="switchTab('compare')">🏆 Compare Facility/District Performance</button>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analyticsTab" class="tab-content">
+            <!-- Filters -->
+            <div class="card filters-card-main">
+                <h3 class="card-title">🎯 Data Filters & Selection</h3>
+                
+                <!-- Search Organization Unit -->
+                <div class="filter-group" style="margin-bottom: 20px; position: relative;">
+                    <label for="orgUnitSearch">🔍 Quick Search for Facility or District</label>
+                    <input type="text" 
+                           id="orgUnitSearch" 
+                           placeholder="Type facility or district name (min 3 characters)..." 
+                           style="padding: 12px; width: 100%; border: 2px solid var(--border-color); border-radius: 8px; font-size: 14px;"
+                           oninput="handleSearchInput(event)"
+                           onfocus="showSearchDropdown()"
+                           autocomplete="off">
+                    <div id="searchDropdown" class="search-dropdown hidden">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+
+                <!-- OR Separator -->
+                <div style="text-align: center; margin: 20px 0; color: var(--text-secondary); font-weight: 600;">
+                    — OR Navigate Hierarchy —
+                </div>
+
+                <!-- Hierarchical Selection -->
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label for="level2">Region</label>
+                        <select id="level2" onchange="loadChildren(2)">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="level3">District</label>
+                        <select id="level3" onchange="loadChildren(3)" disabled>
+                            <option>--</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="level4">County</label>
+                        <select id="level4" onchange="loadChildren(4)" disabled>
+                            <option>--</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="level5">Sub-county</label>
+                        <select id="level5" onchange="loadChildren(5)" disabled>
+                            <option>--</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="level6">Facility</label>
+                        <select id="level6" onchange="selectFinalLevel(6)" disabled>
+                            <option>--</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Period Selection -->
+                <div class="filters-row" style="margin-top: 20px; align-items: end;">
+                    <div class="filter-group">
+                        <label>📅 Start Month</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="startYear" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <!-- Years populated by JS -->
+                            </select>
+                            <select id="startMonth" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📅 End Month</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="endYear" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <!-- Years populated by JS -->
+                            </select>
+                            <select id="endMonth" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Info Display -->
+                <div class="selected-info" style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; padding: 12px 16px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <span>Selected: <strong id="selectedOrgUnit" style="color: var(--accent);">Uganda</strong></span>
+                    <span>Period: <strong id="selectedPeriod" style="color: var(--accent);">-</strong> (<span id="monthsCount">0</span> months)</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="btn-group" style="display: flex; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="loadAnalytics()" style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        </svg>
+                        Load Analysis
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearCache()">Clear Cache</button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading hidden">
+                <div class="spinner"></div>
+                <span>Loading WASH data...</span>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #10b981;"></div>
+                    <span>≥75% (On Target)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #fbbf24;"></div>
+                    <span>50-74.9% (Needs Improvement)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>&lt;50% (Critical)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #3b82f6;"></div>
+                    <span>&gt;100% (Data Error)</span>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div id="analyticsResults" class="hidden">
+                <!-- Summary Cards -->
+                <div id="summaryCards" class="summary-grid"></div>
+
+                <!-- Data Table -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 class="card-title" id="tableTitle">📊 WASH Indicators</h3>
+                        <button onclick="downloadAnalyticsExcel()" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+                            📥 Download Excel
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table id="analyticsTable" class="compare-styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Indicator</th>
+                                    <th>Value (%)</th>
+                                    <th>Target (%)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analyticsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Compare Tab -->
+        <div id="compareTab" class="tab-content hidden">
+            <div class="card">
+                <h2 style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                    🏆 Compare Facility/District Performance
+                </h2>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                    Compare WASH indicators across districts in a region, or facilities in a district.
+                </p>
+
+                <div style="border: 2px solid var(--border-color); border-radius: 12px; padding: 18px;">
+                    <!-- Compare Mode -->
+                    <div style="display:flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px;">
+                        <label style="font-weight: 700;">Compare type:</label>
+                        <label style="display:flex; gap:6px; align-items:center; font-weight: 600;">
+                            <input type="radio" name="compareMode" value="districts" checked onchange="onCompareModeChange()">
+                            Compare Districts in a Region
+                        </label>
+                        <label style="display:flex; gap:6px; align-items:center; font-weight: 600;">
+                            <input type="radio" name="compareMode" value="facilities" onchange="onCompareModeChange()">
+                            Compare Facilities in a District
+                        </label>
+                    </div>
+
+                    <!-- Period Selection -->
+                    <div style="border: 1px solid var(--border-color); padding: 14px; border-radius: 10px; margin-bottom: 16px;">
+                        <h4 style="margin-bottom: 10px;">📅 Period for Comparison</h4>
+                        <div style="display:flex; gap: 14px; flex-wrap: wrap; align-items: end;">
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="font-size: 13px; font-weight: 600;">Start Month</label>
+                                <div style="display:flex; gap: 8px;">
+                                    <select id="compareStartYear" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;"></select>
+                                    <select id="compareStartMonth" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                                        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                                        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                                        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="flex: 1; min-width: 180px;">
+                                <label style="font-size: 13px; font-weight: 600;">End Month</label>
+                                <div style="display:flex; gap: 8px;">
+                                    <select id="compareEndYear" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;"></select>
+                                    <select id="compareEndMonth" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
+                                        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
+                                        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
+                                        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Districts Panel -->
+                    <div id="compareDistrictsPanel">
+                        <div class="filter-group" style="margin-bottom: 12px;">
+                            <label>Select Region</label>
+                            <select id="compareRegionSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                <option value="">⏳ Loading...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="runCompareDistricts()">Compare Districts</button>
+                    </div>
+
+                    <!-- Facilities Panel -->
+                    <div id="compareFacilitiesPanel" class="hidden">
+                        <div class="filter-group" style="margin-bottom: 12px;">
+                            <label>Select District</label>
+                            <select id="compareDistrictSelect" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                <option value="">⏳ Loading...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="runCompareFacilities()">Load Facilities</button>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend" style="margin-top: 16px;">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #10b981;"></div>
+                        <span>≥75% (On Target)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #fbbf24;"></div>
+                        <span>50-74.9% (Needs Improvement)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ef4444;"></div>
+                        <span>&lt;50% (Critical)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>&gt;100% (Data Error)</span>
+                    </div>
+                </div>
+
+                <!-- Compare Results -->
+                <div id="compareTableDisplay" class="hidden" style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 id="compareTableTitle">Comparison</h3>
+                        <button onclick="downloadCompareExcel()" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px;">
+                            📥 Download Excel (Color-coded)
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table id="compareTable" class="compare-styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Organization Unit</th>
+                                    <th>Latrines (%)</th>
+                                    <th>Improved Latrines (%)</th>
+                                    <th>Handwashing (%)</th>
+                                    <th>Safe Water (%)</th>
+                                    <th>ODF (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="compareTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Compare Loading -->
+                <div id="compareLoading" class="loading hidden">
+                    <div class="spinner"></div>
+                    <span>Loading comparison data...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let selectedOrgUnit = { id: 'akV6429SUqu', name: 'Uganda', level: 1 };
+        let currentData = null;
+        let countryId = null;
+        let searchTimeout = null;
+        let compareContext = {
+            mode: 'districts',
+            units: [],
+            resultsById: {}
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initializeFilters();
+            initCompareYears();
+            initPeriodYears();
+            await loadCompareDropdowns();
+            updatePeriodDisplay();
+            
+            // Close search dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                const dropdown = document.getElementById('searchDropdown');
+                const searchInput = document.getElementById('orgUnitSearch');
+                if (!dropdown.contains(e.target) && e.target !== searchInput) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+        });
+
+        // Theme toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Initialize period year dropdowns
+        function initPeriodYears() {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            
+            ['startYear', 'endYear'].forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '';
+                    for (let y = currentYear; y >= 2015; y--) {
+                        select.innerHTML += `<option value="${y}">${y}</option>`;
+                    }
+                }
+            });
+            
+            // Set defaults: last 12 months
+            document.getElementById('endYear').value = currentYear;
+            document.getElementById('endMonth').value = currentMonth.toString().padStart(2, '0');
+            
+            const startMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+            const startYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+            document.getElementById('startYear').value = startYear;
+            document.getElementById('startMonth').value = startMonth.toString().padStart(2, '0');
+        }
+
+        function updatePeriodDisplay() {
+            const startY = parseInt(document.getElementById('startYear')?.value || new Date().getFullYear());
+            const startM = parseInt(document.getElementById('startMonth')?.value || 1);
+            const endY = parseInt(document.getElementById('endYear')?.value || new Date().getFullYear());
+            const endM = parseInt(document.getElementById('endMonth')?.value || 12);
+            
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const periodText = `${monthNames[startM - 1]} ${startY} - ${monthNames[endM - 1]} ${endY}`;
+            
+            const months = (endY - startY) * 12 + (endM - startM) + 1;
+            
+            document.getElementById('selectedPeriod').textContent = periodText;
+            document.getElementById('monthsCount').textContent = months;
+        }
+
+        function getSelectedPeriod() {
+            const startY = document.getElementById('startYear')?.value;
+            const startM = document.getElementById('startMonth')?.value;
+            const endY = document.getElementById('endYear')?.value;
+            const endM = document.getElementById('endMonth')?.value;
+            
+            if (!startY || !startM || !endY || !endM) return 'LAST_12_MONTHS';
+            
+            const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
+            const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
+            
+            if (start > end) return 'LAST_12_MONTHS';
+            
+            const periods = [];
+            let current = new Date(start);
+            while (current <= end) {
+                periods.push(`${current.getFullYear()}${(current.getMonth() + 1).toString().padStart(2, '0')}`);
+                current.setMonth(current.getMonth() + 1);
+            }
+            return periods.join(';');
+        }
+
+        // ============ FILTERS & HIERARCHY ============
+        async function initializeFilters() {
+            try {
+                const response = await fetch('/api/org-units');
+                const data = await response.json();
+                countryId = data.organisationUnits?.[0]?.id;
+                
+                if (countryId) {
+                    const regionsResp = await fetch(`/api/org-units?parent=${countryId}`);
+                    const regionsData = await regionsResp.json();
+                    const regions = (regionsData.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    
+                    const select = document.getElementById('level2');
+                    select.innerHTML = '<option value="">-- Select Region --</option>' +
+                        regions.map(r => `<option value="${r.id}" data-name="${r.displayName}">${r.displayName}</option>`).join('');
+                }
+            } catch (e) {
+                console.error('Error initializing filters:', e);
+            }
+        }
+
+        async function loadChildren(level) {
+            const currentSelect = document.getElementById(`level${level}`);
+            const parentId = currentSelect.value;
+            const parentName = currentSelect.options[currentSelect.selectedIndex]?.dataset?.name || currentSelect.options[currentSelect.selectedIndex]?.text;
+            
+            // Reset all lower level selects
+            for (let i = level + 1; i <= 6; i++) {
+                const select = document.getElementById(`level${i}`);
+                if (select) {
+                    select.innerHTML = '<option>--</option>';
+                    select.disabled = true;
+                }
+            }
+            
+            if (!parentId) return;
+            
+            // Update selected org unit
+            selectedOrgUnit = { id: parentId, name: parentName, level: level };
+            document.getElementById('selectedOrgUnit').textContent = parentName;
+            
+            // Load children for next level
+            const nextLevel = level + 1;
+            if (nextLevel > 6) return;
+            
+            const nextSelect = document.getElementById(`level${nextLevel}`);
+            if (!nextSelect) return;
+            
+            nextSelect.innerHTML = '<option>⏳ Loading...</option>';
+            nextSelect.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/org-units?parent=${parentId}`);
+                const data = await response.json();
+                const children = (data.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                
+                if (children.length > 0) {
+                    nextSelect.innerHTML = '<option value="">-- Select --</option>' +
+                        children.map(c => `<option value="${c.id}" data-name="${c.displayName}">${c.displayName}</option>`).join('');
+                    nextSelect.disabled = false;
+                } else {
+                    nextSelect.innerHTML = '<option>No sub-units</option>';
+                }
+            } catch (e) {
+                nextSelect.innerHTML = '<option>Error loading</option>';
+            }
+        }
+
+        function selectFinalLevel(level) {
+            const select = document.getElementById(`level${level}`);
+            if (select && select.value) {
+                const name = select.options[select.selectedIndex]?.dataset?.name || select.options[select.selectedIndex]?.text;
+                selectedOrgUnit = { id: select.value, name: name, level: level };
+                document.getElementById('selectedOrgUnit').textContent = name;
+            }
+        }
+
+        // ============ SEARCH FUNCTIONALITY ============
+        function handleSearchInput(event) {
+            const query = event.target.value.trim();
+            
+            if (searchTimeout) clearTimeout(searchTimeout);
+            
+            if (query.length < 3) {
+                document.getElementById('searchDropdown').classList.add('hidden');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => searchOrgUnits(query), 300);
+        }
+
+        function showSearchDropdown() {
+            const query = document.getElementById('orgUnitSearch').value.trim();
+            if (query.length >= 3) {
+                document.getElementById('searchDropdown').classList.remove('hidden');
+            }
+        }
+
+        async function searchOrgUnits(query) {
+            const dropdown = document.getElementById('searchDropdown');
+            dropdown.innerHTML = '<div class="search-loading">🔍 Searching...</div>';
+            dropdown.classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`/api/search-org-units?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.organisationUnits && data.organisationUnits.length > 0) {
+                    dropdown.innerHTML = data.organisationUnits.slice(0, 15).map(ou => `
+                        <div class="search-result-item" onclick="selectSearchResult('${ou.id}', '${ou.displayName.replace(/'/g, "\\'")}', ${ou.level})">
+                            <div class="search-result-name">${ou.displayName}</div>
+                            <div class="search-result-path">Level ${ou.level} ${ou.path ? '• ' + ou.path : ''}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    dropdown.innerHTML = '<div class="search-no-results">No results found</div>';
+                }
+            } catch (e) {
+                dropdown.innerHTML = '<div class="search-no-results">Error searching</div>';
+            }
+        }
+
+        function selectSearchResult(id, name, level) {
+            selectedOrgUnit = { id, name, level };
+            document.getElementById('selectedOrgUnit').textContent = name;
+            document.getElementById('orgUnitSearch').value = name;
+            document.getElementById('searchDropdown').classList.add('hidden');
+            
+            // Reset hierarchy dropdowns
+            for (let i = 2; i <= 6; i++) {
+                const select = document.getElementById(`level${i}`);
+                if (select) {
+                    select.selectedIndex = 0;
+                    if (i > 2) select.disabled = true;
+                }
+            }
+        }
+
+        function clearCache() {
+            fetch('/api/clear-cache', { method: 'POST' })
+                .then(() => showToast('Cache cleared!'))
+                .catch(() => showToast('Error clearing cache', 'error'));
+        }
+
+        // ============ ANALYTICS TAB ============
+        async function loadAnalytics() {
+            const orgUnit = selectedOrgUnit.id;
+            const period = getSelectedPeriod();
+            
+            document.getElementById('analyticsResults').classList.add('hidden');
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`/wash/api/analytics-data?orgUnit=${orgUnit}&period=${period}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    showToast(data.error, 'error');
+                    document.getElementById('loadingSpinner').classList.add('hidden');
+                    return;
+                }
+                
+                currentData = data;
+                renderAnalyticsResults(data);
+                
+                document.getElementById('loadingSpinner').classList.add('hidden');
+                document.getElementById('analyticsResults').classList.remove('hidden');
+                
+            } catch (e) {
+                console.error('Error loading analytics:', e);
+                showToast('Error loading data', 'error');
+                document.getElementById('loadingSpinner').classList.add('hidden');
+            }
+        }
+
+        function renderAnalyticsResults(data) {
+            // Update title
+            document.getElementById('tableTitle').textContent = `📊 WASH Indicators - ${data.orgUnit || 'Uganda'}`;
+            
+            // Render summary cards
+            const summaryContainer = document.getElementById('summaryCards');
+            summaryContainer.innerHTML = data.indicators.map(ind => {
+                const colorClass = ind.color === 'green' ? 'green' : 
+                                   ind.color === 'yellow' ? 'yellow' : 
+                                   ind.color === 'blue' ? 'blue' : 'red';
+                return `
+                    <div class="summary-card ${colorClass}">
+                        <div class="summary-value">${ind.value !== null ? ind.value + '%' : '—'}</div>
+                        <div class="summary-label">${ind.shortName}</div>
+                        ${ind.isDataError ? '<div style="font-size: 11px; color: #3b82f6; margin-top: 4px;">⚠️ Data Error</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Render table
+            const tbody = document.getElementById('analyticsTableBody');
+            tbody.innerHTML = data.indicators.map(ind => {
+                const cellClass = ind.color === 'green' ? 'cell-green' : 
+                                  ind.color === 'yellow' ? 'cell-yellow' : 
+                                  ind.color === 'blue' ? 'cell-blue' : 'cell-red';
+                const status = ind.isDataError ? '⚠️ Data Error' :
+                              ind.color === 'green' ? '✅ On Target' :
+                              ind.color === 'yellow' ? '⚠️ Needs Improvement' : '❌ Critical';
+                return `
+                    <tr>
+                        <td>${ind.name}</td>
+                        <td class="${cellClass}">${ind.value !== null ? ind.value + '%' : '—'}</td>
+                        <td>≥${ind.target}%</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function downloadAnalyticsExcel() {
+            if (!currentData) {
+                showToast('No data to download', 'error');
+                return;
+            }
+            
+            const data = [
+                ['WASH Indicators Report'],
+                [`Organization: ${currentData.orgUnit || 'Uganda'}`],
+                [`Period: ${currentData.period}`],
+                [],
+                ['Indicator', 'Value (%)', 'Target (%)', 'Status']
+            ];
+            
+            currentData.indicators.forEach(ind => {
+                const status = ind.isDataError ? 'Data Error' :
+                              ind.color === 'green' ? 'On Target' :
+                              ind.color === 'yellow' ? 'Needs Improvement' : 'Critical';
+                data.push([ind.name, ind.value, ind.target, status]);
+            });
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            ws['!cols'] = [{ wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, ws, 'WASH Indicators');
+            
+            const date = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `WASH_Report_${date}.xlsx`);
+            showToast('Excel downloaded!');
+        }
+
+        // ============ COMPARE TAB ============
+        function initCompareYears() {
+            const year = new Date().getFullYear();
+            const month = new Date().getMonth() + 1;
+            
+            ['compareStartYear', 'compareEndYear'].forEach(id => {
+                const el = document.getElementById(id);
+                el.innerHTML = '';
+                for (let y = year; y >= 2015; y--) {
+                    el.innerHTML += `<option value="${y}">${y}</option>`;
+                }
+            });
+            
+            document.getElementById('compareEndYear').value = year;
+            document.getElementById('compareEndMonth').value = month.toString().padStart(2, '0');
+            const startMonth = month === 1 ? 12 : month - 1;
+            const startYear = month === 1 ? year - 1 : year;
+            document.getElementById('compareStartYear').value = startYear;
+            document.getElementById('compareStartMonth').value = startMonth.toString().padStart(2, '0');
+        }
+
+        async function loadCompareDropdowns() {
+            const compareRegionSel = document.getElementById('compareRegionSelect');
+            const compareDistrictSel = document.getElementById('compareDistrictSelect');
+            
+            try {
+                const top = await fetch('/api/org-units').then(r => r.json());
+                const countryId = (top.organisationUnits || [])[0]?.id;
+                if (countryId) {
+                    const regionsData = await fetch(`/api/org-units?parent=${countryId}`).then(r => r.json());
+                    const regions = (regionsData.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                    compareRegionSel.innerHTML = '<option value="">-- Select Region --</option>' +
+                        regions.map(r => `<option value="${r.id}">${r.displayName}</option>`).join('');
+                }
+                
+                // Load districts for facility comparison
+                const districtsResp = await fetch('/api/districts').then(r => r.json());
+                const districts = Object.keys(districtsResp || {}).sort();
+                compareDistrictSel.innerHTML = '<option value="">-- Select District --</option>' +
+                    districts.map(d => `<option value="${d}">${d}</option>`).join('');
+                    
+            } catch (e) {
+                console.error('Error loading compare dropdowns:', e);
+            }
+        }
+
+        function onCompareModeChange() {
+            const selected = document.querySelector('input[name="compareMode"]:checked')?.value || 'districts';
+            compareContext.mode = selected;
+            
+            document.getElementById('compareDistrictsPanel').classList.toggle('hidden', selected !== 'districts');
+            document.getElementById('compareFacilitiesPanel').classList.toggle('hidden', selected !== 'facilities');
+            document.getElementById('compareTableDisplay').classList.add('hidden');
+        }
+
+        function getComparisonPeriod() {
+            const startY = document.getElementById('compareStartYear')?.value;
+            const startM = document.getElementById('compareStartMonth')?.value;
+            const endY = document.getElementById('compareEndYear')?.value;
+            const endM = document.getElementById('compareEndMonth')?.value;
+            
+            if (!startY || !startM || !endY || !endM) {
+                alert('Please select start and end month.');
+                return null;
+            }
+            
+            const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
+            const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
+            if (start > end) {
+                alert('Start date must be before end date.');
+                return null;
+            }
+            
+            const periods = [];
+            let current = new Date(start);
+            while (current <= end) {
+                periods.push(`${current.getFullYear()}${(current.getMonth() + 1).toString().padStart(2, '0')}`);
+                current.setMonth(current.getMonth() + 1);
+            }
+            return periods.join(';');
+        }
+
+        async function runCompareDistricts() {
+            const regionId = document.getElementById('compareRegionSelect').value;
+            if (!regionId) {
+                alert('Please select a region first.');
+                return;
+            }
+            
+            const period = getComparisonPeriod();
+            if (!period) return;
+            
+            document.getElementById('compareLoading').classList.remove('hidden');
+            document.getElementById('compareTableDisplay').classList.add('hidden');
+            
+            try {
+                const regionResp = await fetch(`/api/org-units?parent=${regionId}`).then(r => r.json());
+                const districts = (regionResp.children || []).filter(u => u.level === 3 || !u.level);
+                const units = districts.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                
+                compareContext.units = units;
+                compareContext.resultsById = {};
+                
+                await Promise.all(units.map(async (u) => {
+                    const data = await fetch(`/wash/api/compare-data?orgUnit=${u.id}&period=${period}`).then(r => r.json());
+                    compareContext.resultsById[u.id] = data;
+                }));
+                
+                document.getElementById('compareTableTitle').textContent = 'Districts in Region - WASH Comparison';
+                renderCompareTable(units);
+                
+            } catch (e) {
+                console.error('Compare error:', e);
+                alert('Error loading comparison: ' + e.message);
+            } finally {
+                document.getElementById('compareLoading').classList.add('hidden');
+            }
+        }
+
+        async function runCompareFacilities() {
+            const districtName = document.getElementById('compareDistrictSelect').value;
+            if (!districtName) {
+                alert('Please select a district first.');
+                return;
+            }
+            
+            const period = getComparisonPeriod();
+            if (!period) return;
+            
+            document.getElementById('compareLoading').classList.remove('hidden');
+            document.getElementById('compareTableDisplay').classList.add('hidden');
+            
+            try {
+                // Find district ID
+                const searchResp = await fetch(`/api/org-units`).then(r => r.json());
+                const countryId = searchResp.organisationUnits?.[0]?.id;
+                
+                // Search through regions to find district
+                const regionsResp = await fetch(`/api/org-units?parent=${countryId}`).then(r => r.json());
+                let districtId = null;
+                
+                for (const region of regionsResp.children || []) {
+                    const districtsResp = await fetch(`/api/org-units?parent=${region.id}`).then(r => r.json());
+                    const found = (districtsResp.children || []).find(d => 
+                        d.displayName.toUpperCase().includes(districtName.toUpperCase().replace(' DISTRICT', '').replace(' CITY', ''))
+                    );
+                    if (found) {
+                        districtId = found.id;
+                        break;
+                    }
+                }
+                
+                if (!districtId) {
+                    alert('Could not find district in DHIS2');
+                    return;
+                }
+                
+                // Get facilities (level 5 or 6)
+                const facilitiesResp = await fetch(`/api/org-units-descendants?parent=${districtId}&level=6`).then(r => r.json());
+                let facilities = facilitiesResp.organisationUnits || [];
+                
+                if (facilities.length === 0) {
+                    // Try level 5
+                    const level5Resp = await fetch(`/api/org-units-descendants?parent=${districtId}&level=5`).then(r => r.json());
+                    facilities = level5Resp.organisationUnits || [];
+                }
+                
+                const units = facilities.sort((a, b) => a.displayName.localeCompare(b.displayName));
+                compareContext.units = units;
+                compareContext.resultsById = {};
+                
+                // Fetch data in batches
+                const batchSize = 10;
+                for (let i = 0; i < units.length; i += batchSize) {
+                    const batch = units.slice(i, i + batchSize);
+                    await Promise.all(batch.map(async (u) => {
+                        const data = await fetch(`/wash/api/compare-data?orgUnit=${u.id}&period=${period}`).then(r => r.json());
+                        compareContext.resultsById[u.id] = data;
+                    }));
+                }
+                
+                document.getElementById('compareTableTitle').textContent = `Facilities in ${districtName} - WASH Comparison`;
+                renderCompareTable(units);
+                
+            } catch (e) {
+                console.error('Compare error:', e);
+                alert('Error loading comparison: ' + e.message);
+            } finally {
+                document.getElementById('compareLoading').classList.add('hidden');
+            }
+        }
+
+        function getWashCellClass(value) {
+            if (value === null || value === undefined) return '';
+            const v = Number(value);
+            if (!Number.isFinite(v)) return '';
+            if (v > 100) return 'cell-blue';
+            if (v >= 75) return 'cell-green';
+            if (v >= 50) return 'cell-yellow';
+            return 'cell-red';
+        }
+
+        function renderCompareTable(units) {
+            const tbody = document.getElementById('compareTableBody');
+            tbody.innerHTML = '';
+            
+            let unitsWithData = 0;
+            
+            units.forEach(u => {
+                const data = compareContext.resultsById[u.id] || {};
+                const hasData = data.hasData !== false;
+                if (hasData) unitsWithData++;
+                
+                const tr = document.createElement('tr');
+                if (!hasData) tr.style.opacity = '0.6';
+                
+                // Org Unit name
+                const tdName = document.createElement('td');
+                tdName.style.textAlign = 'left';
+                tdName.style.fontWeight = '500';
+                if (!hasData) {
+                    tdName.innerHTML = `${u.displayName} <span style="color: #ef4444; font-size: 10px;">(no data)</span>`;
+                } else {
+                    tdName.textContent = u.displayName;
+                }
+                tr.appendChild(tdName);
+                
+                // Add indicator cells
+                const indicators = ['latrines', 'improved_latrines', 'handwashing', 'safe_water', 'odf'];
+                indicators.forEach(key => {
+                    const td = document.createElement('td');
+                    const value = data[key];
+                    if (value !== null && value !== undefined) {
+                        td.textContent = `${value}%`;
+                        td.classList.add(getWashCellClass(value));
+                        if (value > 100) {
+                            td.title = 'Data Error: Value exceeds 100%';
+                        }
+                    } else {
+                        td.textContent = '—';
+                        td.style.color = '#9ca3af';
+                    }
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            // Show note if some units have no data
+            if (unitsWithData < units.length) {
+                const note = document.createElement('tr');
+                note.innerHTML = `<td colspan="6" style="text-align: center; color: #f59e0b; font-size: 12px; padding: 12px;">
+                    ⚠️ ${units.length - unitsWithData} of ${units.length} units have no WASH data for the selected period.
+                </td>`;
+                tbody.appendChild(note);
+            }
+            
+            document.getElementById('compareTableDisplay').classList.remove('hidden');
+        }
+
+        function downloadCompareExcel() {
+            const table = document.getElementById('compareTable');
+            if (!table) {
+                alert('No comparison table to download');
+                return;
+            }
+            
+            // Styling constants
+            const BORDER = {
+                top: { style: 'thin', color: { rgb: '000000' } },
+                bottom: { style: 'thin', color: { rgb: '000000' } },
+                left: { style: 'thin', color: { rgb: '000000' } },
+                right: { style: 'thin', color: { rgb: '000000' } }
+            };
+            
+            const HEADER_STYLE = {
+                fill: { fgColor: { rgb: '0891B2' } },
+                font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+                alignment: { horizontal: 'center', vertical: 'center' },
+                border: BORDER
+            };
+            
+            const COLOR_MAP = {
+                'cell-green': { fill: { fgColor: { rgb: '10B981' } }, font: { color: { rgb: 'FFFFFF' }, bold: true } },
+                'cell-yellow': { fill: { fgColor: { rgb: 'FBBF24' } }, font: { color: { rgb: '000000' }, bold: true } },
+                'cell-red': { fill: { fgColor: { rgb: 'EF4444' } }, font: { color: { rgb: 'FFFFFF' }, bold: true } },
+                'cell-blue': { fill: { fgColor: { rgb: '3B82F6' } }, font: { color: { rgb: 'FFFFFF' }, bold: true } }
+            };
+            
+            // Extract data
+            const data = [];
+            const styles = [];
+            
+            // Header
+            const headerRow = [];
+            const headerStyles = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                headerRow.push(th.textContent.trim());
+                headerStyles.push(HEADER_STYLE);
+            });
+            data.push(headerRow);
+            styles.push(headerStyles);
+            
+            // Body
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const rowData = [];
+                const rowStyles = [];
+                tr.querySelectorAll('td').forEach((td, idx) => {
+                    rowData.push(td.textContent.trim());
+                    
+                    let cellStyle = {
+                        alignment: { horizontal: idx === 0 ? 'left' : 'center', vertical: 'center' },
+                        border: BORDER
+                    };
+                    
+                    if (td.classList.contains('cell-green')) {
+                        cellStyle = { ...cellStyle, ...COLOR_MAP['cell-green'] };
+                    } else if (td.classList.contains('cell-yellow')) {
+                        cellStyle = { ...cellStyle, ...COLOR_MAP['cell-yellow'] };
+                    } else if (td.classList.contains('cell-red')) {
+                        cellStyle = { ...cellStyle, ...COLOR_MAP['cell-red'] };
+                    } else if (td.classList.contains('cell-blue')) {
+                        cellStyle = { ...cellStyle, ...COLOR_MAP['cell-blue'] };
+                    }
+                    
+                    rowStyles.push(cellStyle);
+                });
+                data.push(rowData);
+                styles.push(rowStyles);
+            });
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Apply styles
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; R++) {
+                for (let C = range.s.c; C <= range.e.c; C++) {
+                    const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (ws[cellAddr] && styles[R] && styles[R][C]) {
+                        ws[cellAddr].s = styles[R][C];
+                    }
+                }
+            }
+            
+            ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 18 }, { wch: 15 }, { wch: 15 }, { wch: 12 }];
+            ws['!rows'] = [{ hpt: 25 }];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'WASH Comparison');
+            
+            const date = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `WASH_Comparison_${date}.xlsx`);
+            showToast('Excel downloaded!');
+        }
+    </script>
+</body>
+</html>
+
