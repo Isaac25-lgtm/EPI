@@ -677,46 +677,30 @@
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>📅 Start Month</label>
+                        <label>📅 Start Quarter</label>
                         <div style="display: flex; gap: 8px;">
                             <select id="startYear" onchange="updatePeriodDisplay()" style="flex: 1;">
                                 <!-- Years populated by JS -->
                             </select>
-                            <select id="startMonth" onchange="updatePeriodDisplay()" style="flex: 1;">
-                                <option value="01">January</option>
-                                <option value="02">February</option>
-                                <option value="03">March</option>
-                                <option value="04">April</option>
-                                <option value="05">May</option>
-                                <option value="06">June</option>
-                                <option value="07">July</option>
-                                <option value="08">August</option>
-                                <option value="09">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                            <select id="startQuarter" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <option value="1">Q1 (Jan-Mar)</option>
+                                <option value="2">Q2 (Apr-Jun)</option>
+                                <option value="3">Q3 (Jul-Sep)</option>
+                                <option value="4">Q4 (Oct-Dec)</option>
                             </select>
                         </div>
                     </div>
                     <div class="filter-group">
-                        <label>📅 End Month</label>
+                        <label>📅 End Quarter</label>
                         <div style="display: flex; gap: 8px;">
                             <select id="endYear" onchange="updatePeriodDisplay()" style="flex: 1;">
                                 <!-- Years populated by JS -->
                             </select>
-                            <select id="endMonth" onchange="updatePeriodDisplay()" style="flex: 1;">
-                                <option value="01">January</option>
-                                <option value="02">February</option>
-                                <option value="03">March</option>
-                                <option value="04">April</option>
-                                <option value="05">May</option>
-                                <option value="06">June</option>
-                                <option value="07">July</option>
-                                <option value="08">August</option>
-                                <option value="09">September</option>
-                                <option value="10">October</option>
-                                <option value="11">November</option>
-                                <option value="12">December</option>
+                            <select id="endQuarter" onchange="updatePeriodDisplay()" style="flex: 1;">
+                                <option value="1">Q1 (Jan-Mar)</option>
+                                <option value="2">Q2 (Apr-Jun)</option>
+                                <option value="3">Q3 (Jul-Sep)</option>
+                                <option value="4">Q4 (Oct-Dec)</option>
                             </select>
                         </div>
                     </div>
@@ -833,26 +817,26 @@
                         <h4 style="margin-bottom: 10px;">📅 Period for Comparison</h4>
                         <div style="display:flex; gap: 14px; flex-wrap: wrap; align-items: end;">
                             <div style="flex: 1; min-width: 180px;">
-                                <label style="font-size: 13px; font-weight: 600;">Start Month</label>
+                                <label style="font-size: 13px; font-weight: 600;">Start Quarter</label>
                                 <div style="display:flex; gap: 8px;">
                                     <select id="compareStartYear" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;"></select>
-                                    <select id="compareStartMonth" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
-                                        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-                                        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
-                                        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
-                                        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                    <select id="compareStartQuarter" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <option value="1">Q1 (Jan-Mar)</option>
+                                        <option value="2">Q2 (Apr-Jun)</option>
+                                        <option value="3">Q3 (Jul-Sep)</option>
+                                        <option value="4">Q4 (Oct-Dec)</option>
                                     </select>
                                 </div>
                             </div>
                             <div style="flex: 1; min-width: 180px;">
-                                <label style="font-size: 13px; font-weight: 600;">End Month</label>
+                                <label style="font-size: 13px; font-weight: 600;">End Quarter</label>
                                 <div style="display:flex; gap: 8px;">
                                     <select id="compareEndYear" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;"></select>
-                                    <select id="compareEndMonth" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
-                                        <option value="01">January</option><option value="02">February</option><option value="03">March</option>
-                                        <option value="04">April</option><option value="05">May</option><option value="06">June</option>
-                                        <option value="07">July</option><option value="08">August</option><option value="09">September</option>
-                                        <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+                                    <select id="compareEndQuarter" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                                        <option value="1">Q1 (Jan-Mar)</option>
+                                        <option value="2">Q2 (Apr-Jun)</option>
+                                        <option value="3">Q3 (Jul-Sep)</option>
+                                        <option value="4">Q4 (Oct-Dec)</option>
                                     </select>
                                 </div>
                             </div>
@@ -994,7 +978,7 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Initialize period year dropdowns
+        // Initialize period year dropdowns with quarterly defaults
         function initPeriodYears() {
             const currentYear = new Date().getFullYear();
             const currentMonth = new Date().getMonth() + 1;
@@ -1010,38 +994,38 @@
             });
             
             // Set defaults: Last 4 quarters (12 months) ending with current quarter
-            // WASH data is quarterly, so we want to capture the last 4 quarters
-            const currentQuarter = Math.floor((currentMonth - 1) / 3);
-            const quarterEndMonth = (currentQuarter + 1) * 3; // End of current quarter (3, 6, 9, or 12)
+            const currentQuarter = Math.floor((currentMonth - 1) / 3) + 1;
             
             document.getElementById('endYear').value = currentYear;
-            document.getElementById('endMonth').value = quarterEndMonth.toString().padStart(2, '0');
+            document.getElementById('endQuarter').value = currentQuarter;
             
-            // Start 12 months ago (4 quarters)
-            let startYear = currentYear - 1;
-            let startMonth = quarterEndMonth + 1; // Start of next quarter after -12 months
-            if (startMonth > 12) {
-                startMonth = startMonth - 12;
-                startYear = currentYear;
+            // Start: 4 quarters ago
+            let startYear = currentYear;
+            let startQuarter = currentQuarter - 3; // Go back 3 quarters (4 total including current)
+            if (startQuarter <= 0) {
+                startQuarter += 4;
+                startYear--;
             }
             
             document.getElementById('startYear').value = startYear;
-            document.getElementById('startMonth').value = startMonth.toString().padStart(2, '0');
+            document.getElementById('startQuarter').value = startQuarter;
         }
 
         function updatePeriodDisplay() {
             const startY = parseInt(document.getElementById('startYear')?.value || new Date().getFullYear());
-            const startM = parseInt(document.getElementById('startMonth')?.value || 1);
+            const startQ = parseInt(document.getElementById('startQuarter')?.value || 1);
             const endY = parseInt(document.getElementById('endYear')?.value || new Date().getFullYear());
-            const endM = parseInt(document.getElementById('endMonth')?.value || 12);
+            const endQ = parseInt(document.getElementById('endQuarter')?.value || 1);
             
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const periodText = `${monthNames[startM - 1]} ${startY} - ${monthNames[endM - 1]} ${endY}`;
+            const quarterNames = ['Q1', 'Q2', 'Q3', 'Q4'];
+            const periodText = `${startY}${quarterNames[startQ - 1]} - ${endY}${quarterNames[endQ - 1]}`;
             
-            const months = (endY - startY) * 12 + (endM - startM) + 1;
+            // Calculate number of quarters
+            const totalQuarters = (endY - startY) * 4 + (endQ - startQ) + 1;
+            const totalMonths = totalQuarters * 3;
             
             document.getElementById('selectedPeriod').textContent = periodText;
-            document.getElementById('monthsCount').textContent = months;
+            document.getElementById('monthsCount').textContent = `${totalQuarters} quarters (${totalMonths} months)`;
             
             // Reset quick period to Custom if manually changed
             const quickSelect = document.getElementById('quickPeriodSelect');
@@ -1058,95 +1042,90 @@
             
             const currentYear = new Date().getFullYear();
             const currentMonth = new Date().getMonth() + 1;
-            const currentQuarter = Math.floor((currentMonth - 1) / 3);
-            const quarterEndMonth = (currentQuarter + 1) * 3;
+            const currentQuarter = Math.floor((currentMonth - 1) / 3) + 1;
             
-            let startYear, startMonth, endYear, endMonth;
+            let startYear, startQuarter, endYear, endQuarter;
             
             switch(period) {
                 case 'LAST_QUARTER':
-                    // Last complete quarter (3 months)
+                    // Last complete quarter
                     endYear = currentYear;
-                    endMonth = currentQuarter === 0 ? 12 : (currentQuarter * 3);
-                    if (currentQuarter === 0) endYear--;
-                    
-                    startMonth = endMonth - 2;
-                    startYear = endYear;
-                    if (startMonth <= 0) {
-                        startMonth += 12;
-                        startYear--;
+                    endQuarter = currentQuarter - 1;
+                    if (endQuarter <= 0) {
+                        endQuarter = 4;
+                        endYear--;
                     }
+                    startYear = endYear;
+                    startQuarter = endQuarter;
                     break;
                     
                 case 'LAST_2_QUARTERS':
-                    // Last 2 quarters (6 months)
+                    // Last 2 quarters
                     endYear = currentYear;
-                    endMonth = quarterEndMonth;
+                    endQuarter = currentQuarter;
                     
-                    startMonth = endMonth - 5;
                     startYear = endYear;
-                    if (startMonth <= 0) {
-                        startMonth += 12;
+                    startQuarter = endQuarter - 1;
+                    if (startQuarter <= 0) {
+                        startQuarter = 4;
                         startYear--;
                     }
                     break;
                     
                 case 'LAST_4_QUARTERS':
-                    // Last 4 quarters (12 months)
+                    // Last 4 quarters (default)
                     endYear = currentYear;
-                    endMonth = quarterEndMonth;
+                    endQuarter = currentQuarter;
                     
-                    startMonth = endMonth - 11;
                     startYear = endYear;
-                    if (startMonth <= 0) {
-                        startMonth += 12;
+                    startQuarter = endQuarter - 3;
+                    if (startQuarter <= 0) {
+                        startQuarter += 4;
                         startYear--;
                     }
                     break;
                     
                 case 'THIS_YEAR':
                     startYear = currentYear;
-                    startMonth = 1;
+                    startQuarter = 1;
                     endYear = currentYear;
-                    endMonth = 12;
+                    endQuarter = 4;
                     break;
                     
                 case 'LAST_YEAR':
                     startYear = currentYear - 1;
-                    startMonth = 1;
+                    startQuarter = 1;
                     endYear = currentYear - 1;
-                    endMonth = 12;
+                    endQuarter = 4;
                     break;
             }
             
             document.getElementById('startYear').value = startYear;
-            document.getElementById('startMonth').value = startMonth.toString().padStart(2, '0');
+            document.getElementById('startQuarter').value = startQuarter;
             document.getElementById('endYear').value = endYear;
-            document.getElementById('endMonth').value = endMonth.toString().padStart(2, '0');
+            document.getElementById('endQuarter').value = endQuarter;
             
             updatePeriodDisplay();
         }
 
         function getSelectedPeriod() {
             const startY = document.getElementById('startYear')?.value;
-            const startM = document.getElementById('startMonth')?.value;
+            const startQ = document.getElementById('startQuarter')?.value;
             const endY = document.getElementById('endYear')?.value;
-            const endM = document.getElementById('endMonth')?.value;
+            const endQ = document.getElementById('endQuarter')?.value;
             
-            if (!startY || !startM || !endY || !endM) return 'LAST_12_MONTHS';
+            if (!startY || !startQ || !endY || !endQ) return 'LAST_12_MONTHS';
             
-            const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
-            const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
+            // Convert quarters to YYYYMM format for backend
+            // Q1=01 (Jan), Q2=04 (Apr), Q3=07 (Jul), Q4=10 (Oct) - start of each quarter
+            const quarterStartMonth = {1: '01', 2: '04', 3: '07', 4: '10'};
+            const quarterEndMonth = {1: '03', 2: '06', 3: '09', 4: '12'};
             
-            if (start > end) return 'LAST_12_MONTHS';
+            const startMonth = quarterStartMonth[parseInt(startQ)];
+            const endMonth = quarterEndMonth[parseInt(endQ)];
             
-            const periods = [];
-            let current = new Date(start);
-            while (current <= end) {
-                periods.push(`${current.getFullYear()}${(current.getMonth() + 1).toString().padStart(2, '0')}`);
-                current.setMonth(current.getMonth() + 1);
-            }
-            return periods.join(';');
+            // Return as YYYYMM-YYYYMM format (backend will convert to quarterly periods)
+            return `${startY}${startMonth}-${endY}${endMonth}`;
         }
 
         // ============ FILTERS & HIERARCHY ============
@@ -1398,6 +1377,7 @@
         function initCompareYears() {
             const year = new Date().getFullYear();
             const month = new Date().getMonth() + 1;
+            const currentQuarter = Math.floor((month - 1) / 3) + 1;
             
             ['compareStartYear', 'compareEndYear'].forEach(id => {
                 const el = document.getElementById(id);
@@ -1407,12 +1387,19 @@
                 }
             });
             
+            // Default: Last 4 quarters
             document.getElementById('compareEndYear').value = year;
-            document.getElementById('compareEndMonth').value = month.toString().padStart(2, '0');
-            const startMonth = month === 1 ? 12 : month - 1;
-            const startYear = month === 1 ? year - 1 : year;
+            document.getElementById('compareEndQuarter').value = currentQuarter;
+            
+            let startYear = year;
+            let startQuarter = currentQuarter - 3;
+            if (startQuarter <= 0) {
+                startQuarter += 4;
+                startYear--;
+            }
+            
             document.getElementById('compareStartYear').value = startYear;
-            document.getElementById('compareStartMonth').value = startMonth.toString().padStart(2, '0');
+            document.getElementById('compareStartQuarter').value = startQuarter;
         }
 
         async function loadCompareDropdowns() {
@@ -1451,21 +1438,32 @@
 
         function getComparisonPeriod() {
             const startY = document.getElementById('compareStartYear')?.value;
-            const startM = document.getElementById('compareStartMonth')?.value;
+            const startQ = document.getElementById('compareStartQuarter')?.value;
             const endY = document.getElementById('compareEndYear')?.value;
-            const endM = document.getElementById('compareEndMonth')?.value;
+            const endQ = document.getElementById('compareEndQuarter')?.value;
             
-            if (!startY || !startM || !endY || !endM) {
-                alert('Please select start and end month.');
+            if (!startY || !startQ || !endY || !endQ) {
+                alert('Please select start and end quarter.');
                 return null;
             }
             
-            const start = new Date(parseInt(startY), parseInt(startM) - 1, 1);
-            const end = new Date(parseInt(endY), parseInt(endM) - 1, 1);
-            if (start > end) {
-                alert('Start date must be before end date.');
+            // Validate: start before end
+            const startNum = parseInt(startY) * 4 + parseInt(startQ);
+            const endNum = parseInt(endY) * 4 + parseInt(endQ);
+            if (startNum > endNum) {
+                alert('Start quarter must be before end quarter.');
                 return null;
             }
+            
+            // Convert quarters to YYYYMM format for backend
+            const quarterStartMonth = {1: '01', 2: '04', 3: '07', 4: '10'};
+            const quarterEndMonth = {1: '03', 2: '06', 3: '09', 4: '12'};
+            
+            const startMonth = quarterStartMonth[parseInt(startQ)];
+            const endMonth = quarterEndMonth[parseInt(endQ)];
+            
+            return `${startY}${startMonth}-${endY}${endMonth}`;
+        }
             
             const periods = [];
             let current = new Date(start);
