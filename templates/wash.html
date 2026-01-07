@@ -1026,22 +1026,32 @@
 
         // ============ FILTERS & HIERARCHY ============
         async function initializeFilters() {
+            const regionSelect = document.getElementById('level2');
+            regionSelect.innerHTML = '<option value="">Loading regions...</option>';
+            
             try {
+                console.log('Fetching country...');
                 const response = await fetch('/api/org-units');
                 const data = await response.json();
                 countryId = data.organisationUnits?.[0]?.id;
                 
                 if (countryId) {
+                    console.log('Fetching regions for country:', countryId);
                     const regionsResp = await fetch(`/api/org-units?parent=${countryId}`);
                     const regionsData = await regionsResp.json();
                     const regions = (regionsData.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
                     
-                    const select = document.getElementById('level2');
-                    select.innerHTML = '<option value="">-- Select Region --</option>' +
+                    console.log('Loaded', regions.length, 'regions');
+                    
+                    regionSelect.innerHTML = '<option value="">-- Select Region --</option>' +
                         regions.map(r => `<option value="${r.id}" data-name="${r.displayName}">${r.displayName}</option>`).join('');
+                } else {
+                    regionSelect.innerHTML = '<option value="">No country found</option>';
                 }
             } catch (e) {
                 console.error('Error initializing filters:', e);
+                regionSelect.innerHTML = '<option value="">Error loading regions - check console</option>';
+                showToast('Failed to load regions: ' + e.message, 'error');
             }
         }
 
@@ -1049,6 +1059,8 @@
             const currentSelect = document.getElementById(`level${level}`);
             const parentId = currentSelect.value;
             const parentName = currentSelect.options[currentSelect.selectedIndex]?.dataset?.name || currentSelect.options[currentSelect.selectedIndex]?.text;
+            
+            console.log(`Loading children for level ${level}, parent: ${parentName} (${parentId})`);
             
             // Reset all lower level selects
             for (let i = level + 1; i <= 6; i++) {
@@ -1077,8 +1089,13 @@
             
             try {
                 const response = await fetch(`/api/org-units?parent=${parentId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const data = await response.json();
                 const children = (data.children || []).sort((a, b) => a.displayName.localeCompare(b.displayName));
+                
+                console.log(`Loaded ${children.length} children for level ${nextLevel}`);
                 
                 if (children.length > 0) {
                     nextSelect.innerHTML = '<option value="">-- Select --</option>' +
@@ -1088,7 +1105,9 @@
                     nextSelect.innerHTML = '<option>No sub-units</option>';
                 }
             } catch (e) {
-                nextSelect.innerHTML = '<option>Error loading</option>';
+                console.error(`Error loading children for level ${nextLevel}:`, e);
+                nextSelect.innerHTML = '<option>Error loading - check console</option>';
+                showToast(`Failed to load ${nextLevel === 3 ? 'districts' : nextLevel === 4 ? 'counties' : 'sub-units'}`, 'error');
             }
         }
 
