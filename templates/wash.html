@@ -664,28 +664,14 @@
 
                 <!-- Period Selection -->
                 <div class="filters-row" style="margin-top: 20px; align-items: end;">
-                    <div class="filter-group">
-                        <label>📅 Quick Period Selection</label>
-                        <select id="quickPeriodSelect" onchange="setQuickPeriod()" style="padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px;">
-                            <option value="">-- Select Preset --</option>
+                    <div class="filter-group" style="grid-column: 1 / -1;">
+                        <label>📅 Select Period</label>
+                        <select id="periodSelect" onchange="updatePeriodDisplay()" style="padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; width: 100%; font-size: 14px;">
                             <option value="LAST_QUARTER">Last Quarter (3 months)</option>
                             <option value="LAST_2_QUARTERS">Last 2 Quarters (6 months)</option>
                             <option value="LAST_4_QUARTERS" selected>Last 4 Quarters (12 months)</option>
-                            <option value="THIS_YEAR">This Year</option>
-                            <option value="LAST_YEAR">Last Year</option>
-                            <option value="CUSTOM">Custom Range</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>📅 Start Quarter</label>
-                        <select id="startQuarter" onchange="updatePeriodDisplay()" style="padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; width: 100%;">
-                            <!-- Quarters populated by JS -->
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>📅 End Quarter</label>
-                        <select id="endQuarter" onchange="updatePeriodDisplay()" style="padding: 10px 12px; border: 2px solid var(--border-color); border-radius: 8px; width: 100%;">
-                            <!-- Quarters populated by JS -->
+                            <option value="THIS_YEAR">This Year (4 quarters)</option>
+                            <option value="LAST_YEAR">Last Year (4 quarters)</option>
                         </select>
                     </div>
                 </div>
@@ -799,19 +785,15 @@
                     <!-- Period Selection -->
                     <div style="border: 1px solid var(--border-color); padding: 14px; border-radius: 10px; margin-bottom: 16px;">
                         <h4 style="margin-bottom: 10px;">📅 Period for Comparison</h4>
-                        <div style="display:flex; gap: 14px; flex-wrap: wrap; align-items: end;">
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="font-size: 13px; font-weight: 600;">Start Quarter</label>
-                                <select id="compareStartQuarter" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
-                                    <!-- Quarters populated by JS -->
-                                </select>
-                            </div>
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="font-size: 13px; font-weight: 600;">End Quarter</label>
-                                <select id="compareEndQuarter" style="width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
-                                    <!-- Quarters populated by JS -->
-                                </select>
-                            </div>
+                        <div style="display:flex; gap: 14px;">
+                            <select id="comparePeriodSelect" style="width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px; font-size: 14px;">
+                                <option value="LAST_QUARTER">Last Quarter (3 months)</option>
+                                <option value="LAST_2_QUARTERS">Last 2 Quarters (6 months)</option>
+                                <option value="LAST_4_QUARTERS" selected>Last 4 Quarters (12 months)</option>
+                                <option value="THIS_YEAR">This Year (4 quarters)</option>
+                                <option value="LAST_YEAR">Last Year (4 quarters)</option>
+                            </select>
+                        </div>
                         </div>
                     </div>
 
@@ -950,183 +932,109 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // Generate list of last 10 quarters in DHIS2 format
-        function generateQuartersList() {
-            const quarters = [];
+        // Generate period string based on preset selection
+        function getPeriodFromPreset(preset) {
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth() + 1;
             const currentQuarter = Math.floor((currentMonth - 1) / 3) + 1;
             
-            let year = currentYear;
-            let quarter = currentQuarter;
+            const quarterStartMonth = {1: '01', 2: '04', 3: '07', 4: '10'};
+            const quarterEndMonth = {1: '03', 2: '06', 3: '09', 4: '12'};
             
-            // Generate last 10 quarters
-            for (let i = 0; i < 10; i++) {
-                const quarterNames = {
-                    1: 'January - March',
-                    2: 'April - June',
-                    3: 'July - September',
-                    4: 'October - December'
-                };
-                
-                quarters.push({
-                    value: `${year}Q${quarter}`,
-                    label: `${quarterNames[quarter]} ${year}`,
-                    year: year,
-                    quarter: quarter
-                });
-                
-                quarter--;
-                if (quarter < 1) {
-                    quarter = 4;
-                    year--;
-                }
-            }
+            let startYear, startQ, endYear, endQ;
             
-            return quarters;
-        }
-
-        // Initialize period quarter dropdowns
-        function initPeriodYears() {
-            const quarters = generateQuartersList();
-            
-            // Populate both dropdowns
-            const startSelect = document.getElementById('startQuarter');
-            const endSelect = document.getElementById('endQuarter');
-            
-            if (startSelect && endSelect) {
-                const options = quarters.map(q => 
-                    `<option value="${q.value}">${q.label}</option>`
-                ).join('');
-                
-                startSelect.innerHTML = options;
-                endSelect.innerHTML = options;
-                
-                // Set defaults: Last 4 quarters (end = current quarter, start = 3 quarters ago)
-                endSelect.value = quarters[0].value; // Most recent quarter
-                startSelect.value = quarters[3].value; // 4 quarters ago
-            }
-        }
-
-        function updatePeriodDisplay() {
-            const startVal = document.getElementById('startQuarter')?.value || '';
-            const endVal = document.getElementById('endQuarter')?.value || '';
-            
-            if (!startVal || !endVal) return;
-            
-            // Extract readable labels
-            const quarters = generateQuartersList();
-            const startQ = quarters.find(q => q.value === startVal);
-            const endQ = quarters.find(q => q.value === endVal);
-            
-            if (startQ && endQ) {
-                const periodText = `${startQ.label} → ${endQ.label}`;
-                
-                // Calculate number of quarters
-                const startNum = startQ.year * 4 + startQ.quarter;
-                const endNum = endQ.year * 4 + endQ.quarter;
-                const totalQuarters = Math.abs(endNum - startNum) + 1;
-                const totalMonths = totalQuarters * 3;
-                
-                document.getElementById('selectedPeriod').textContent = periodText;
-                document.getElementById('monthsCount').textContent = `${totalQuarters} quarters (${totalMonths} months)`;
-            }
-            
-            // Reset quick period to Custom if manually changed
-            const quickSelect = document.getElementById('quickPeriodSelect');
-            if (quickSelect && quickSelect.value !== '') {
-                quickSelect.value = 'CUSTOM';
-            }
-        }
-
-        function setQuickPeriod() {
-            const quickSelect = document.getElementById('quickPeriodSelect');
-            const period = quickSelect.value;
-            
-            if (!period || period === 'CUSTOM') return;
-            
-            const quarters = generateQuartersList();
-            
-            let startIdx, endIdx;
-            
-            switch(period) {
+            switch(preset) {
                 case 'LAST_QUARTER':
-                    // Just the most recent complete quarter
-                    startIdx = 1;
-                    endIdx = 1;
+                    // Last complete quarter
+                    endYear = currentYear;
+                    endQ = currentQuarter - 1;
+                    if (endQ <= 0) {
+                        endQ = 4;
+                        endYear--;
+                    }
+                    startYear = endYear;
+                    startQ = endQ;
                     break;
                     
                 case 'LAST_2_QUARTERS':
-                    // Last 2 quarters
-                    startIdx = 1;
-                    endIdx = 0;
+                    endYear = currentYear;
+                    endQ = currentQuarter;
+                    startYear = endYear;
+                    startQ = endQ - 1;
+                    if (startQ <= 0) {
+                        startQ += 4;
+                        startYear--;
+                    }
                     break;
                     
                 case 'LAST_4_QUARTERS':
-                    // Last 4 quarters (default)
-                    startIdx = 3;
-                    endIdx = 0;
+                    endYear = currentYear;
+                    endQ = currentQuarter;
+                    startYear = endYear;
+                    startQ = endQ - 3;
+                    if (startQ <= 0) {
+                        startQ += 4;
+                        startYear--;
+                    }
                     break;
                     
                 case 'THIS_YEAR':
-                    // All 4 quarters of current year
-                    const currentYear = new Date().getFullYear();
-                    const thisYearQuarters = quarters.filter(q => q.year === currentYear);
-                    if (thisYearQuarters.length > 0) {
-                        document.getElementById('startQuarter').value = thisYearQuarters[thisYearQuarters.length - 1].value;
-                        document.getElementById('endQuarter').value = thisYearQuarters[0].value;
-                        updatePeriodDisplay();
-                        return;
-                    }
+                    startYear = currentYear;
+                    startQ = 1;
+                    endYear = currentYear;
+                    endQ = 4;
                     break;
                     
                 case 'LAST_YEAR':
-                    // All 4 quarters of last year
-                    const lastYear = new Date().getFullYear() - 1;
-                    const lastYearQuarters = quarters.filter(q => q.year === lastYear);
-                    if (lastYearQuarters.length > 0) {
-                        document.getElementById('startQuarter').value = lastYearQuarters[lastYearQuarters.length - 1].value;
-                        document.getElementById('endQuarter').value = lastYearQuarters[0].value;
-                        updatePeriodDisplay();
-                        return;
-                    }
+                    startYear = currentYear - 1;
+                    startQ = 1;
+                    endYear = currentYear - 1;
+                    endQ = 4;
                     break;
+                    
+                default:
+                    return 'LAST_12_MONTHS';
             }
-            
-            if (startIdx !== undefined && endIdx !== undefined) {
-                document.getElementById('startQuarter').value = quarters[startIdx].value;
-                document.getElementById('endQuarter').value = quarters[endIdx].value;
-                updatePeriodDisplay();
-            }
-        }
-
-        function getSelectedPeriod() {
-            const startVal = document.getElementById('startQuarter')?.value || '';
-            const endVal = document.getElementById('endQuarter')?.value || '';
-            
-            if (!startVal || !endVal) return 'LAST_12_MONTHS';
-            
-            // Extract year and quarter from format "2025Q1"
-            const startMatch = startVal.match(/(\d{4})Q(\d)/);
-            const endMatch = endVal.match(/(\d{4})Q(\d)/);
-            
-            if (!startMatch || !endMatch) return 'LAST_12_MONTHS';
-            
-            const startYear = startMatch[1];
-            const startQ = parseInt(startMatch[2]);
-            const endYear = endMatch[1];
-            const endQ = parseInt(endMatch[2]);
-            
-            // Convert quarters to YYYYMM format for backend
-            const quarterStartMonth = {1: '01', 2: '04', 3: '07', 4: '10'};
-            const quarterEndMonth = {1: '03', 2: '06', 3: '09', 4: '12'};
             
             const startMonth = quarterStartMonth[startQ];
             const endMonth = quarterEndMonth[endQ];
             
-            // Return as YYYYMM-YYYYMM format
             return `${startYear}${startMonth}-${endYear}${endMonth}`;
+        }
+
+        // Initialize period dropdowns - not needed anymore
+        function initPeriodYears() {
+            // Period is now a simple dropdown, no initialization needed
+            updatePeriodDisplay();
+        }
+
+        function updatePeriodDisplay() {
+            const preset = document.getElementById('periodSelect')?.value || 'LAST_4_QUARTERS';
+            
+            const periodNames = {
+                'LAST_QUARTER': 'Last Quarter',
+                'LAST_2_QUARTERS': 'Last 2 Quarters',
+                'LAST_4_QUARTERS': 'Last 4 Quarters',
+                'THIS_YEAR': 'This Year',
+                'LAST_YEAR': 'Last Year'
+            };
+            
+            const monthCounts = {
+                'LAST_QUARTER': 3,
+                'LAST_2_QUARTERS': 6,
+                'LAST_4_QUARTERS': 12,
+                'THIS_YEAR': 12,
+                'LAST_YEAR': 12
+            };
+            
+            document.getElementById('selectedPeriod').textContent = periodNames[preset] || preset;
+            document.getElementById('monthsCount').textContent = monthCounts[preset] || 12;
+        }
+
+        function getSelectedPeriod() {
+            const preset = document.getElementById('periodSelect')?.value || 'LAST_4_QUARTERS';
+            return getPeriodFromPreset(preset);
         }
 
         // ============ FILTERS & HIERARCHY ============
@@ -1376,23 +1284,7 @@
 
         // ============ COMPARE TAB ============
         function initCompareYears() {
-            const quarters = generateQuartersList();
-            
-            const startSelect = document.getElementById('compareStartQuarter');
-            const endSelect = document.getElementById('compareEndQuarter');
-            
-            if (startSelect && endSelect) {
-                const options = quarters.map(q => 
-                    `<option value="${q.value}">${q.label}</option>`
-                ).join('');
-                
-                startSelect.innerHTML = options;
-                endSelect.innerHTML = options;
-                
-                // Set defaults: Last 4 quarters
-                endSelect.value = quarters[0].value;
-                startSelect.value = quarters[3].value;
-            }
+            // Compare now uses simple dropdown preset, no initialization needed
         }
 
         async function loadCompareDropdowns() {
@@ -1430,13 +1322,9 @@
         }
 
         function getComparisonPeriod() {
-            const startVal = document.getElementById('compareStartQuarter')?.value || '';
-            const endVal = document.getElementById('compareEndQuarter')?.value || '';
-            
-            if (!startVal || !endVal) {
-                alert('Please select start and end quarter.');
-                return null;
-            }
+            const preset = document.getElementById('comparePeriodSelect')?.value || 'LAST_4_QUARTERS';
+            return getPeriodFromPreset(preset);
+        }
             
             // Extract year and quarter from format "2025Q1"
             const startMatch = startVal.match(/(\d{4})Q(\d)/);
