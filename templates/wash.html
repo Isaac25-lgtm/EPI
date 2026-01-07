@@ -84,17 +84,33 @@
         .btn-primary {
             background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
         }
 
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
         .btn-secondary {
             background: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            background: var(--bg-primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
         }
 
         .btn-back {
@@ -192,6 +208,34 @@
             gap: 8px;
         }
 
+        /* Filters Card with Borders */
+        .filters-card-main {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 2px solid #0891b2;
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.1);
+        }
+
+        .filters-card-main h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            border-bottom: 3px solid #0891b2;
+            padding-bottom: 12px;
+        }
+
+        [data-theme="dark"] .filters-card-main {
+            border-color: #0e7490;
+            box-shadow: 0 4px 12px rgba(14, 116, 144, 0.2);
+        }
+
+        [data-theme="dark"] .filters-card-main h3 {
+            border-bottom-color: #0e7490;
+        }
+
         /* Filters */
         .filters-card {
             display: grid;
@@ -219,12 +263,19 @@
             background: var(--bg-secondary);
             color: var(--text-primary);
             font-size: 14px;
+            transition: border-color 0.2s;
         }
 
         .filter-group select:focus,
         .filter-group input:focus {
             outline: none;
             border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+
+        .filter-group select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Tables */
