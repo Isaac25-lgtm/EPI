@@ -1,27 +1,129 @@
-# EPI Dashboard - Child Immunization Analytics
+# Health Analytics Dashboard - Uganda HMIS
 
-A comprehensive immunization analytics dashboard for Uganda HMIS (DHIS2) that tracks child immunization coverage, dropout rates, trends, and forecasts.
+A comprehensive health analytics dashboard for Uganda HMIS (DHIS2) that tracks **Child Immunization (EPI)**, **Maternal Health (ANC & Intrapartum)**, and **WASH** indicators with coverage analysis, trend forecasting, and RED categorization.
 
-## Features
+## 🏥 Modules
 
-### 📊 Raw Data Section
-- View raw doses from DHIS2
+### 1. 💉 EPI - Child Immunization
 - 28 immunization indicators (105-CL01 to 105-CL28)
-- Filter by organization unit (6 levels) and time period
-- Trend charts and data tables
-- Downloadable as PDF and PNG
+- Coverage calculations using UBOS population for 146 districts
+- Dropout rates: DPT, Polio, BCG→MR1, Malaria 1→2→3→4
+- RED Categorization for quarterly performance monitoring
+- Trend analysis with outlier detection (Z-score method)
+- Forecasting using linear regression
 
-### 📈 Analytics Section
-- **Coverage calculations** using UBOS population for 146 districts
-- **Period divisors**: Monthly ÷12, Quarterly ÷4, Annual ÷1
+### 2. 🤰 Maternal Health
+**ANC (Antenatal Care):**
+- ANC 1, 4, 8+ Visit Coverage
+- ANC 1st Trimester Rate
+- IPT3 Coverage
+- Hb Testing, LLIN Distribution
+- Iron/Folic Acid, Ultrasound Scan Rates
+- Teenage Pregnancy Rate
+
+**Intrapartum:**
+- Deliveries Coverage
+- Low Birth Weight Rate & KMC Initiation
+- Birth Asphyxia & Resuscitation Rates
+- Fresh Still Birth Rate (per 1,000)
+- Neonatal Mortality Rate (per 1,000)
+- Perinatal Mortality Rate (per 1,000)
+- Maternal Mortality Ratio (per 100,000)
+
+### 3. 🚿 WASH
+- Water, Sanitation, and Hygiene indicators
+- Quarterly data analysis
+
+## 📊 Features
+
+- **Multi-level hierarchy**: National → Region → District → Sub-county → Facility
+- **UBOS Population data** for all 146 districts
+- **Custom catchment populations** for facility-level analysis
+- **Period selection**: Monthly, Quarterly, Annual, Custom ranges
 - **Color coding**: 🟢 ≥95%, 🟡 70-94.9%, 🔴 <70%
-- **Dropout rates**: DPT, Polio, BCG→MR1, Malaria 1→2→3→4
-- **Trend analysis** with outlier detection (Z-score method)
-- **Forecasting** using linear regression
-- All tables/charts downloadable as PDF and PNG
+- **Export options**: PDF, PNG, Excel
+- **Show Calculation**: Transparent formula display for each indicator
+- **Compare feature**: Side-by-side analysis with Excel export
 
-## Vaccines Covered
+## 📈 Key Formulas
 
+### Coverage
+```
+Coverage (%) = (Numerator / Target Population) × 100
+```
+
+### Dropout Rate
+```
+Dropout (%) = ((First Dose - Last Dose) / First Dose) × 100
+```
+
+### Neonatal Mortality Rate
+```
+NMR (per 1,000) = (105-MA12 Total Newborn Deaths / Live Births) × 1,000
+```
+
+### Maternal Mortality Ratio
+```
+MMR (per 100,000) = (Maternal Deaths / Live Births) × 100,000
+```
+
+## 🚀 Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Isaac25-lgtm/EPI.git
+cd EPI
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Create `.env` file:
+```
+SECRET_KEY=your-secret-key
+```
+
+4. Run the application:
+```bash
+python app.py
+```
+
+5. Open http://localhost:5000 in your browser
+
+6. Login with your **DHIS2 Uganda HMIS credentials**
+
+## 🛠️ Tech Stack
+
+- **Backend**: Flask, Python
+- **Frontend**: HTML, CSS, JavaScript
+- **Charts**: Chart.js
+- **PDF/Image Export**: jsPDF, html2canvas
+- **Data Source**: DHIS2 Uganda HMIS (https://hmis.health.go.ug)
+
+## 📁 Project Structure
+
+```
+├── app.py              # Main Flask application
+├── modules/
+│   ├── auth.py         # Authentication
+│   ├── core.py         # Core utilities & caching
+│   ├── epi.py          # EPI/Immunization module
+│   ├── maternal.py     # Maternal Health module
+│   └── wash.py         # WASH module
+├── templates/
+│   ├── dashboard.html  # EPI Dashboard
+│   ├── maternal.html   # Maternal Health Dashboard
+│   ├── wash.html       # WASH Dashboard
+│   ├── landing.html    # Module selection page
+│   └── login.html      # Login page
+└── requirements.txt    # Python dependencies
+```
+
+## 📋 Data Elements
+
+### EPI (105-CL)
 | Code | Vaccine |
 |------|---------|
 | 105-CL01 | BCG |
@@ -36,52 +138,21 @@ A comprehensive immunization analytics dashboard for Uganda HMIS (DHIS2) that tr
 | 105-CL23, 27 | Measles (MR1, MR2) |
 | 105-CL24, 28 | Fully immunized |
 
-## Installation
+### Maternal Health (105-AN, 105-MA)
+| Code | Indicator |
+|------|-----------|
+| 105-AN01a | ANC 1st Visit |
+| 105-AN02 | ANC 4th Visit |
+| 105-AN03 | ANC 8+ Visits |
+| 105-MA04 | Total Deliveries |
+| 105-MA05a1 | Live Births Total |
+| 105-MA12 | Newborn Deaths (0-28 days) |
+| 105-MA13 | Maternal Deaths |
 
-1. Clone the repository:
-```bash
-git clone https://github.com/Isaac25-lgtm/EPI.git
-cd EPI
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Create `.env` file with DHIS2 credentials:
-```
-DHIS2_USERNAME=your_username
-DHIS2_PASSWORD=your_password
-```
-
-4. Run the application:
-```bash
-python app.py
-```
-
-5. Open http://localhost:5000 in your browser
-
-## Coverage Formula
-
-```
-Coverage (%) = (Doses Administered / (Target% × UBOS Population / Divisor)) × 100
-```
-
-## Dropout Rate Formula
-
-```
-Dropout (%) = ((First Dose - Last Dose) / First Dose) × 100
-```
-
-## Tech Stack
-
-- **Backend**: Flask, Python
-- **Frontend**: HTML, CSS, JavaScript
-- **Charts**: Chart.js
-- **PDF/Image Export**: jsPDF, html2canvas
-- **Data Source**: DHIS2 Uganda HMIS
-
-## License
+## 📄 License
 
 MIT
+
+## 👨‍💻 Author
+
+Isaac - [GitHub](https://github.com/Isaac25-lgtm)
