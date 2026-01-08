@@ -3243,7 +3243,6 @@
                                     <th style="width:12%">Doses Given</th>
                                     <th style="width:12%">Target</th>
                                     <th style="width:15%">Coverage</th>
-                                    <th style="width:26%">Schedule</th>
                                 </tr>
                             </thead>
                             <tbody id="coverageTableBody">
@@ -4608,7 +4607,6 @@
                     <td style="font-size:15px; font-weight:700;">${i.doses.toLocaleString()}</td>
                     <td style="font-size:14px; font-weight:600;">${i.target_population.toLocaleString()}</td>
                     <td><div class="coverage-cell ${i.color}">${i.coverage}%</div></td>
-                    <td style="font-weight:600;"><span class="schedule-text">${info.schedule}</span></td>
                 </tr>`;
                 }).join('');
 
@@ -5213,7 +5211,6 @@
                     <th style="width:12%">Doses Given</th>
                     <th style="width:12%">Target</th>
                     <th style="width:15%">Coverage</th>
-                    <th style="width:26%">Schedule</th>
                 </tr>`;
 
                 // Remove ranking-table class
@@ -5353,10 +5350,10 @@
                     XLSX.writeFile(wb, `District_Ranking_${data.parent_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
                 } else if (window.coverageData && Array.isArray(window.coverageData)) {
                     // Original coverage export
-                    const headers = ['Vaccine', 'Disease', 'Schedule', 'Doses Given', 'Target', 'Coverage (%)'];
+                    const headers = ['Vaccine', 'Disease', 'Doses Given', 'Target', 'Coverage (%)'];
                     const rows = window.coverageData.map(i => {
                         const info = ANTIGEN_INFO[i.code] || {};
-                        return [getShortVaccineName(i.name, i.code), info.disease || '', info.schedule || '', i.doses, i.target_population, i.coverage];
+                        return [getShortVaccineName(i.name, i.code), info.disease || '', i.doses, i.target_population, i.coverage];
                     });
 
                     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
@@ -5391,10 +5388,10 @@
                     a.download = `District_Ranking_${data.parent_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
                     a.click();
                 } else if (window.coverageData && Array.isArray(window.coverageData)) {
-                    const headers = ['Vaccine', 'Disease', 'Schedule', 'Doses Given', 'Target', 'Coverage (%)'];
+                    const headers = ['Vaccine', 'Disease', 'Doses Given', 'Target', 'Coverage (%)'];
                     const rows = window.coverageData.map(i => {
                         const info = ANTIGEN_INFO[i.code] || {};
-                        return [getShortVaccineName(i.name, i.code), info.disease || '', info.schedule || '', i.doses, i.target_population, i.coverage];
+                        return [getShortVaccineName(i.name, i.code), info.disease || '', i.doses, i.target_population, i.coverage];
                     });
 
                     let csv = headers.join(',') + '\n';
@@ -7131,7 +7128,7 @@
                     ];
                 });
 
-                const headers = ['#', 'Antigen/Indicator', 'Doses Given', 'Target Pop', 'Coverage %', 'Status', 'Disease Prevented', 'Schedule'];
+                const headers = ['#', 'Antigen/Indicator', 'Doses Given', 'Target Pop', 'Coverage %', 'Status', 'Disease Prevented'];
                 downloadCSV(data, `Coverage_${selectedOrgUnit.name}`, headers);
             }
 
@@ -7977,10 +7974,10 @@
 
                 // Sheet 2: Coverage Details (styled)
                 const coverageData = [
-                    ['#', 'Vaccine', 'Doses', 'Target', 'Coverage', 'Status', 'Disease', 'Schedule']
+                    ['#', 'Vaccine', 'Doses', 'Target', 'Coverage', 'Status', 'Disease']
                 ];
                 indicators.forEach((i, idx) => {
-                    const info = ANTIGEN_INFO[i.code] || { disease: '-', schedule: '-' };
+                    const info = ANTIGEN_INFO[i.code] || { disease: '-' };
                     coverageData.push([
                         idx + 1,
                         getShortVaccineName(i.name, i.code),
@@ -7988,23 +7985,22 @@
                         i.target_population,
                         i.coverage,
                         i.color === 'green' ? 'ON TARGET' : i.color === 'yellow' ? 'MODERATE' : 'LOW',
-                        info.disease,
-                        info.schedule
+                        info.disease
                     ]);
                 });
 
                 const wsCoverage = XLSX.utils.aoa_to_sheet(coverageData);
-                wsCoverage['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 25 }];
+                wsCoverage['!cols'] = [{ wch: 4 }, { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 30 }];
 
                 // Style coverage sheet header with borders
-                for (let col = 0; col <= 7; col++) {
+                for (let col = 0; col <= 6; col++) {
                     const hdr = wsCoverage[XLSX.utils.encode_cell({ r: 0, c: col })];
                     if (hdr) hdr.s = { fill: { patternType: 'solid', fgColor: { rgb: '11998E' } }, font: { color: { rgb: 'FFFFFF' }, bold: true }, alignment: { horizontal: 'center' }, border: EXCEL_BORDER_THIN };
                 }
 
                 // Style all coverage data cells with borders
                 for (let row = 1; row <= indicators.length; row++) {
-                    for (let col = 0; col <= 7; col++) {
+                    for (let col = 0; col <= 6; col++) {
                         const cell = wsCoverage[XLSX.utils.encode_cell({ r: row, c: col })];
                         if (cell) {
                             const isCovCol = col === 4;
