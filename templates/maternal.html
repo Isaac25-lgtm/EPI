@@ -1672,9 +1672,14 @@
                         <div id="compareTableDisplay" class="hidden" style="margin-top: 24px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                 <h3 id="compareTableTitle">Comparison</h3>
-                                <button onclick="downloadCompareExcel()" class="btn-download" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    📥 Download Excel (Color-coded)
-                                </button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="downloadCompareExcel()" class="btn-download" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        📥 Download Excel (Color-coded)
+                                    </button>
+                                    <button onclick="downloadCompareJPG()" class="btn-download" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        📷 Download JPG
+                                    </button>
+                                </div>
                             </div>
                             <div class="table-container">
                                 <!-- ANC Comparison Table -->
@@ -3267,8 +3272,38 @@
             XLSX.writeFile(wb, fileName);
         }
 
-        function downloadIntrapartumJPG() {
-            downloadChartAsJPG('intrapartumSection', 'Intrapartum_Indicators');
+        async function downloadIntrapartumJPG() {
+            const sectionElement = document.getElementById('intrapartumSection');
+            if (!sectionElement) {
+                alert('Intrapartum section not found');
+                return;
+            }
+
+            try {
+                // Use html2canvas to capture the entire section
+                const canvas = await html2canvas(sectionElement, {
+                    scale: 2, // Higher quality
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                });
+
+                // Convert to JPG and download
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const orgName = (currentData?.orgUnit || 'Intrapartum').replace(/[^a-zA-Z0-9]/g, '_');
+                    const date = new Date().toISOString().split('T')[0];
+                    link.download = `Intrapartum_Indicators_${orgName}_${date}.jpg`;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }, 'image/jpeg', 0.95);
+
+            } catch (error) {
+                console.error('Error downloading JPG:', error);
+                alert('Failed to download JPG. Please try again.');
+            }
         }
 
         function renderANCTable(data) {
@@ -4652,6 +4687,41 @@
             // Download
             XLSX.writeFile(wb, fileName);
             console.log('✅ Excel downloaded:', fileName);
+        }
+
+        async function downloadCompareJPG() {
+            const compareDisplay = document.getElementById('compareTableDisplay');
+            if (!compareDisplay || compareDisplay.classList.contains('hidden')) {
+                alert('No comparison data to download');
+                return;
+            }
+
+            try {
+                // Use html2canvas to capture both tables
+                const canvas = await html2canvas(compareDisplay, {
+                    scale: 2, // Higher quality
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true
+                });
+
+                // Convert to JPG and download
+                canvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const title = document.getElementById('compareTableTitle')?.textContent || 'Comparison';
+                    const mode = compareContext.mode || 'comparison';
+                    const date = new Date().toISOString().split('T')[0];
+                    link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${mode}_${date}.jpg`;
+                    link.href = url;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }, 'image/jpeg', 0.95);
+
+            } catch (error) {
+                console.error('Error downloading JPG:', error);
+                alert('Failed to download JPG. Please try again.');
+            }
         }
 
     </script>
