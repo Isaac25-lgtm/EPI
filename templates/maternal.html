@@ -1303,7 +1303,7 @@
                         <strong>Neonatal Mortality Rate (per 1,000):</strong>
                     </div>
                     <div class="formula-content">
-                        = ((105-MA12. Deaths 0-7 days + Deaths 8-28 days) / 105-MA05a1. Live births) × 1,000
+                        = (105-MA12. Newborn deaths (0-28 days) Total / 105-MA05a1. Live births) × 1,000
                     </div>
                 </div>
 
@@ -3073,7 +3073,7 @@
                 },
                 {
                     name: 'Neonatal Mortality Rate (per 1,000)',
-                    numerator: (data.newbornDeaths0_7 || 0) + (data.newbornDeaths8_28 || 0),
+                    numerator: data.neonatalDeathsTotal || 0,
                     denominator: data.liveBirthsTotal || 0,
                     value: data.neonatalMortality || 0,
                     unit: '',

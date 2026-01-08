@@ -77,8 +77,8 @@ INTRAPARTUM_INDICATORS = {
     'freshStillBirth': ['105-MA05b1', '105-MA05b1.', 'Births in the unit - Fresh Still birth Total'],
     'maceratedStillBirth': ['105-MA05c1', '105-MA05c1.', 'Births in the unit - Macerated still birth Total'],
     'kmcInitiated': ['105-MA08', '105-MA08.', 'low birth weight babies (<2.5 Kg) initiated on kangaroo (KMC)'],
-    'newbornDeaths0_7': ['105-MA12', '105-MA12.', 'Newborn deaths 0-7 days'],
-    'newbornDeaths8_28': ['105-MA12', '105-MA12.', 'Newborn deaths 8-28 days'],
+    'newbornDeaths0_7': ['105-MA12a', '105-MA12a.', 'Newborn deaths 0-7 days'],
+    'neonatalDeathsTotal': ['105-MA12', '105-MA12.', 'Newborn deaths (0-28 days) Total'],
     'maternalDeaths': ['105-MA13', '105-MA13.', 'Maternal deaths'],
     'birthAsphyxia': ['105-MA23', '105-MA23.', 'babies with Birth asphyxia'],
     'resuscitated': ['105-MA24', '105-MA24.', 'Live babies Successfully Resuscitated'],
@@ -706,11 +706,9 @@ def get_intrapartum_data():
             'kmcInitiated': ['105-MA08', '105-MA08.', 'kangaroo (KMC)',
                              '105-MA08. No. of low birth weight babies (<2.5 Kg) initiated on kangaroo (KMC)'],
             'newbornDeaths0_7': ['105-MA12a', '105-MA12a.', 'Newborn deaths 0-7 days',
-                                 '105-MA12. Newborn deaths 0-7 days',
                                  '105-MA12a. Newborn deaths 0-7 days'],
-            'newbornDeaths8_28': ['105-MA12b', '105-MA12b.', 'Newborn deaths 8-28 days',
-                                  '105-MA12. Newborn deaths 8-28 days',
-                                  '105-MA12b. Newborn deaths 8-28 days'],
+            'neonatalDeathsTotal': ['105-MA12', '105-MA12.', 'Newborn deaths',
+                                    '105-MA12. Newborn deaths (0-28 days) Total'],
             'maternalDeaths': ['105-MA13', '105-MA13.', 'Maternal deaths',
                                '105-MA13. Maternal deaths'],
             'birthAsphyxia': ['105-MA23', '105-MA23.', 'Birth asphyxia',
@@ -790,7 +788,7 @@ def get_intrapartum_data():
             'maceratedStillBirth': 0,
             'kmcInitiated': 0,
             'newbornDeaths0_7': 0,
-            'newbornDeaths8_28': 0,
+            'neonatalDeathsTotal': 0,
             'maternalDeaths': 0,
             'birthAsphyxia': 0,
             'resuscitated': 0,
@@ -826,8 +824,8 @@ def get_intrapartum_data():
         # Fresh still births per 1000 deliveries
         fresh_still_rate = round((raw_values['freshStillBirth'] / deliveries * 1000), 1) if deliveries > 0 else 0
         
-        # Neonatal mortality rate per 1000 live births
-        neonatal_deaths = raw_values['newbornDeaths0_7'] + raw_values['newbornDeaths8_28']
+        # Neonatal mortality rate per 1000 live births (using 105-MA12 total)
+        neonatal_deaths = raw_values['neonatalDeathsTotal']
         neonatal_mortality = round((neonatal_deaths / live_births * 1000), 1) if live_births > 0 else 0
         
         # Perinatal mortality rate per 1000 births
