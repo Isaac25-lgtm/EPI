@@ -17,9 +17,11 @@ app.secret_key = os.getenv('SECRET_KEY', 'epi-dashboard-secret-key-2024')
 CORS(app)
 
 # Register Blueprints
+from modules.reporting import reporting_bp
 from modules.maternal import maternal_bp
 from modules.epi import epi_bp
 from modules.wash import wash_bp
+app.register_blueprint(reporting_bp)
 app.register_blueprint(maternal_bp)
 app.register_blueprint(epi_bp)
 app.register_blueprint(wash_bp)

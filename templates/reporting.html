@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMIS 033b Weekly Reporting Rates - Uganda HMIS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #fbbf24;
+            --danger-color: #ef4444;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --bg-light: #f8fafc;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .cell-green { background-color: #10b981; color: white; font-weight: 600; text-align: center; }
+        .cell-yellow { background-color: #fbbf24; color: #000; font-weight: 600; text-align: center; }
+        .cell-red { background-color: #ef4444; color: white; font-weight: 600; text-align: center; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .filter-group {
+            margin-bottom: 16px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        .data-table tbody tr {
+            animation: fadeInUp 0.3s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stat-value {
+            transition: all 0.5s ease;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0 0 8px 0; color: var(--primary-color);">📊 HMIS 033b Weekly Reporting Rates</h1>
+            <p style="margin: 0; color: var(--text-secondary);">Monitor weekly epidemiological surveillance reporting compliance</p>
+            <div style="margin-top: 12px;">
+                <a href="/" class="btn btn-primary">🏠 Back to Dashboard</a>
+                <button onclick="logout()" class="btn" style="background: #ef4444; color: white; margin-left: 8px;">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📍 Select Organization & Period</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                <div class="filter-group">
+                    <label>Organization Unit</label>
+                    <input type="text" id="orgSearch" placeholder="Search district or facility..." onkeyup="searchOrgUnits()">
+                    <div id="orgResults" style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 8px;"></div>
+                </div>
+                <div class="filter-group">
+                    <label>Period</label>
+                    <select id="periodSelect">
+                        <option value="LAST_12_WEEKS">Last 12 Weeks</option>
+                        <option value="LAST_26_WEEKS">Last 26 Weeks</option>
+                        <option value="LAST_52_WEEKS">Last 52 Weeks</option>
+                        <option value="THIS_YEAR">This Year (Weeks)</option>
+                    </select>
+                    <button onclick="loadReportingData()" class="btn btn-primary" style="margin-top: 12px; width: 100%;">
+                        📊 Load Data
+                    </button>
+                </div>
+            </div>
+            <div id="selectedInfo" style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; display: none;">
+                <strong>Selected:</strong> <span id="selectedOrgName">-</span> | 
+                <strong>Period:</strong> <span id="selectedPeriodName">-</span>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="hidden">
+            <div class="summary-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Average Reporting Rate</div>
+                    <div class="stat-value" id="avgReporting">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Weeks</div>
+                    <div class="stat-value" id="totalWeeks">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Weeks ≥ 90%</div>
+                    <div class="stat-value" id="weeksGood">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Weeks < 70%</div>
+                    <div class="stat-value" id="weeksPoor">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2>📋 Weekly Reporting Compliance</h2>
+                    <button onclick="downloadExcel()" class="btn btn-primary">📥 Download Excel</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="reportingTable">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Reporting Rate (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportingTableBody">
+                            <tr>
+                                <td colspan="2" class="loading">Select an organization and load data</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 Trend Over Time</h2>
+                <canvas id="trendChart" style="max-height: 400px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedOrgUnit = null;
+        let chartInstance = null;
+        let currentData = null;
+
+        async function searchOrgUnits() {
+            const query = document.getElementById('orgSearch').value.trim();
+            if (query.length < 3) {
+                document.getElementById('orgResults').innerHTML = '<div style="padding: 12px; color: #64748b;">Type at least 3 characters...</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search-org-units?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    document.getElementById('orgResults').innerHTML = `<div style="padding: 12px; color: #ef4444;">${data.error}</div>`;
+                    return;
+                }
+
+                const units = data.organisationUnits || [];
+                if (units.length === 0) {
+                    document.getElementById('orgResults').innerHTML = '<div style="padding: 12px; color: #64748b;">No results found</div>';
+                    return;
+                }
+
+                const html = units.map(u => `
+                    <div onclick='selectOrgUnit(${JSON.stringify(u)})' 
+                         style="padding: 12px; cursor: pointer; border-bottom: 1px solid #e2e8f0; transition: background 0.2s;"
+                         onmouseover="this.style.background='#f8fafc'" 
+                         onmouseout="this.style.background='white'">
+                        <div style="font-weight: 600;">${u.displayName}</div>
+                        <div style="font-size: 12px; color: #64748b;">${u.path || 'Level ' + u.level}</div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('orgResults').innerHTML = html;
+            } catch (error) {
+                console.error('Search error:', error);
+                document.getElementById('orgResults').innerHTML = `<div style="padding: 12px; color: #ef4444;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function selectOrgUnit(unit) {
+            selectedOrgUnit = unit;
+            document.getElementById('selectedOrgName').textContent = unit.displayName;
+            document.getElementById('selectedInfo').style.display = 'block';
+            document.getElementById('orgSearch').value = unit.displayName;
+            document.getElementById('orgResults').innerHTML = '';
+        }
+
+        async function loadReportingData() {
+            if (!selectedOrgUnit) {
+                alert('Please select an organization unit first');
+                return;
+            }
+
+            const period = document.getElementById('periodSelect').value;
+            document.getElementById('selectedPeriodName').textContent = document.getElementById('periodSelect').options[document.getElementById('periodSelect').selectedIndex].text;
+
+            document.getElementById('reportingTableBody').innerHTML = `
+                <tr>
+                    <td colspan="2" style="text-align: center; padding: 60px;">
+                        <div class="loading-spinner"></div>
+                        <p style="margin-top: 16px; color: #64748b; font-size: 14px;">Fetching weekly data from DHIS2...</p>
+                        <div class="progress-bar" style="max-width: 300px; margin: 16px auto 0;">
+                            <div class="progress-bar-fill" style="width: 30%;"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            try {
+                const response = await fetch(`/reporting/api/reporting-data?orgUnit=${selectedOrgUnit.id}&period=${period}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                currentData = data;
+                renderTable(data);
+                renderSummary(data);
+                renderChart(data);
+                document.getElementById('resultsSection').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Load error:', error);
+                alert('Failed to load data: ' + error.message);
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('reportingTableBody');
+            if (!data.weeklyData || data.weeklyData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; padding: 40px; color: #64748b;">📭 No data available for this period</td></tr>';
+                return;
+            }
+
+            // Clear and add rows with staggered animation
+            tbody.innerHTML = '';
+            data.weeklyData.forEach((week, index) => {
+                setTimeout(() => {
+                    const row = document.createElement('tr');
+                    row.style.animationDelay = `${index * 0.05}s`;
+                    row.innerHTML = `
+                        <td style="font-weight: 600;">${formatWeekPeriod(week.period)}</td>
+                        <td class="cell-${week.reportingRateColor}" style="border-radius: 6px;">${week.reportingRate}%</td>
+                    `;
+                    tbody.appendChild(row);
+                }, index * 30);
+            });
+        }
+        
+        function formatWeekPeriod(period) {
+            // Format week period like "2025W01" to "Week 1, 2025"
+            if (period && period.includes('W')) {
+                const parts = period.match(/(\d{4})W(\d+)/);
+                if (parts) {
+                    return `Week ${parseInt(parts[2])}, ${parts[1]}`;
+                }
+            }
+            return period;
+        }
+
+        function renderSummary(data) {
+            // Animate the stat values
+            animateValue('avgReporting', 0, data.summary.avgReportingRate, '%');
+            animateValue('totalWeeks', 0, data.summary.totalWeeks, '');
+            animateValue('weeksGood', 0, data.summary.weeksAbove90, '');
+            animateValue('weeksPoor', 0, data.summary.weeksBelow70, '');
+        }
+        
+        function animateValue(elementId, start, end, suffix) {
+            const element = document.getElementById(elementId);
+            const duration = 1000;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+                const current = Math.round(start + (end - start) * easeProgress * 10) / 10;
+                element.textContent = current + suffix;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = end + suffix;
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+
+        function renderChart(data) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.weeklyData.map(w => w.period),
+                    datasets: [
+                        {
+                            label: 'Reporting Rate (%)',
+                            data: data.weeklyData.map(w => w.reportingRate),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: value => value + '%' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function downloadExcel() {
+            if (!currentData || !currentData.weeklyData) {
+                alert('No data to download');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const wsData = [
+                ['HMIS 033b Weekly Reporting Rates'],
+                ['Organization: ' + currentData.orgUnit],
+                ['Period: ' + currentData.period],
+                ['Generated: ' + new Date().toLocaleString()],
+                [''],
+                ['Week', 'Reporting Rate (%)']
+            ];
+
+            currentData.weeklyData.forEach(week => {
+                wsData.push([week.period, week.reportingRate]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Reporting Rates');
+            XLSX.writeFile(wb, `033b_Reporting_Rates_${currentData.orgUnit.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+    </script>
+</body>
+</html>
+
