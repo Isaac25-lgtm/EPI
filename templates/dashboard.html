@@ -4402,7 +4402,7 @@
                 
                 const period = getSelectedPeriod();
                 
-                document.getElementById('selectedPeriod').textContent = period;
+                document.getElementById('selectedPeriod').textContent = getSelectedPeriodFormatted();
                 document.getElementById('errorMessage').style.display = 'none';
 
                 // Check if this is a facility-level org unit for analytics
