@@ -841,8 +841,29 @@
             Plotly.newPlot('channelChart', traces, layout, { responsive: true });
         }
 
+        function getMonthFromEpiWeek(epiWeek, year) {
+            // Approximate conversion: epi week to month
+            // Week 1-4 = Jan, Week 5-8 = Feb, etc.
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            // Calculate approximate date from epi week
+            // Jan 4 is always in week 1
+            const jan4 = new Date(year, 0, 4);
+            const dayOfWeek = jan4.getDay();
+            const week1Monday = new Date(jan4);
+            week1Monday.setDate(jan4.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+            
+            // Add weeks to get to target week
+            const targetDate = new Date(week1Monday);
+            targetDate.setDate(week1Monday.getDate() + (epiWeek - 1) * 7);
+            
+            return monthNames[targetDate.getMonth()];
+        }
+
         function renderAlertTable(data) {
             const alertWeeks = data.analysis.filter(w => w.is_alert);
+            const currentYear = data.metadata.current_year;
             
             if (alertWeeks.length === 0) {
                 document.getElementById('alertTableContainer').innerHTML = '<div class="alert alert-success">✅ No epidemic alerts detected. Malaria transmission is within expected levels.</div>';
@@ -857,6 +878,7 @@
                     <thead>
                         <tr>
                             <th>Week</th>
+                            <th>Month</th>
                             <th>Cases</th>
                             <th>Threshold</th>
                             <th>Deviation</th>
@@ -868,11 +890,13 @@
             `;
             
             alertWeeks.forEach(week => {
+                const month = getMonthFromEpiWeek(week.epi_week, currentYear);
                 html += `
                     <tr>
                         <td><strong>Week ${week.epi_week}</strong></td>
-                        <td>${Math.round(week.confirmed_cases)}</td>
-                        <td>${Math.round(week[data.metadata.threshold])}</td>
+                        <td>${month}</td>
+                        <td>${Math.round(week.confirmed_cases).toLocaleString()}</td>
+                        <td>${Math.round(week[data.metadata.threshold]).toLocaleString()}</td>
                         <td class="deviation-cell">${week.deviation_percent > 0 ? '+' : ''}${week.deviation_percent}%</td>
                         <td>${week.z_score}</td>
                         <td><span class="status-badge ${week.alert_zone === 'epidemic' ? 'status-epidemic' : 'status-alert'}">${week.alert_status}</span></td>
@@ -880,7 +904,29 @@
                 `;
             });
             
-            html += '</tbody></table>';
+            html += `</tbody></table>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <h4 style="margin-bottom: 0.75rem; font-size: 0.95rem; color: var(--text-primary);">📖 Understanding the Metrics</h4>
+                    <div style="display: grid; gap: 0.75rem; font-size: 0.9rem; color: var(--text-secondary);">
+                        <div>
+                            <strong style="color: var(--text-primary);">Threshold:</strong> 
+                            The epidemic threshold value (${data.metadata.threshold === 'q3' ? '75th' : '85th'} percentile) calculated from 5 years of baseline data. 
+                            When current cases exceed this value, it indicates potentially abnormal disease transmission.
+                        </div>
+                        <div>
+                            <strong style="color: var(--text-primary);">Deviation:</strong> 
+                            The percentage difference between observed cases and the expected (median) cases. 
+                            Positive values indicate cases are higher than expected. For example, +50% means 50% more cases than typically expected for that week.
+                        </div>
+                        <div>
+                            <strong style="color: var(--text-primary);">Z-Score:</strong> 
+                            A statistical measure showing how many standard deviations the current cases are from the baseline mean. 
+                            Z-scores above +2 indicate statistically significant unusual increases. Higher Z-scores suggest more extreme deviations from normal patterns.
+                        </div>
+                    </div>
+                </div>
+            `;
             document.getElementById('alertTableContainer').innerHTML = html;
         }
 

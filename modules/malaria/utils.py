@@ -7,6 +7,26 @@ import numpy as np
 from datetime import datetime, timedelta
 
 
+def safe_float(val, default=0.0):
+    """Safely convert any value to float"""
+    try:
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return default
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def safe_int(val, default=0):
+    """Safely convert any value to int"""
+    try:
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return default
+        return int(float(val))
+    except (ValueError, TypeError):
+        return default
+
+
 def get_epi_week(date):
     """
     Convert date to epidemiological week (1-52)
@@ -31,6 +51,8 @@ def epi_week_to_date(year, week):
     """
     Convert epidemiological week to approximate date (Monday of that week)
     """
+    year = safe_int(year)
+    week = safe_int(week, 1)
     # January 4th is always in week 1
     jan4 = datetime(year, 1, 4)
     week_1_monday = jan4 - timedelta(days=jan4.weekday())
@@ -42,6 +64,7 @@ def format_week_label(week):
     """
     Format week number for display
     """
+    week = safe_int(week)
     return f"Week {week:02d}"
 
 
@@ -49,6 +72,8 @@ def format_week_date(year, week):
     """
     Format week with date range for tooltips
     """
+    year = safe_int(year)
+    week = safe_int(week, 1)
     start_date = epi_week_to_date(year, week)
     end_date = start_date + timedelta(days=6)
     return f"Week {week:02d} ({start_date.strftime('%b %d')} - {end_date.strftime('%b %d')})"
@@ -58,8 +83,10 @@ def calculate_deviation_percentage(current, baseline):
     """
     Calculate percentage deviation from baseline
     """
+    current = safe_float(current)
+    baseline = safe_float(baseline)
     if baseline == 0:
-        return 0 if current == 0 else 100
+        return 0.0 if current == 0 else 100.0
     return round(((current - baseline) / baseline) * 100, 1)
 
 
@@ -103,6 +130,12 @@ def get_alert_color(current, q1, median, q3):
     """
     Determine alert zone color based on case count
     """
+    # Convert all to float for safe comparison
+    current = safe_float(current)
+    q1 = safe_float(q1)
+    median = safe_float(median)
+    q3 = safe_float(q3)
+    
     if current > q3:
         return '#e74c3c'  # Red - Epidemic
     elif current > median:
@@ -117,6 +150,12 @@ def get_alert_status(current, q1, median, q3):
     """
     Get alert status text
     """
+    # Convert all to float for safe comparison
+    current = safe_float(current)
+    q1 = safe_float(q1)
+    median = safe_float(median)
+    q3 = safe_float(q3)
+    
     if current > q3:
         return 'EPIDEMIC ALERT'
     elif current > median:
@@ -135,11 +174,12 @@ def validate_baseline_data(df, min_weeks=40):
     coverage_stats = {}
     
     for year in df['year'].unique():
+        year_int = safe_int(year)
         year_data = df[df['year'] == year]
         weeks_present = year_data['epi_week'].nunique()
-        coverage_stats[year] = {
-            'weeks_present': weeks_present,
-            'coverage_percent': (weeks_present / 52) * 100,
+        coverage_stats[year_int] = {
+            'weeks_present': int(weeks_present),
+            'coverage_percent': round((weeks_present / 52) * 100, 1),
             'is_sufficient': weeks_present >= min_weeks
         }
     
@@ -185,8 +225,12 @@ def detect_consecutive_alerts(alert_weeks, consecutive_count=2):
     if consecutive_count <= 1:
         return alert_weeks
     
+    if not alert_weeks:
+        return []
+    
     confirmed_alerts = []
-    alert_weeks_sorted = sorted(alert_weeks)
+    # Convert all to int before sorting
+    alert_weeks_sorted = sorted([safe_int(w) for w in alert_weeks])
     
     for i in range(len(alert_weeks_sorted) - consecutive_count + 1):
         window = alert_weeks_sorted[i:i + consecutive_count]
@@ -202,28 +246,28 @@ def calculate_summary_stats(current_data, baseline_stats):
     Calculate summary statistics for dashboard
     """
     total_weeks = len(current_data)
-    alert_weeks = current_data[current_data['is_alert']]['epi_week'].tolist()
+    alert_weeks = current_data[current_data['is_alert'] == True]['epi_week'].tolist()
     
-    current_week = current_data['epi_week'].max()
+    current_week = safe_int(current_data['epi_week'].max())
     current_week_data = current_data[current_data['epi_week'] == current_week].iloc[0]
     
-    total_cases = current_data['confirmed_cases'].sum()
-    expected_cases = baseline_stats['median'].sum()
+    total_cases = safe_float(current_data['confirmed_cases'].sum())
+    expected_cases = safe_float(baseline_stats['median'].sum())
     
     summary = {
         'total_weeks_monitored': total_weeks,
         'total_alert_weeks': len(alert_weeks),
-        'alert_weeks_list': alert_weeks,
+        'alert_weeks_list': [safe_int(w) for w in alert_weeks],
         'current_week': current_week,
-        'current_week_cases': int(current_week_data['confirmed_cases']),
+        'current_week_cases': safe_int(current_week_data['confirmed_cases']),
         'current_week_status': get_alert_status(
             current_week_data['confirmed_cases'],
             current_week_data['q1'],
             current_week_data['median'],
             current_week_data['q3']
         ),
-        'total_cases_ytd': int(total_cases),
-        'expected_cases_ytd': int(expected_cases),
+        'total_cases_ytd': safe_int(total_cases),
+        'expected_cases_ytd': safe_int(expected_cases),
         'deviation_percent': calculate_deviation_percentage(total_cases, expected_cases),
         'alert_rate': round((len(alert_weeks) / total_weeks) * 100, 1) if total_weeks > 0 else 0
     }
