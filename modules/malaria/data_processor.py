@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import os
+from pathlib import Path
 import requests
 from dotenv import load_dotenv
 
@@ -16,7 +17,9 @@ from modules.malaria.utils import (
     interpolate_missing_weeks
 )
 
-load_dotenv()
+# Load .env from project root
+project_root = Path(__file__).parent.parent.parent
+load_dotenv(project_root / '.env')
 
 
 class MalariaDataProcessor:
