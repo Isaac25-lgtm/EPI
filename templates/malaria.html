@@ -530,6 +530,81 @@
                 <div class="chart-container" id="zoneChart" style="min-height: 400px;"></div>
             </div>
         </div>
+
+        <!-- MALARIA INCIDENCE ANALYSIS SECTION -->
+        <div id="incidenceSection" style="display: none;">
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 3px solid var(--border-color);">
+                <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+                    📊 Malaria Incidence Analysis
+                </h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                    Incidence rates per 1,000 population — Geographic distribution and temporal trends
+                </p>
+
+                <!-- Trend Line and Map Grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <!-- Trend Line Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">📈 Incidence Trend (Last 12 Weeks)</div>
+                                <div class="card-subtitle">Weekly incidence per 1,000 population</div>
+                            </div>
+                        </div>
+                        <div class="chart-container" id="incidenceTrendChart" style="min-height: 400px;"></div>
+                        <div style="padding: 1rem; background: #f9fafb; border-top: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <span style="font-weight: 600; color: var(--text-primary);" id="selectedOrgunitName">Select a district</span>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                                        Current Incidence: <span id="currentIncidence" style="font-weight: 600;">--</span>/1,000
+                                    </div>
+                                </div>
+                                <button class="btn btn-secondary" onclick="exportIncidenceTrend()" style="font-size: 0.85rem;">📥 Export CSV</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Spatial Map Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">🗺️ Spatial Distribution Map</div>
+                                <div class="card-subtitle">Quartile-based incidence classification</div>
+                            </div>
+                        </div>
+                        <div id="incidenceMapContainer" style="min-height: 400px; position: relative;">
+                            <!-- Map will be rendered here -->
+                            <div id="incidenceMapPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 400px; color: var(--text-secondary);">
+                                Click "Load Analysis" to view map
+                            </div>
+                        </div>
+                        <div style="padding: 1rem; background: #f9fafb; border-top: 1px solid var(--border-color);">
+                            <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Legend - Incidence per 1,000</div>
+                            <div id="mapLegend" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <!-- Dynamic legend -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incidence Table Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">📋 Incidence Table (Last 12 Weeks)</div>
+                            <div class="card-subtitle">Top districts by current week incidence</div>
+                        </div>
+                        <div class="export-buttons">
+                            <button class="btn btn-secondary" onclick="exportIncidenceTable()">📥 Export CSV</button>
+                        </div>
+                    </div>
+                    <div id="incidenceTableContainer" style="overflow-x: auto;">
+                        <!-- Table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -673,12 +748,15 @@
             document.getElementById('comparisonSection').style.display = 'block';
             document.getElementById('zoneSection').style.display = 'block';
             
-            // Render components
+            // Render endemic channel components
             renderSummaryCards(data);
             renderChannelChart(data);
             renderAlertTable(data);
             renderComparisonChart(data);
             renderZoneChart(data);
+            
+            // Load incidence analysis
+            loadIncidenceAnalysis(selectedOrgUnit.id);
         }
 
         function renderSummaryCards(data) {
@@ -1037,6 +1115,349 @@
             const threshold = document.getElementById('thresholdSelect').value;
             
             window.location.href = `/malaria/api/export-data?orgunit=${selectedOrgUnit.id}&year=${year}&threshold=${threshold}`;
+        }
+
+        // ========== INCIDENCE ANALYSIS FUNCTIONS ==========
+
+        let incidenceData = null;
+
+        async function loadIncidenceAnalysis(orgunitId) {
+            try {
+                // Load incidence trend
+                await loadIncidenceTrend(orgunitId);
+                
+                // Load spatial map
+                await loadIncidenceMap();
+                
+                // Load incidence table
+                await loadIncidenceTable();
+                
+                // Show incidence section
+                document.getElementById('incidenceSection').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading incidence analysis:', error);
+            }
+        }
+
+        async function loadIncidenceTrend(orgunitId) {
+            try {
+                const response = await fetch(`/malaria/api/incidence-trend?orgunit=${orgunitId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Incidence trend error:', data.error);
+                    return;
+                }
+                
+                incidenceData = data;
+                renderIncidenceTrend(data);
+            } catch (error) {
+                console.error('Failed to load incidence trend:', error);
+            }
+        }
+
+        function renderIncidenceTrend(data) {
+            if (!data || !data.data || data.data.length === 0) {
+                document.getElementById('incidenceTrendChart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No data available</div>';
+                return;
+            }
+            
+            const periods = data.data.map(d => d.period.replace(/(\d{4})W(\d{2})/, 'W$2'));
+            const incidences = data.data.map(d => d.incidence);
+            const cases = data.data.map(d => d.cases);
+            
+            // Calculate national average (if available)
+            const avgIncidence = incidences.filter(v => v !== null).reduce((a, b) => a + b, 0) / incidences.filter(v => v !== null).length;
+            
+            const trace1 = {
+                x: periods,
+                y: incidences,
+                mode: 'lines+markers',
+                name: 'Incidence/1,000',
+                line: { color: '#1976D2', width: 3 },
+                marker: { size: 8, color: '#1976D2' },
+                hovertemplate: '<b>%{x}</b><br>Incidence: %{y:.2f}/1,000<br>Cases: %{customdata}<extra></extra>',
+                customdata: cases
+            };
+            
+            const trace2 = {
+                x: periods,
+                y: Array(periods.length).fill(avgIncidence),
+                mode: 'lines',
+                name: 'Average',
+                line: { color: '#757575', width: 2, dash: 'dash' },
+                hoverinfo: 'skip'
+            };
+            
+            const layout = {
+                title: null,
+                xaxis: {
+                    title: 'Week',
+                    gridcolor: '#e5e7eb'
+                },
+                yaxis: {
+                    title: 'Incidence per 1,000 Population',
+                    gridcolor: '#e5e7eb'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2,
+                    x: 0.5,
+                    xanchor: 'center'
+                },
+                height: 400,
+                margin: { l: 60, r: 20, t: 20, b: 60 },
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('incidenceTrendChart', [trace1, trace2], layout, { responsive: true });
+            
+            // Update info
+            document.getElementById('selectedOrgunitName').textContent = data.orgunit_name;
+            const latestIncidence = incidences[incidences.length - 1];
+            document.getElementById('currentIncidence').textContent = latestIncidence !== null ? latestIncidence.toFixed(2) : '--';
+        }
+
+        async function loadIncidenceMap() {
+            try {
+                const level = 3; // District level
+                const response = await fetch(`/malaria/api/incidence-map?level=${level}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Incidence map error:', data.error);
+                    return;
+                }
+                
+                renderIncidenceMap(data);
+            } catch (error) {
+                console.error('Failed to load incidence map:', error);
+            }
+        }
+
+        function renderIncidenceMap(data) {
+            // For now, render as a bar chart of top districts
+            // TODO: Integrate actual GeoJSON map with Plotly or Folium
+            
+            const container = document.getElementById('incidenceMapContainer');
+            document.getElementById('incidenceMapPlaceholder').style.display = 'none';
+            
+            // Sort by incidence descending
+            const sortedOrgunits = data.orgunits
+                .filter(ou => ou.incidence !== null)
+                .sort((a, b) => (b.incidence || 0) - (a.incidence || 0))
+                .slice(0, 20); // Top 20
+            
+            const trace = {
+                y: sortedOrgunits.map(ou => ou.name),
+                x: sortedOrgunits.map(ou => ou.incidence),
+                type: 'bar',
+                orientation: 'h',
+                marker: {
+                    color: sortedOrgunits.map(ou => ou.color),
+                    line: { width: 1, color: '#fff' }
+                },
+                text: sortedOrgunits.map(ou => `${ou.incidence.toFixed(2)}/1,000`),
+                textposition: 'outside',
+                hovertemplate: '<b>%{y}</b><br>Incidence: %{x:.2f}/1,000<br>Quartile: %{customdata}<extra></extra>',
+                customdata: sortedOrgunits.map(ou => ou.label)
+            };
+            
+            const layout = {
+                title: null,
+                xaxis: {
+                    title: 'Incidence per 1,000',
+                    gridcolor: '#e5e7eb'
+                },
+                yaxis: {
+                    automargin: true
+                },
+                height: 400,
+                margin: { l: 150, r: 50, t: 20, b: 50 },
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('incidenceMapContainer', [trace], layout, { responsive: true });
+            
+            // Render legend
+            renderMapLegend(data.thresholds);
+        }
+
+        function renderMapLegend(thresholds) {
+            const legendContainer = document.getElementById('mapLegend');
+            
+            if (!thresholds || Object.keys(thresholds).length === 0) {
+                legendContainer.innerHTML = '<span style="color: var(--text-secondary);">Quartiles: Dynamic classification</span>';
+                return;
+            }
+            
+            const q25 = thresholds.q25 || 0;
+            const q50 = thresholds.q50 || 0;
+            const q75 = thresholds.q75 || 0;
+            
+            legendContainer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 20px; height: 20px; background: #4CAF50; border-radius: 4px;"></div>
+                    <span>Q1: 0 - ${q25.toFixed(1)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 20px; height: 20px; background: #FFEB3B; border-radius: 4px;"></div>
+                    <span>Q2: ${q25.toFixed(1)} - ${q50.toFixed(1)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 20px; height: 20px; background: #FF9800; border-radius: 4px;"></div>
+                    <span>Q3: ${q50.toFixed(1)} - ${q75.toFixed(1)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 20px; height: 20px; background: #F44336; border-radius: 4px;"></div>
+                    <span>Q4: ${q75.toFixed(1)}+</span>
+                </div>
+            `;
+        }
+
+        async function loadIncidenceTable() {
+            try {
+                const level = 3;
+                const response = await fetch(`/malaria/api/incidence-table?level=${level}&limit=20`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Incidence table error:', data.error);
+                    return;
+                }
+                
+                renderIncidenceTable(data);
+            } catch (error) {
+                console.error('Failed to load incidence table:', error);
+            }
+        }
+
+        function renderIncidenceTable(data) {
+            const container = document.getElementById('incidenceTableContainer');
+            
+            if (!data.orgunits || data.orgunits.length === 0) {
+                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No data available</div>';
+                return;
+            }
+            
+            // Format periods for header
+            const periodHeaders = data.periods.map(p => p.replace(/(\d{4})W(\d{2})/, 'W$2')).slice(-6); // Last 6 weeks for display
+            const periodsToShow = data.periods.slice(-6);
+            
+            let html = `
+                <table class="alert-table">
+                    <thead>
+                        <tr>
+                            <th style="position: sticky; left: 0; background: #f9fafb; z-index: 1;">District</th>
+                            <th style="text-align: right;">Population</th>
+                            ${periodHeaders.map(p => `<th style="text-align: right;">${p}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.orgunits.forEach(ou => {
+                const weekCells = periodsToShow.map(period => {
+                    const weekData = ou.weeks.find(w => w.period === period);
+                    const incidence = weekData ? weekData.incidence : null;
+                    
+                    let color = '';
+                    if (incidence !== null) {
+                        if (incidence >= 15) color = 'background: #fee2e2;';
+                        else if (incidence >= 10) color = 'background: #fed7aa;';
+                        else if (incidence >= 5) color = 'background: #fef3c7;';
+                    }
+                    
+                    return `<td style="text-align: right; ${color}">${incidence !== null ? incidence.toFixed(1) : '--'}</td>`;
+                }).join('');
+                
+                html += `
+                    <tr>
+                        <td style="position: sticky; left: 0; background: white; font-weight: 500;">${ou.orgunit_name}</td>
+                        <td style="text-align: right;">${ou.population ? ou.population.toLocaleString() : '--'}</td>
+                        ${weekCells}
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function exportIncidenceTrend() {
+            if (!incidenceData) {
+                alert('No data to export');
+                return;
+            }
+            
+            // Convert to CSV
+            const headers = ['Week', 'Period', 'Cases', 'Population', 'Incidence per 1,000'];
+            const rows = incidenceData.data.map((d, i) => [
+                i + 1,
+                d.period,
+                d.cases,
+                d.population,
+                d.incidence !== null ? d.incidence.toFixed(2) : ''
+            ]);
+            
+            let csv = headers.join(',') + '\n';
+            rows.forEach(row => {
+                csv += row.join(',') + '\n';
+            });
+            
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `malaria_incidence_trend_${incidenceData.orgunit_name}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        async function exportIncidenceTable() {
+            try {
+                const level = 3;
+                const response = await fetch(`/malaria/api/incidence-table?level=${level}&limit=146`); // All districts
+                const data = await response.json();
+                
+                if (data.error || !data.orgunits) {
+                    alert('No data to export');
+                    return;
+                }
+                
+                // Convert to CSV
+                const periodHeaders = data.periods.map(p => p.replace(/(\d{4})W(\d{2})/, 'W$2'));
+                const headers = ['District', 'Population', ...periodHeaders];
+                
+                let csv = headers.join(',') + '\n';
+                
+                data.orgunits.forEach(ou => {
+                    const row = [
+                        `"${ou.orgunit_name}"`,
+                        ou.population || '',
+                        ...data.periods.map(period => {
+                            const weekData = ou.weeks.find(w => w.period === period);
+                            return weekData && weekData.incidence !== null ? weekData.incidence.toFixed(2) : '';
+                        })
+                    ];
+                    csv += row.join(',') + '\n';
+                });
+                
+                // Download
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `malaria_incidence_table_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+            } catch (error) {
+                console.error('Export failed:', error);
+                alert('Export failed: ' + error.message);
+            }
         }
     </script>
 </body>

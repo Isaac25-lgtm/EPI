@@ -14,6 +14,10 @@ import numpy as np
 from modules.malaria import malaria_bp
 from modules.malaria.channel_calculator import EndemicChannelCalculator
 from modules.malaria.config import MALARIA_DATA_ELEMENT, BASELINE_YEARS
+from modules.malaria.incidence_calculator import (
+    calculate_incidence, calculate_quartile_classification,
+    calculate_weekly_incidence, rank_orgunits_by_incidence
+)
 
 # Use the same DHIS2 URL as main app
 DHIS2_BASE_URL = 'https://hmis.health.go.ug/api'
@@ -597,3 +601,448 @@ def fetch_malaria_data(auth, orgunit_id, start_year, end_year):
         print(f"Error fetching malaria data: {e}")
         traceback.print_exc()
         return pd.DataFrame()
+
+
+@malaria_bp.route('/api/incidence-trend')
+@require_login
+def get_incidence_trend():
+    """
+    Get 12-week incidence trend for a selected org unit
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        orgunit_id = request.args.get('orgunit')
+        if not orgunit_id:
+            return jsonify({'error': 'Organization unit ID required'}), 400
+        
+        # Find data element
+        data_element = find_malaria_data_element(auth)
+        
+        # Get last 12 weeks
+        current_year = datetime.now().year
+        current_week = datetime.now().isocalendar()[1]
+        
+        periods = []
+        for i in range(12):
+            week_num = current_week - i
+            year = current_year
+            if week_num <= 0:
+                week_num += 52
+                year -= 1
+            periods.append(f"{year}W{week_num:02d}")
+        
+        periods = list(reversed(periods))
+        period_str = ";".join(periods)
+        
+        # Fetch cases
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/analytics",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{data_element}'),
+                ('dimension', f'pe:{period_str}'),
+                ('dimension', f'ou:{orgunit_id}'),
+                ('displayProperty', 'NAME'),
+                ('skipMeta', 'false')
+            ],
+            timeout=60
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
+        
+        data = response.json()
+        rows = data.get('rows', [])
+        
+        # Parse cases
+        cases_data = []
+        for row in rows:
+            period = row[1]
+            value = safe_float(row[3])
+            cases_data.append({
+                'period': period,
+                'value': value
+            })
+        
+        # Get population (from core DHIS2 or custom attribute)
+        # For now, fetch from UBOS population data element if available
+        # Otherwise use a default or fetch from org unit attributes
+        population = fetch_orgunit_population(auth, orgunit_id, current_year)
+        
+        # Calculate incidence
+        incidence_data = []
+        for case_week in cases_data:
+            incidence = calculate_incidence(case_week['value'], population)
+            incidence_data.append({
+                'period': case_week['period'],
+                'cases': case_week['value'],
+                'incidence': incidence,
+                'population': population
+            })
+        
+        # Get org unit name
+        orgunit_name = get_orgunit_name(auth, orgunit_id)
+        
+        return jsonify({
+            'orgunit_id': orgunit_id,
+            'orgunit_name': orgunit_name,
+            'population': population,
+            'data': incidence_data
+        })
+    
+    except Exception as e:
+        print(f"Error in get_incidence_trend: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@malaria_bp.route('/api/incidence-map')
+@require_login
+def get_incidence_map():
+    """
+    Get incidence data for spatial map with quartile classification
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        level = request.args.get('level', '3')  # Default to district level
+        parent_id = request.args.get('parent')  # For drill-down
+        
+        # Find data element
+        data_element = find_malaria_data_element(auth)
+        
+        # Get current week
+        current_year = datetime.now().year
+        current_week = datetime.now().isocalendar()[1]
+        current_period = f"{current_year}W{current_week:02d}"
+        
+        # Build org unit dimension
+        if parent_id:
+            # Drill-down: get children of parent
+            ou_dimension = f'ou:{parent_id};LEVEL-{level}'
+        else:
+            # Top level: all at specified level
+            ou_dimension = f'ou:LEVEL-{level}'
+        
+        # Fetch current week cases
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/analytics",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{data_element}'),
+                ('dimension', f'pe:{current_period}'),
+                ('dimension', ou_dimension),
+                ('displayProperty', 'NAME'),
+                ('skipMeta', 'false')
+            ],
+            timeout=60
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
+        
+        data = response.json()
+        rows = data.get('rows', [])
+        meta_items = data.get('metaData', {}).get('items', {})
+        
+        # Parse cases by org unit
+        cases_by_ou = {}
+        for row in rows:
+            ou_id = row[2]
+            value = safe_float(row[3])
+            cases_by_ou[ou_id] = value
+        
+        # Fetch populations for all org units
+        populations = fetch_populations_for_level(auth, level, parent_id, current_year)
+        
+        # Calculate incidence for each org unit
+        incidence_by_ou = {}
+        for ou_id, cases in cases_by_ou.items():
+            population = populations.get(ou_id)
+            incidence = calculate_incidence(cases, population)
+            incidence_by_ou[ou_id] = incidence
+        
+        # Add org units with no cases but with population
+        for ou_id in populations.keys():
+            if ou_id not in incidence_by_ou:
+                incidence = calculate_incidence(0, populations[ou_id])
+                incidence_by_ou[ou_id] = incidence
+        
+        # Calculate quartile classification
+        color_mapping, thresholds = calculate_quartile_classification(incidence_by_ou)
+        
+        # Rank org units
+        ranked_data = rank_orgunits_by_incidence(incidence_by_ou)
+        
+        # Prepare response
+        orgunits_data = []
+        for ou_id, incidence in incidence_by_ou.items():
+            ou_info = meta_items.get(ou_id, {})
+            rank = next((r for o, i, r in ranked_data if o == ou_id), None)
+            
+            orgunits_data.append({
+                'id': ou_id,
+                'name': ou_info.get('name', ou_id),
+                'cases': cases_by_ou.get(ou_id, 0),
+                'population': populations.get(ou_id),
+                'incidence': incidence,
+                'quartile': color_mapping[ou_id]['quartile'],
+                'color': color_mapping[ou_id]['color'],
+                'label': color_mapping[ou_id]['label'],
+                'rank': rank
+            })
+        
+        return jsonify({
+            'period': current_period,
+            'level': level,
+            'parent_id': parent_id,
+            'thresholds': thresholds,
+            'total_orgunits': len(orgunits_data),
+            'orgunits': orgunits_data
+        })
+    
+    except Exception as e:
+        print(f"Error in get_incidence_map: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@malaria_bp.route('/api/incidence-table')
+@require_login
+def get_incidence_table():
+    """
+    Get incidence table for last 12 weeks for multiple org units
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        level = request.args.get('level', '3')
+        limit = int(request.args.get('limit', '20'))
+        
+        # Find data element
+        data_element = find_malaria_data_element(auth)
+        
+        # Get last 12 weeks
+        current_year = datetime.now().year
+        current_week = datetime.now().isocalendar()[1]
+        
+        periods = []
+        for i in range(12):
+            week_num = current_week - i
+            year = current_year
+            if week_num <= 0:
+                week_num += 52
+                year -= 1
+            periods.append(f"{year}W{week_num:02d}")
+        
+        periods = list(reversed(periods))
+        period_str = ";".join(periods)
+        
+        # Fetch cases for all org units
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/analytics",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{data_element}'),
+                ('dimension', f'pe:{period_str}'),
+                ('dimension', f'ou:LEVEL-{level}'),
+                ('displayProperty', 'NAME'),
+                ('skipMeta', 'false')
+            ],
+            timeout=120
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
+        
+        data = response.json()
+        rows = data.get('rows', [])
+        meta_items = data.get('metaData', {}).get('items', {})
+        
+        # Parse data
+        cases_data = []
+        for row in rows:
+            ou_id = row[2]
+            period = row[1]
+            value = safe_float(row[3])
+            cases_data.append({
+                'orgunit': ou_id,
+                'period': period,
+                'value': value
+            })
+        
+        # Fetch populations
+        populations = fetch_populations_for_level(auth, level, None, current_year)
+        
+        # Calculate weekly incidence
+        df = calculate_weekly_incidence(cases_data, populations)
+        
+        if df.empty:
+            return jsonify({'periods': periods, 'orgunits': []})
+        
+        # Pivot to get org units as rows, periods as columns
+        pivot_df = df.pivot_table(
+            index='orgunit',
+            columns='period',
+            values='incidence',
+            fill_value=None
+        )
+        
+        # Get latest week incidence for sorting
+        latest_period = periods[-1]
+        if latest_period in pivot_df.columns:
+            pivot_df = pivot_df.sort_values(by=latest_period, ascending=False)
+        
+        # Limit results
+        pivot_df = pivot_df.head(limit)
+        
+        # Convert to list format
+        table_data = []
+        for ou_id, row_data in pivot_df.iterrows():
+            ou_info = meta_items.get(ou_id, {})
+            row_dict = {
+                'orgunit_id': ou_id,
+                'orgunit_name': ou_info.get('name', ou_id),
+                'population': populations.get(ou_id),
+                'weeks': []
+            }
+            
+            for period in periods:
+                incidence = row_data.get(period)
+                row_dict['weeks'].append({
+                    'period': period,
+                    'incidence': incidence
+                })
+            
+            table_data.append(row_dict)
+        
+        return jsonify({
+            'periods': periods,
+            'orgunits': table_data
+        })
+    
+    except Exception as e:
+        print(f"Error in get_incidence_table: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+def fetch_orgunit_population(auth, orgunit_id, year):
+    """
+    Fetch population for a single org unit.
+    Uses UBOS population data or org unit attribute.
+    """
+    # Try to fetch from population data element (UBOS)
+    # You'll need to replace this with your actual population data element UID
+    POPULATION_DE = 'YOUR_POPULATION_DATA_ELEMENT_UID'  # TODO: Replace
+    
+    try:
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/analytics",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{POPULATION_DE}'),
+                ('dimension', f'pe:{year}'),
+                ('dimension', f'ou:{orgunit_id}'),
+                ('displayProperty', 'NAME')
+            ],
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            rows = data.get('rows', [])
+            if rows and len(rows) > 0:
+                return safe_float(rows[0][3])
+    except:
+        pass
+    
+    # Fallback: Try to get from org unit attributes
+    try:
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{orgunit_id}",
+            auth=auth,
+            params={'fields': 'attributeValues[value,attribute[id,name]]'},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            ou_data = response.json()
+            attr_values = ou_data.get('attributeValues', [])
+            
+            for attr in attr_values:
+                attr_name = attr.get('attribute', {}).get('name', '').lower()
+                if 'population' in attr_name or 'catchment' in attr_name:
+                    return safe_float(attr.get('value'))
+    except:
+        pass
+    
+    # Default fallback for testing
+    return 10000
+
+
+def fetch_populations_for_level(auth, level, parent_id, year):
+    """
+    Fetch populations for all org units at a level.
+    """
+    POPULATION_DE = 'YOUR_POPULATION_DATA_ELEMENT_UID'  # TODO: Replace
+    
+    populations = {}
+    
+    # Build org unit dimension
+    if parent_id:
+        ou_dimension = f'ou:{parent_id};LEVEL-{level}'
+    else:
+        ou_dimension = f'ou:LEVEL-{level}'
+    
+    try:
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/analytics",
+            auth=auth,
+            params=[
+                ('dimension', f'dx:{POPULATION_DE}'),
+                ('dimension', f'pe:{year}'),
+                ('dimension', ou_dimension),
+                ('displayProperty', 'NAME')
+            ],
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            rows = data.get('rows', [])
+            
+            for row in rows:
+                ou_id = row[2]
+                pop = safe_float(row[3])
+                populations[ou_id] = pop
+    except Exception as e:
+        print(f"Error fetching populations: {e}")
+    
+    # For any missing populations, use default
+    return populations
+
+
+def get_orgunit_name(auth, orgunit_id):
+    """Get organisation unit name."""
+    try:
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{orgunit_id}",
+            auth=auth,
+            params={'fields': 'displayName'},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json().get('displayName', orgunit_id)
+    except:
+        pass
+    
+    return orgunit_id
