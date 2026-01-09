@@ -4523,7 +4523,7 @@
 
             async function loadAnalyticsData(period) {
                 // Build the API URL with optional custom population for facilities
-                let url = `/api/analytics-data?orgUnit=${selectedOrgUnit.id}&period=${period}&districtName=${encodeURIComponent(selectedDistrict)}`;
+                let url = `/epi/api/analytics-data?orgUnit=${selectedOrgUnit.id}&period=${period}&districtName=${encodeURIComponent(selectedDistrict)}`;
 
                 // Add custom population if set (for facility-level analysis)
                 if (facilityPopulation && isFacilityLevel()) {
@@ -5428,7 +5428,7 @@
                 `;
 
                     // Build URL with custom population if available
-                    let url = `/api/red-categorization?orgUnit=${selectedOrgUnit.id}&districtName=${encodeURIComponent(selectedOrgUnit.name)}`;
+                    let url = `/epi/api/red-categorization?orgUnit=${selectedOrgUnit.id}&districtName=${encodeURIComponent(selectedOrgUnit.name)}`;
                     if (facilityPopulation) {
                         url += `&customPopulation=${facilityPopulation}`;
                     }

@@ -14,10 +14,16 @@ import numpy as np
 from modules.malaria import malaria_bp
 from modules.malaria.channel_calculator import EndemicChannelCalculator
 from modules.malaria.config import MALARIA_DATA_ELEMENT, BASELINE_YEARS
+from modules.malaria.utils import safe_float, safe_int
 from modules.malaria.incidence_calculator import (
     calculate_incidence, calculate_quartile_classification,
     calculate_weekly_incidence, rank_orgunits_by_incidence
 )
+
+# Import UBOS Population data
+# This is the official Uganda Bureau of Statistics population data
+from modules.malaria.ubos_population import UBOS_POPULATION
+print(f"Loaded UBOS_POPULATION with {len(UBOS_POPULATION)} districts")
 
 # Use the same DHIS2 URL as main app
 DHIS2_BASE_URL = 'https://hmis.health.go.ug/api'
@@ -620,22 +626,12 @@ def get_incidence_trend():
         
         # Find data element
         data_element = find_malaria_data_element(auth)
+        print(f"Incidence trend - Using data element: {data_element}")
         
-        # Get last 12 weeks
-        current_year = datetime.now().year
-        current_week = datetime.now().isocalendar()[1]
+        # Use DHIS2's built-in LAST_12_WEEKS relative period (more reliable)
+        period_param = 'LAST_12_WEEKS'
         
-        periods = []
-        for i in range(12):
-            week_num = current_week - i
-            year = current_year
-            if week_num <= 0:
-                week_num += 52
-                year -= 1
-            periods.append(f"{year}W{week_num:02d}")
-        
-        periods = list(reversed(periods))
-        period_str = ";".join(periods)
+        print(f"Incidence trend - Fetching data for orgunit: {orgunit_id}")
         
         # Fetch cases
         response = requests.get(
@@ -643,7 +639,7 @@ def get_incidence_trend():
             auth=auth,
             params=[
                 ('dimension', f'dx:{data_element}'),
-                ('dimension', f'pe:{period_str}'),
+                ('dimension', f'pe:{period_param}'),
                 ('dimension', f'ou:{orgunit_id}'),
                 ('displayProperty', 'NAME'),
                 ('skipMeta', 'false')
@@ -651,45 +647,58 @@ def get_incidence_trend():
             timeout=60
         )
         
+        print(f"Incidence trend - DHIS2 response: {response.status_code}")
+        
         if response.status_code != 200:
+            print(f"Incidence trend - Error response: {response.text[:500]}")
             return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
         
         data = response.json()
         rows = data.get('rows', [])
+        meta_dimensions = data.get('metaData', {}).get('dimensions', {})
         
-        # Parse cases
-        cases_data = []
+        # Extract periods from response metadata (sorted chronologically)
+        periods = sorted(meta_dimensions.get('pe', []))
+        
+        print(f"Incidence trend - Got {len(rows)} data rows")
+        print(f"Incidence trend - Periods from response: {periods}")
+        
+        # Parse cases into lookup
+        cases_lookup = {}
         for row in rows:
             period = row[1]
             value = safe_float(row[3])
-            cases_data.append({
-                'period': period,
-                'value': value
-            })
+            cases_lookup[period] = value
         
-        # Get population (from core DHIS2 or custom attribute)
-        # For now, fetch from UBOS population data element if available
-        # Otherwise use a default or fetch from org unit attributes
+        print(f"Incidence trend - Cases by period: {cases_lookup}")
+        
+        # Get population (from UBOS data or fetch from org unit)
+        current_year = datetime.now().year
         population = fetch_orgunit_population(auth, orgunit_id, current_year)
+        print(f"Incidence trend - Population for orgunit: {population}")
         
-        # Calculate incidence
+        # Build incidence data in chronological order (using periods from response)
         incidence_data = []
-        for case_week in cases_data:
-            incidence = calculate_incidence(case_week['value'], population)
+        for period in periods:
+            cases = cases_lookup.get(period, 0)
+            incidence = calculate_incidence(cases, population)
             incidence_data.append({
-                'period': case_week['period'],
-                'cases': case_week['value'],
-                'incidence': incidence,
+                'period': period,
+                'cases': int(cases) if cases else 0,
+                'incidence': round(incidence, 2) if incidence else 0,
                 'population': population
             })
         
         # Get org unit name
         orgunit_name = get_orgunit_name(auth, orgunit_id)
         
+        print(f"Incidence trend for {orgunit_name}: {len(incidence_data)} weeks")
+        
         return jsonify({
             'orgunit_id': orgunit_id,
             'orgunit_name': orgunit_name,
             'population': population,
+            'periods': periods,  # Include ordered periods for reference
             'data': incidence_data
         })
     
@@ -817,6 +826,7 @@ def get_incidence_map():
 def get_incidence_table():
     """
     Get incidence table for last 12 weeks for multiple org units
+    Shows raw cases when population data is not available
     """
     try:
         auth = get_auth()
@@ -824,26 +834,18 @@ def get_incidence_table():
             return jsonify({'error': 'Authentication required'}), 401
         
         level = request.args.get('level', '3')
-        limit = int(request.args.get('limit', '20'))
+        limit = int(request.args.get('limit', '150'))  # Get all districts, scrollable after 20
+        
+        print(f"=== INCIDENCE TABLE: level={level}, limit={limit} ===")
         
         # Find data element
         data_element = find_malaria_data_element(auth)
+        print(f"Using malaria data element: {data_element}")
         
-        # Get last 12 weeks
-        current_year = datetime.now().year
-        current_week = datetime.now().isocalendar()[1]
+        # Use DHIS2's built-in LAST_12_WEEKS relative period (more reliable)
+        period_param = 'LAST_12_WEEKS'
         
-        periods = []
-        for i in range(12):
-            week_num = current_week - i
-            year = current_year
-            if week_num <= 0:
-                week_num += 52
-                year -= 1
-            periods.append(f"{year}W{week_num:02d}")
-        
-        periods = list(reversed(periods))
-        period_str = ";".join(periods)
+        print(f"Incidence table - Using period: {period_param}")
         
         # Fetch cases for all org units
         response = requests.get(
@@ -851,7 +853,7 @@ def get_incidence_table():
             auth=auth,
             params=[
                 ('dimension', f'dx:{data_element}'),
-                ('dimension', f'pe:{period_str}'),
+                ('dimension', f'pe:{period_param}'),
                 ('dimension', f'ou:LEVEL-{level}'),
                 ('displayProperty', 'NAME'),
                 ('skipMeta', 'false')
@@ -859,73 +861,117 @@ def get_incidence_table():
             timeout=120
         )
         
+        print(f"Incidence table - DHIS2 response: {response.status_code}")
+        
         if response.status_code != 200:
             return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
         
         data = response.json()
         rows = data.get('rows', [])
         meta_items = data.get('metaData', {}).get('items', {})
+        meta_dimensions = data.get('metaData', {}).get('dimensions', {})
         
-        # Parse data
-        cases_data = []
+        # Extract periods from response metadata (sorted chronologically)
+        periods = sorted(meta_dimensions.get('pe', []))
+        
+        print(f"Got {len(rows)} data rows, {len(meta_items)} meta items")
+        print(f"Periods from response: {periods}")
+        
+        if not rows:
+            return jsonify({'periods': periods, 'orgunits': [], 'message': 'No data returned from DHIS2'})
+        
+        # Build cases by orgunit and period
+        cases_by_ou = {}
         for row in rows:
             ou_id = row[2]
             period = row[1]
             value = safe_float(row[3])
-            cases_data.append({
-                'orgunit': ou_id,
-                'period': period,
-                'value': value
-            })
+            
+            if ou_id not in cases_by_ou:
+                cases_by_ou[ou_id] = {'cases': {}, 'total': 0}
+            
+            cases_by_ou[ou_id]['cases'][period] = value
+            cases_by_ou[ou_id]['total'] += value
         
-        # Fetch populations
-        populations = fetch_populations_for_level(auth, level, None, current_year)
+        print(f"Processed {len(cases_by_ou)} org units")
         
-        # Calculate weekly incidence
-        df = calculate_weekly_incidence(cases_data, populations)
+        # Try to fetch populations (but don't fail if not available)
+        try:
+            current_year = datetime.now().year
+            populations = fetch_populations_for_level(auth, level, None, current_year)
+            print(f"Got {len(populations)} population records")
+        except Exception as pop_err:
+            print(f"Population fetch failed: {pop_err}")
+            traceback.print_exc()
+            populations = {}
         
-        if df.empty:
-            return jsonify({'periods': periods, 'orgunits': []})
+        # Calculate average incidence for each org unit (for proper ranking)
+        # Only include districts WITH population data
+        ous_with_population = []
+        ous_without_population = []
         
-        # Pivot to get org units as rows, periods as columns
-        pivot_df = df.pivot_table(
-            index='orgunit',
-            columns='period',
-            values='incidence',
-            fill_value=None
-        )
+        for ou_id, ou_data in cases_by_ou.items():
+            population = populations.get(ou_id)
+            if population and population > 0:
+                # Calculate average incidence per week
+                week_incidences = []
+                for period, cases in ou_data['cases'].items():
+                    incidence = (cases / population) * 1000
+                    week_incidences.append(incidence)
+                ou_data['avg_incidence'] = sum(week_incidences) / len(week_incidences) if week_incidences else 0
+                ou_data['has_population'] = True
+                ous_with_population.append((ou_id, ou_data))
+            else:
+                # Track districts without population for logging
+                ou_info = meta_items.get(ou_id, {})
+                ous_without_population.append(ou_info.get('name', ou_id))
         
-        # Get latest week incidence for sorting
-        latest_period = periods[-1]
-        if latest_period in pivot_df.columns:
-            pivot_df = pivot_df.sort_values(by=latest_period, ascending=False)
+        # Log districts without population
+        if ous_without_population:
+            print(f"Districts WITHOUT population data ({len(ous_without_population)}): {', '.join(ous_without_population[:10])}...")
         
-        # Limit results
-        pivot_df = pivot_df.head(limit)
+        print(f"Districts WITH population: {len(ous_with_population)}")
         
-        # Convert to list format
+        # Sort org units by average incidence (worst hit at top) - NO LIMIT, show all
+        sorted_ous = sorted(ous_with_population, key=lambda x: x[1].get('avg_incidence', 0), reverse=True)
+        
+        # Build table data
         table_data = []
-        for ou_id, row_data in pivot_df.iterrows():
+        for ou_id, ou_data in sorted_ous:
             ou_info = meta_items.get(ou_id, {})
+            population = populations.get(ou_id)
+            
             row_dict = {
                 'orgunit_id': ou_id,
                 'orgunit_name': ou_info.get('name', ou_id),
-                'population': populations.get(ou_id),
+                'population': population,
+                'total_cases': int(ou_data['total']),
+                'avg_incidence': round(ou_data.get('avg_incidence', 0), 2),
                 'weeks': []
             }
             
             for period in periods:
-                incidence = row_data.get(period)
+                cases = ou_data['cases'].get(period, 0)
+                # Calculate incidence if population available
+                if population and population > 0:
+                    incidence = (cases / population) * 1000
+                else:
+                    incidence = None
+                
                 row_dict['weeks'].append({
                     'period': period,
-                    'incidence': incidence
+                    'cases': cases,
+                    'incidence': round(incidence, 2) if incidence is not None else None
                 })
             
             table_data.append(row_dict)
         
+        print(f"Returning {len(table_data)} org units in table")
+        
         return jsonify({
             'periods': periods,
-            'orgunits': table_data
+            'orgunits': table_data,
+            'has_population': len(populations) > 0
         })
     
     except Exception as e:
@@ -937,11 +983,44 @@ def get_incidence_table():
 def fetch_orgunit_population(auth, orgunit_id, year):
     """
     Fetch population for a single org unit.
-    Uses UBOS population data or org unit attribute.
+    Uses UBOS_POPULATION (official UBOS data).
     """
-    # Try to fetch from population data element (UBOS)
-    # You'll need to replace this with your actual population data element UID
-    POPULATION_DE = 'YOUR_POPULATION_DATA_ELEMENT_UID'  # TODO: Replace
+    # First, get the org unit name from DHIS2
+    try:
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{orgunit_id}",
+            auth=auth,
+            params={'fields': 'displayName'},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            ou_name = response.json().get('displayName', '')
+            print(f"[Population] Looking up: '{ou_name}' (ID: {orgunit_id})")
+            
+            # Normalize for matching (uppercase, remove common suffixes)
+            normalized = ou_name.upper().replace(' DISTRICT', '').replace(' CITY', '').strip()
+            
+            # Try exact match first
+            if normalized in UBOS_POPULATION:
+                pop = UBOS_POPULATION[normalized]
+                print(f"[Population] Found: {normalized} = {pop:,}")
+                return pop
+            
+            # Try with CITY suffix (for cities like "Kampala" -> "KAMPALA CITY" in UBOS)
+            city_name = f"{normalized} CITY"
+            if city_name in UBOS_POPULATION:
+                pop = UBOS_POPULATION[city_name]
+                print(f"[Population] Found: {city_name} = {pop:,}")
+                return pop
+            
+            print(f"[Population] NOT FOUND: '{ou_name}' (tried: {normalized}, {city_name})")
+                
+    except Exception as e:
+        print(f"[Population] Error: {e}")
+        traceback.print_exc()
+    
+    return None
     
     try:
         response = requests.get(
@@ -988,45 +1067,208 @@ def fetch_orgunit_population(auth, orgunit_id, year):
     return 10000
 
 
+def find_population_data_element(auth):
+    """
+    Search for population data element in DHIS2.
+    Tries multiple search terms to find UBOS/population data.
+    Excludes non-population items like facility counts, rates, etc.
+    """
+    print("\n=== SEARCHING FOR POPULATION DATA ELEMENT ===")
+    
+    # Expanded search patterns for Uganda HMIS
+    search_patterns = [
+        # Name-based searches (most specific first)
+        ('displayName', 'UBOS Population'),
+        ('displayName', 'Total Population'),
+        ('displayName', 'Projected Population'),
+        ('displayName', 'Catchment Population'),
+        ('displayName', 'District Population'),
+        ('displayName', 'population'),
+        ('displayName', 'UBOS'),
+        ('displayName', 'projected'),
+        ('displayName', 'census'),
+        # Code-based searches
+        ('code', 'W01'),  # Uganda HMIS W01 population data
+        ('code', 'POP'),
+        ('code', 'UBOS'),
+    ]
+    
+    # Words that indicate this is NOT a population count
+    exclude_words = [
+        'facility', 'facilities', 'health', 'rate', 'ratio', '%', 'percent', 
+        'proportion', 'coverage', 'indicator', 'number of', 'no.', 'no of',
+        'staff', 'worker', 'patient', 'visit', 'bed', 'equipment'
+    ]
+    
+    all_found = []
+    
+    for field, value in search_patterns:
+        try:
+            filter_param = f'{field}:ilike:{value}'
+            response = requests.get(
+                f"{DHIS2_BASE_URL}/dataElements",
+                auth=auth,
+                params={
+                    'filter': filter_param,
+                    'fields': 'id,code,displayName,valueType',
+                    'paging': 'false'
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                elements = data.get('dataElements', [])
+                
+                for el in elements:
+                    name_lower = el['displayName'].lower()
+                    
+                    # Skip if contains excluded words
+                    should_exclude = any(excl in name_lower for excl in exclude_words)
+                    
+                    if not should_exclude and el['id'] not in [e['id'] for e in all_found]:
+                        all_found.append(el)
+                        print(f"  ✓ Found: {el.get('code', 'N/A')} - {el['displayName']} (ID: {el['id']})")
+                    
+        except Exception as e:
+            print(f"Error searching for population ({field}:{value}): {e}")
+            continue
+    
+    print(f"Total valid population elements found: {len(all_found)}")
+    
+    if not all_found:
+        print("ERROR: No population data element found!")
+        print("Please visit: /malaria/api/search-population-elements to see all available options")
+        print("==============================================\n")
+        return None
+    
+    # Priority selection - look for best matches first
+    priority_patterns = [
+        ('ubos', 'population'),       # UBOS Population
+        ('total', 'population'),      # Total Population
+        ('projected', 'population'),  # Projected Population
+        ('catchment', 'population'),  # Catchment Population
+        ('district', 'population'),   # District Population
+        ('ubos',),                     # UBOS anything
+        ('population',),              # Any population
+    ]
+    
+    for patterns in priority_patterns:
+        for el in all_found:
+            name_lower = el['displayName'].lower()
+            if all(p in name_lower for p in patterns):
+                print(f"*** SELECTED: {el['displayName']} (ID: {el['id']})")
+                print("==============================================\n")
+                return el['id']
+    
+    # Fallback to first numeric element
+    for el in all_found:
+        if el.get('valueType') in ['NUMBER', 'INTEGER', 'INTEGER_POSITIVE']:
+            print(f"*** FALLBACK: {el['displayName']} (ID: {el['id']})")
+            print("==============================================\n")
+            return el['id']
+    
+    # Last resort
+    print(f"*** LAST RESORT: {all_found[0]['displayName']} (ID: {all_found[0]['id']})")
+    print("==============================================\n")
+    return all_found[0]['id']
+
+
 def fetch_populations_for_level(auth, level, parent_id, year):
     """
-    Fetch populations for all org units at a level.
+    Get populations for all org units at a level.
+    Uses UBOS_POPULATION from app.py (hardcoded official UBOS data).
+    Maps org unit names to population values.
     """
-    POPULATION_DE = 'YOUR_POPULATION_DATA_ELEMENT_UID'  # TODO: Replace
-    
     populations = {}
     
-    # Build org unit dimension
-    if parent_id:
-        ou_dimension = f'ou:{parent_id};LEVEL-{level}'
-    else:
-        ou_dimension = f'ou:LEVEL-{level}'
+    print(f"\n=== FETCHING POPULATION DATA (UBOS) ===")
+    print(f"Level: {level}, UBOS districts available: {len(UBOS_POPULATION)}")
     
+    if not UBOS_POPULATION:
+        print("ERROR: UBOS_POPULATION not loaded!")
+        return populations
+    
+    # Get org unit names for the level
     try:
+        if parent_id:
+            ou_dimension = f'ou:{parent_id};LEVEL-{level}'
+        else:
+            ou_dimension = f'ou:LEVEL-{level}'
+        
+        # Fetch org units to get their names
         response = requests.get(
-            f"{DHIS2_BASE_URL}/analytics",
+            f"{DHIS2_BASE_URL}/organisationUnits",
             auth=auth,
-            params=[
-                ('dimension', f'dx:{POPULATION_DE}'),
-                ('dimension', f'pe:{year}'),
-                ('dimension', ou_dimension),
-                ('displayProperty', 'NAME')
-            ],
+            params={
+                'level': level,
+                'fields': 'id,displayName',
+                'paging': 'false'
+            },
             timeout=60
         )
         
         if response.status_code == 200:
             data = response.json()
-            rows = data.get('rows', [])
+            org_units = data.get('organisationUnits', [])
             
-            for row in rows:
-                ou_id = row[2]
-                pop = safe_float(row[3])
-                populations[ou_id] = pop
+            print(f"Found {len(org_units)} org units at level {level}")
+            
+            # Common spelling variations between DHIS2 and UBOS
+            SPELLING_MAP = {
+                'LUWERO': 'LUWEERO',
+                'SEMBABULE': 'SSEMBABULE',
+                'SEMBAABULE': 'SSEMBABULE',
+                'BUKOMANSIMBI': 'BUKOMANSIMBI',
+                'LYANTONDE': 'LYANTONDE',
+            }
+            
+            matched = 0
+            unmatched = []
+            
+            for ou in org_units:
+                ou_id = ou['id']
+                ou_name = ou['displayName'].upper().strip()
+                
+                # Try exact match first
+                if ou_name in UBOS_POPULATION:
+                    populations[ou_id] = UBOS_POPULATION[ou_name]
+                    matched += 1
+                else:
+                    # Try cleaning the name (remove "District", "City", etc.)
+                    clean_name = ou_name.replace(' DISTRICT', '').replace(' CITY', '').strip()
+                    
+                    if clean_name in UBOS_POPULATION:
+                        populations[ou_id] = UBOS_POPULATION[clean_name]
+                        matched += 1
+                    # Try spelling variation
+                    elif clean_name in SPELLING_MAP and SPELLING_MAP[clean_name] in UBOS_POPULATION:
+                        populations[ou_id] = UBOS_POPULATION[SPELLING_MAP[clean_name]]
+                        matched += 1
+                    else:
+                        # Try with "CITY" suffix
+                        city_name = f"{clean_name} CITY"
+                        if city_name in UBOS_POPULATION:
+                            populations[ou_id] = UBOS_POPULATION[city_name]
+                            matched += 1
+                        else:
+                            unmatched.append(clean_name)
+            
+            print(f"SUCCESS: Matched {matched}/{len(org_units)} org units to UBOS population")
+            
+            if unmatched and len(unmatched) <= 10:
+                print(f"Unmatched: {', '.join(unmatched[:10])}")
+            
+            # Show sample
+            sample = list(populations.items())[:3]
+            for ou_id, pop in sample:
+                print(f"  Sample: {ou_id} = {pop:,.0f}")
+                
     except Exception as e:
-        print(f"Error fetching populations: {e}")
+        print(f"Error fetching org units: {e}")
+        traceback.print_exc()
     
-    # For any missing populations, use default
+    print(f"=== END POPULATION FETCH: {len(populations)} records ===\n")
     return populations
 
 
@@ -1046,3 +1288,272 @@ def get_orgunit_name(auth, orgunit_id):
         pass
     
     return orgunit_id
+
+
+@malaria_bp.route('/api/geojson')
+@require_login
+def get_geojson():
+    """
+    Fetch GeoJSON boundaries from DHIS2 for map rendering.
+    Uses the DHIS2 maps API: https://hmis.health.go.ug/dhis-web-maps/
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        level = request.args.get('level', '3')  # Default to district level
+        parent_id = request.args.get('parent')  # Optional parent for filtering
+        
+        # Build the GeoJSON request URL
+        # DHIS2 provides GeoJSON at: /api/organisationUnits.geojson?level=X
+        params = {
+            'level': level
+        }
+        
+        if parent_id:
+            params['parent'] = parent_id
+        
+        print(f"Fetching GeoJSON for level {level}, parent: {parent_id}")
+        
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits.geojson",
+            auth=auth,
+            params=params,
+            timeout=120
+        )
+        
+        print(f"GeoJSON response status: {response.status_code}")
+        
+        if response.status_code != 200:
+            print(f"GeoJSON error: {response.text[:500]}")
+            return jsonify({'error': f'DHIS2 GeoJSON error: {response.status_code}'}), 500
+        
+        geojson = response.json()
+        
+        # Verify it's valid GeoJSON
+        if 'features' not in geojson:
+            return jsonify({'error': 'Invalid GeoJSON response'}), 500
+        
+        features = geojson.get('features', [])
+        valid_features = [f for f in features if f.get('geometry') and f['geometry'].get('coordinates')]
+        
+        print(f"Fetched {len(features)} features, {len(valid_features)} have valid geometry")
+        
+        # Log first feature structure for debugging
+        if features:
+            sample = features[0]
+            print(f"Sample feature: id={sample.get('id')}, has_geometry={sample.get('geometry') is not None}")
+            if sample.get('properties'):
+                print(f"Sample properties keys: {list(sample['properties'].keys())[:5]}")
+        
+        return jsonify(geojson)
+    
+    except Exception as e:
+        print(f"Error fetching GeoJSON: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@malaria_bp.route('/api/search-population-elements')
+@require_login
+def search_population_elements():
+    """
+    Search for population-related data elements in DHIS2
+    Returns a comprehensive list of potential population data sources
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Expanded search terms to find population data
+        search_terms = [
+            'population', 'UBOS', 'W01', 'projected', 'census', 
+            'catchment', 'inhabitants', 'people', 'demographic',
+            'pop total', 'total pop', 'district pop'
+        ]
+        
+        results = []
+        
+        for term in search_terms:
+            response = requests.get(
+                f"{DHIS2_BASE_URL}/dataElements",
+                auth=auth,
+                params={
+                    'filter': f'displayName:ilike:{term}',
+                    'fields': 'id,code,displayName,valueType,categoryCombo[name]',
+                    'paging': 'false'
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                for element in data.get('dataElements', []):
+                    # Avoid duplicates and filter out non-population items
+                    name_lower = element['displayName'].lower()
+                    # Exclude if it's clearly not population
+                    if any(x in name_lower for x in ['rate', 'facility', 'facilities', '%', 'percent', 'proportion']):
+                        continue
+                    
+                    if element['id'] not in [r['id'] for r in results]:
+                        results.append({
+                            'id': element['id'],
+                            'code': element.get('code', ''),
+                            'name': element['displayName'],
+                            'valueType': element.get('valueType', ''),
+                            'category': element.get('categoryCombo', {}).get('name', ''),
+                            'matched_term': term
+                        })
+        
+        # Also search indicators
+        indicator_results = []
+        for term in ['population', 'UBOS', 'projected']:
+            response = requests.get(
+                f"{DHIS2_BASE_URL}/indicators",
+                auth=auth,
+                params={
+                    'filter': f'displayName:ilike:{term}',
+                    'fields': 'id,code,displayName,indicatorType[name]',
+                    'paging': 'false'
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                for indicator in data.get('indicators', []):
+                    name_lower = indicator['displayName'].lower()
+                    if 'rate' not in name_lower and '%' not in name_lower:
+                        if indicator['id'] not in [r['id'] for r in indicator_results]:
+                            indicator_results.append({
+                                'id': indicator['id'],
+                                'code': indicator.get('code', ''),
+                                'name': indicator['displayName'],
+                                'type': 'indicator',
+                                'indicatorType': indicator.get('indicatorType', {}).get('name', '')
+                            })
+        
+        # Sort by relevance (UBOS and population keywords first)
+        def relevance_score(item):
+            name = item['name'].lower()
+            score = 0
+            if 'ubos' in name: score += 100
+            if 'population' in name: score += 50
+            if 'projected' in name: score += 40
+            if 'total' in name: score += 30
+            if 'census' in name: score += 20
+            if 'catchment' in name: score += 10
+            return -score  # Negative for descending sort
+        
+        results.sort(key=relevance_score)
+        indicator_results.sort(key=relevance_score)
+        
+        print(f"\n=== POPULATION SEARCH RESULTS ===")
+        print(f"Found {len(results)} data elements:")
+        for r in results[:10]:  # Show top 10
+            print(f"  - {r['code']}: {r['name']} (ID: {r['id']})")
+        print(f"Found {len(indicator_results)} indicators:")
+        for r in indicator_results[:5]:
+            print(f"  - {r['code']}: {r['name']} (ID: {r['id']})")
+        print("=================================\n")
+        
+        return jsonify({
+            'data_elements': results,
+            'indicators': indicator_results,
+            'message': f'Found {len(results)} data elements and {len(indicator_results)} indicators. Check console for recommended element.'
+        })
+    
+    except Exception as e:
+        print(f"Error searching population elements: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@malaria_bp.route('/api/search-w01')
+@require_login
+def search_w01_elements():
+    """
+    Search specifically for W01 data elements (population data in Uganda HMIS)
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        # Search for W01 code prefix
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/dataElements",
+            auth=auth,
+            params={
+                'filter': 'code:ilike:W01',
+                'fields': 'id,code,displayName,valueType',
+                'paging': 'false'
+            },
+            timeout=30
+        )
+        
+        results = []
+        if response.status_code == 200:
+            data = response.json()
+            results = data.get('dataElements', [])
+        
+        print(f"\n=== W01 DATA ELEMENTS FOUND ===")
+        for el in results:
+            print(f"  {el.get('code', 'N/A')}: {el['displayName']} (ID: {el['id']})")
+        print(f"Total W01 elements: {len(results)}")
+        print("================================\n")
+        
+        return jsonify({
+            'w01_elements': results,
+            'count': len(results)
+        })
+    
+    except Exception as e:
+        print(f"Error searching W01: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@malaria_bp.route('/api/orgunit-children')
+@require_login
+def get_orgunit_children():
+    """
+    Get children of an organization unit for drill-down functionality.
+    """
+    try:
+        auth = get_auth()
+        if not auth:
+            return jsonify({'error': 'Authentication required'}), 401
+        
+        parent_id = request.args.get('parent')
+        if not parent_id:
+            return jsonify({'error': 'Parent ID required'}), 400
+        
+        response = requests.get(
+            f"{DHIS2_BASE_URL}/organisationUnits/{parent_id}",
+            auth=auth,
+            params={
+                'fields': 'id,displayName,level,children[id,displayName,level]'
+            },
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return jsonify({'error': f'DHIS2 error: {response.status_code}'}), 500
+        
+        data = response.json()
+        children = data.get('children', [])
+        
+        return jsonify({
+            'parent': {
+                'id': data.get('id'),
+                'name': data.get('displayName'),
+                'level': data.get('level')
+            },
+            'children': children
+        })
+    
+    except Exception as e:
+        print(f"Error fetching children: {e}")
+        return jsonify({'error': str(e)}), 500

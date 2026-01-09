@@ -10,6 +10,10 @@
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- Leaflet for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -533,74 +537,56 @@
 
         <!-- MALARIA INCIDENCE ANALYSIS SECTION -->
         <div id="incidenceSection" style="display: none;">
-            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 3px solid var(--border-color);">
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 3px solid #1f2937;">
                 <h2 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
                     📊 Malaria Incidence Analysis
                 </h2>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
                     Incidence rates per 1,000 population — Geographic distribution and temporal trends
                 </p>
 
-                <!-- Trend Line and Map Grid -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <!-- Trend Line Card -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div>
-                                <div class="card-title">📈 Incidence Trend (Last 12 Weeks)</div>
-                                <div class="card-subtitle">Weekly incidence per 1,000 population</div>
-                            </div>
+                <!-- Trend Line Card - Full Width -->
+                <div class="card" style="border: 2px solid #1f2937; margin-bottom: 1.5rem;">
+                    <div class="card-header" style="background: linear-gradient(135deg, #1f2937 0%, #374151 100%); color: white;">
+                        <div>
+                            <div class="card-title" style="color: white; font-size: 1.25rem;">📈 Malaria Incidence Trend Analysis</div>
+                            <div class="card-subtitle" style="color: #d1d5db;">Weekly confirmed cases per 1,000 population over the last 12 weeks</div>
                         </div>
-                        <div class="chart-container" id="incidenceTrendChart" style="min-height: 400px;"></div>
-                        <div style="padding: 1rem; background: #f9fafb; border-top: 1px solid var(--border-color);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <span style="font-weight: 600; color: var(--text-primary);" id="selectedOrgunitName">Select a district</span>
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                                        Current Incidence: <span id="currentIncidence" style="font-weight: 600;">--</span>/1,000
-                                    </div>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="text-align: right;">
+                                <span style="font-weight: 600; font-size: 1.1rem;" id="selectedOrgunitName">Select a district</span>
+                                <div style="font-size: 0.9rem; color: #9ca3af;">
+                                    Current: <span id="currentIncidence" style="font-weight: 700; color: #10b981;">--</span>/1,000
                                 </div>
-                                <button class="btn btn-secondary" onclick="exportIncidenceTrend()" style="font-size: 0.85rem;">📥 Export CSV</button>
                             </div>
+                            <button class="btn" onclick="exportIncidenceTrend()" style="background: #10b981; color: white; font-size: 0.85rem; border: none;">📥 Export</button>
                         </div>
                     </div>
-
-                    <!-- Spatial Map Card -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div>
-                                <div class="card-title">🗺️ Spatial Distribution Map</div>
-                                <div class="card-subtitle">Quartile-based incidence classification</div>
-                            </div>
-                        </div>
-                        <div id="incidenceMapContainer" style="min-height: 400px; position: relative;">
-                            <!-- Map will be rendered here -->
-                            <div id="incidenceMapPlaceholder" style="display: flex; align-items: center; justify-content: center; height: 400px; color: var(--text-secondary);">
-                                Click "Load Analysis" to view map
-                            </div>
-                        </div>
-                        <div style="padding: 1rem; background: #f9fafb; border-top: 1px solid var(--border-color);">
-                            <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Legend - Incidence per 1,000</div>
-                            <div id="mapLegend" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <!-- Dynamic legend -->
-                            </div>
+                    <div class="chart-container" id="incidenceTrendChart" style="min-height: 450px; padding: 1rem;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: var(--text-secondary);">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📊</div>
+                            <div style="font-size: 1.1rem; font-weight: 500;">Select a district from the Endemic Channel above</div>
+                            <div style="font-size: 0.9rem; margin-top: 0.5rem;">Then click "Load Analysis" to view incidence trends</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Incidence Table Card -->
-                <div class="card">
+                <div class="card" style="border: 2px solid #1f2937;">
                     <div class="card-header">
                         <div>
-                            <div class="card-title">📋 Incidence Table (Last 12 Weeks)</div>
-                            <div class="card-subtitle">Top districts by current week incidence</div>
+                            <div class="card-title">📋 Incidence Table</div>
+                            <div class="card-subtitle">Districts ranked by current week incidence</div>
                         </div>
                         <div class="export-buttons">
                             <button class="btn btn-secondary" onclick="exportIncidenceTable()">📥 Export CSV</button>
                         </div>
                     </div>
-                    <div id="incidenceTableContainer" style="overflow-x: auto;">
-                        <!-- Table will be rendered here -->
+                    <div id="incidenceTableContainer" style="overflow-x: auto; padding: 1rem;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);">
+                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                            <div>Table will load automatically with trend analysis</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1122,30 +1108,41 @@
         let incidenceData = null;
 
         async function loadIncidenceAnalysis(orgunitId) {
+            // Show incidence section first
+            document.getElementById('incidenceSection').style.display = 'block';
+            
+            // Show loading states
+            document.getElementById('incidenceTrendChart').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 450px; color: var(--text-secondary);"><div class="loading-spinner"></div> Loading trend data...</div>';
+            document.getElementById('incidenceTableContainer').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 200px; color: var(--text-secondary);"><div class="loading-spinner"></div> Loading table data...</div>';
+            
             try {
-                // Load incidence trend
+                // Load incidence trend for the selected org unit
                 await loadIncidenceTrend(orgunitId);
-                
-                // Load spatial map
-                await loadIncidenceMap();
-                
-                // Load incidence table
-                await loadIncidenceTable();
-                
-                // Show incidence section
-                document.getElementById('incidenceSection').style.display = 'block';
             } catch (error) {
-                console.error('Error loading incidence analysis:', error);
+                console.error('Error loading incidence trend:', error);
+                document.getElementById('incidenceTrendChart').innerHTML = '<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ Failed to load trend data</div>';
+            }
+            
+            try {
+                // Load incidence table (for all districts)
+                await loadIncidenceTable();
+            } catch (error) {
+                console.error('Error loading incidence table:', error);
+                document.getElementById('incidenceTableContainer').innerHTML = '<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ Failed to load table data</div>';
             }
         }
 
         async function loadIncidenceTrend(orgunitId) {
             try {
+                console.log('Loading incidence trend for:', orgunitId);
                 const response = await fetch(`/malaria/api/incidence-trend?orgunit=${orgunitId}`);
                 const data = await response.json();
                 
+                console.log('Incidence trend response:', data);
+                
                 if (data.error) {
                     console.error('Incidence trend error:', data.error);
+                    document.getElementById('incidenceTrendChart').innerHTML = `<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ ${data.error}</div>`;
                     return;
                 }
                 
@@ -1153,186 +1150,218 @@
                 renderIncidenceTrend(data);
             } catch (error) {
                 console.error('Failed to load incidence trend:', error);
+                document.getElementById('incidenceTrendChart').innerHTML = `<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ Failed to load: ${error.message}</div>`;
             }
         }
 
         function renderIncidenceTrend(data) {
+            console.log('Rendering incidence trend with data:', data);
+            
+            // Clear the container FIRST before Plotly renders
+            document.getElementById('incidenceTrendChart').innerHTML = '';
+            
             if (!data || !data.data || data.data.length === 0) {
-                document.getElementById('incidenceTrendChart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No data available</div>';
+                document.getElementById('incidenceTrendChart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No incidence data available for this period</div>';
                 return;
             }
             
-            const periods = data.data.map(d => d.period.replace(/(\d{4})W(\d{2})/, 'W$2'));
+            // Get raw periods and data
+            const rawPeriods = data.data.map(d => d.period);
             const incidences = data.data.map(d => d.incidence);
             const cases = data.data.map(d => d.cases);
             
-            // Calculate national average (if available)
-            const avgIncidence = incidences.filter(v => v !== null).reduce((a, b) => a + b, 0) / incidences.filter(v => v !== null).length;
+            console.log('Periods:', rawPeriods, 'Incidences:', incidences, 'Cases:', cases);
             
+            // Calculate statistics
+            const validIncidences = incidences.filter(v => v !== null && v !== undefined && v > 0);
+            const avgIncidence = validIncidences.length > 0 ? validIncidences.reduce((a, b) => a + b, 0) / validIncidences.length : 0;
+            const maxIncidence = validIncidences.length > 0 ? Math.max(...validIncidences) : 0;
+            const minIncidence = validIncidences.length > 0 ? Math.min(...validIncidences) : 0;
+            const totalCases = cases.reduce((a, b) => a + (b || 0), 0);
+            
+            console.log('Statistics:', { avgIncidence, maxIncidence, minIncidence, totalCases, validIncidences });
+            
+            // Format week labels nicely (e.g., "W01" instead of "2025W01")
+            const weekLabels = rawPeriods.map(p => {
+                const match = p.match(/(\d{4})W(\d{2})/);
+                if (match) {
+                    return `W${match[2]}`;
+                }
+                return p;
+            });
+            
+            // Incidence line trace
             const trace1 = {
-                x: periods,
+                x: weekLabels,
                 y: incidences,
-                mode: 'lines+markers',
-                name: 'Incidence/1,000',
-                line: { color: '#1976D2', width: 3 },
-                marker: { size: 8, color: '#1976D2' },
-                hovertemplate: '<b>%{x}</b><br>Incidence: %{y:.2f}/1,000<br>Cases: %{customdata}<extra></extra>',
-                customdata: cases
+                mode: 'lines+markers+text',
+                name: 'Weekly Incidence',
+                line: { color: '#1976D2', width: 3, shape: 'spline' },
+                marker: { size: 10, color: '#1976D2', line: { color: '#fff', width: 2 } },
+                text: incidences.map(v => v !== null ? v.toFixed(1) : ''),
+                textposition: 'top center',
+                textfont: { size: 11, color: '#1976D2', family: 'Arial Black' },
+                hovertemplate: '<b>%{x}</b><br>Incidence: %{y:.2f}/1,000<br>Cases: %{customdata:,}<extra></extra>',
+                customdata: cases,
+                fill: 'tozeroy',
+                fillcolor: 'rgba(25, 118, 210, 0.1)'
             };
             
+            // Average line trace
             const trace2 = {
-                x: periods,
-                y: Array(periods.length).fill(avgIncidence),
+                x: weekLabels,
+                y: Array(rawPeriods.length).fill(avgIncidence),
                 mode: 'lines',
-                name: 'Average',
-                line: { color: '#757575', width: 2, dash: 'dash' },
+                name: `Period Average (${avgIncidence.toFixed(1)})`,
+                line: { color: '#ef4444', width: 2, dash: 'dash' },
                 hoverinfo: 'skip'
             };
             
+            // Cases bar trace (secondary axis)
+            const trace3 = {
+                x: weekLabels,
+                y: cases,
+                type: 'bar',
+                name: 'Confirmed Cases',
+                marker: { 
+                    color: 'rgba(16, 185, 129, 0.6)',
+                    line: { color: '#10b981', width: 1 }
+                },
+                yaxis: 'y2',
+                hovertemplate: '<b>%{x}</b><br>Cases: %{y:,}<extra></extra>'
+            };
+            
             const layout = {
-                title: null,
+                title: {
+                    text: `<b>${data.orgunit_name}</b> - Malaria Incidence Trend`,
+                    font: { size: 18, color: '#1f2937' },
+                    x: 0.5,
+                    xanchor: 'center'
+                },
                 xaxis: {
-                    title: 'Week',
-                    gridcolor: '#e5e7eb'
+                    title: { text: 'Epidemiological Week', font: { size: 14, color: '#374151' } },
+                    gridcolor: '#e5e7eb',
+                    tickfont: { size: 12, color: '#374151' },
+                    showgrid: true,
+                    zeroline: false
                 },
                 yaxis: {
-                    title: 'Incidence per 1,000 Population',
-                    gridcolor: '#e5e7eb'
+                    title: { text: 'Incidence per 1,000 Population', font: { size: 14, color: '#1976D2' } },
+                    gridcolor: '#e5e7eb',
+                    tickfont: { size: 12, color: '#1976D2' },
+                    showgrid: true,
+                    zeroline: true,
+                    zerolinecolor: '#e5e7eb',
+                    rangemode: 'tozero'
+                },
+                yaxis2: {
+                    title: { text: 'Confirmed Cases', font: { size: 14, color: '#10b981' } },
+                    overlaying: 'y',
+                    side: 'right',
+                    gridcolor: 'transparent',
+                    tickfont: { size: 12, color: '#10b981' },
+                    showgrid: false,
+                    rangemode: 'tozero'
                 },
                 hovermode: 'x unified',
                 showlegend: true,
                 legend: {
                     orientation: 'h',
-                    y: -0.2,
+                    y: -0.15,
                     x: 0.5,
-                    xanchor: 'center'
+                    xanchor: 'center',
+                    bgcolor: 'rgba(255,255,255,0.9)',
+                    bordercolor: '#e5e7eb',
+                    borderwidth: 1,
+                    font: { size: 12 }
                 },
-                height: 400,
-                margin: { l: 60, r: 20, t: 20, b: 60 },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white'
+                height: 450,
+                margin: { l: 70, r: 70, t: 60, b: 80 },
+                plot_bgcolor: '#fafafa',
+                paper_bgcolor: 'white',
+                annotations: [
+                    {
+                        x: 1,
+                        y: 1.08,
+                        xref: 'paper',
+                        yref: 'paper',
+                        text: `Total: <b>${totalCases.toLocaleString()}</b> cases | Max: <b>${maxIncidence.toFixed(1)}</b>/1,000 | Min: <b>${minIncidence.toFixed(1)}</b>/1,000`,
+                        showarrow: false,
+                        font: { size: 12, color: '#6b7280' },
+                        xanchor: 'right'
+                    }
+                ]
             };
             
-            Plotly.newPlot('incidenceTrendChart', [trace1, trace2], layout, { responsive: true });
+            Plotly.newPlot('incidenceTrendChart', [trace3, trace1, trace2], layout, { responsive: true, displayModeBar: false });
             
-            // Update info
+            // Update header info
             document.getElementById('selectedOrgunitName').textContent = data.orgunit_name;
             const latestIncidence = incidences[incidences.length - 1];
             document.getElementById('currentIncidence').textContent = latestIncidence !== null ? latestIncidence.toFixed(2) : '--';
-        }
-
-        async function loadIncidenceMap() {
-            try {
-                const level = 3; // District level
-                const response = await fetch(`/malaria/api/incidence-map?level=${level}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    console.error('Incidence map error:', data.error);
-                    return;
-                }
-                
-                renderIncidenceMap(data);
-            } catch (error) {
-                console.error('Failed to load incidence map:', error);
-            }
-        }
-
-        function renderIncidenceMap(data) {
-            // For now, render as a bar chart of top districts
-            // TODO: Integrate actual GeoJSON map with Plotly or Folium
             
-            const container = document.getElementById('incidenceMapContainer');
-            document.getElementById('incidenceMapPlaceholder').style.display = 'none';
+            // Add statistics footer below the chart
+            const chartContainer = document.getElementById('incidenceTrendChart');
+            const statsFooter = document.createElement('div');
+            statsFooter.style.cssText = 'display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-top: 2px solid #1f2937; margin-top: 0.5rem; border-radius: 0 0 8px 8px;';
             
-            // Sort by incidence descending
-            const sortedOrgunits = data.orgunits
-                .filter(ou => ou.incidence !== null)
-                .sort((a, b) => (b.incidence || 0) - (a.incidence || 0))
-                .slice(0, 20); // Top 20
+            const population = data.population || 0;
+            const latestCases = cases[cases.length - 1] || 0;
             
-            const trace = {
-                y: sortedOrgunits.map(ou => ou.name),
-                x: sortedOrgunits.map(ou => ou.incidence),
-                type: 'bar',
-                orientation: 'h',
-                marker: {
-                    color: sortedOrgunits.map(ou => ou.color),
-                    line: { width: 1, color: '#fff' }
-                },
-                text: sortedOrgunits.map(ou => `${ou.incidence.toFixed(2)}/1,000`),
-                textposition: 'outside',
-                hovertemplate: '<b>%{y}</b><br>Incidence: %{x:.2f}/1,000<br>Quartile: %{customdata}<extra></extra>',
-                customdata: sortedOrgunits.map(ou => ou.label)
-            };
-            
-            const layout = {
-                title: null,
-                xaxis: {
-                    title: 'Incidence per 1,000',
-                    gridcolor: '#e5e7eb'
-                },
-                yaxis: {
-                    automargin: true
-                },
-                height: 400,
-                margin: { l: 150, r: 50, t: 20, b: 50 },
-                plot_bgcolor: 'white',
-                paper_bgcolor: 'white'
-            };
-            
-            Plotly.newPlot('incidenceMapContainer', [trace], layout, { responsive: true });
-            
-            // Render legend
-            renderMapLegend(data.thresholds);
-        }
-
-        function renderMapLegend(thresholds) {
-            const legendContainer = document.getElementById('mapLegend');
-            
-            if (!thresholds || Object.keys(thresholds).length === 0) {
-                legendContainer.innerHTML = '<span style="color: var(--text-secondary);">Quartiles: Dynamic classification</span>';
-                return;
-            }
-            
-            const q25 = thresholds.q25 || 0;
-            const q50 = thresholds.q50 || 0;
-            const q75 = thresholds.q75 || 0;
-            
-            legendContainer.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 20px; height: 20px; background: #4CAF50; border-radius: 4px;"></div>
-                    <span>Q1: 0 - ${q25.toFixed(1)}</span>
+            statsFooter.innerHTML = `
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Population</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #1f2937;">${population ? population.toLocaleString() : '--'}</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 20px; height: 20px; background: #FFEB3B; border-radius: 4px;"></div>
-                    <span>Q2: ${q25.toFixed(1)} - ${q50.toFixed(1)}</span>
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Total Cases (12W)</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #10b981;">${totalCases.toLocaleString()}</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 20px; height: 20px; background: #FF9800; border-radius: 4px;"></div>
-                    <span>Q3: ${q50.toFixed(1)} - ${q75.toFixed(1)}</span>
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Latest Week</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #1976D2;">${latestCases.toLocaleString()}</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 20px; height: 20px; background: #F44336; border-radius: 4px;"></div>
-                    <span>Q4: ${q75.toFixed(1)}+</span>
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #dc2626; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Max Incidence</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #dc2626;">${maxIncidence.toFixed(1)}/1K</div>
+                </div>
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #22c55e; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Min Incidence</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #22c55e;">${minIncidence.toFixed(1)}/1K</div>
+                </div>
+                <div style="text-align: center; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 1px solid #f97316; min-width: 120px;">
+                    <div style="font-size: 0.8rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Avg Incidence</div>
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #f97316;">${avgIncidence.toFixed(1)}/1K</div>
                 </div>
             `;
+            chartContainer.appendChild(statsFooter);
         }
+
+        // Map functions removed - using table only
 
         async function loadIncidenceTable() {
             try {
-                const level = 3;
+                const level = 3; // District level
                 const response = await fetch(`/malaria/api/incidence-table?level=${level}&limit=20`);
                 const data = await response.json();
                 
+                console.log('Incidence table response:', data);
+                
                 if (data.error) {
                     console.error('Incidence table error:', data.error);
+                    document.getElementById('incidenceTableContainer').innerHTML = `<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ ${data.error}</div>`;
+                    return;
+                }
+                
+                if (!data.orgunits || data.orgunits.length === 0) {
+                    document.getElementById('incidenceTableContainer').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No data available for the selected period</div>';
                     return;
                 }
                 
                 renderIncidenceTable(data);
             } catch (error) {
-                console.error('Failed to load incidence table:', error);
+                console.error('Error loading incidence table:', error);
+                document.getElementById('incidenceTableContainer').innerHTML = `<div style="padding: 2rem; text-align: center; color: #e74c3c;">⚠️ Failed to load: ${error.message}</div>`;
             }
         }
 
@@ -1340,51 +1369,183 @@
             const container = document.getElementById('incidenceTableContainer');
             
             if (!data.orgunits || data.orgunits.length === 0) {
-                container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-secondary);">No data available</div>';
+                container.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <div>No data available</div>
+                        ${data.message ? `<div style="font-size: 0.85rem; margin-top: 0.5rem;">${data.message}</div>` : ''}
+                    </div>
+                `;
                 return;
             }
             
-            // Format periods for header
-            const periodHeaders = data.periods.map(p => p.replace(/(\d{4})W(\d{2})/, 'W$2')).slice(-6); // Last 6 weeks for display
+            // Format periods for header - show last 6 weeks
             const periodsToShow = data.periods.slice(-6);
+            const periodHeaders = periodsToShow.map(p => p.replace(/(\d{4})W(\d{2})/, 'W$2'));
+            
+            // Check if we have population data
+            const hasPopulation = data.has_population;
+            
+            // Calculate quartiles PER WEEK (proper statistical quartiles)
+            // This gives us proper ranking within each week
+            const weekQuartiles = {};
+            
+            periodsToShow.forEach(period => {
+                // Get all values for this week
+                const weekValues = data.orgunits
+                    .map(o => {
+                        const weekData = o.weeks.find(w => w.period === period);
+                        if (!weekData) return null;
+                        return hasPopulation && weekData.incidence !== null ? weekData.incidence : weekData.cases;
+                    })
+                    .filter(v => v !== null && v > 0)
+                    .sort((a, b) => a - b);
+                
+                if (weekValues.length > 0) {
+                    // Calculate actual quartiles
+                    const q25Index = Math.floor(weekValues.length * 0.25);
+                    const q50Index = Math.floor(weekValues.length * 0.50);
+                    const q75Index = Math.floor(weekValues.length * 0.75);
+                    
+                    weekQuartiles[period] = {
+                        q25: weekValues[q25Index] || 0,
+                        q50: weekValues[q50Index] || 0,
+                        q75: weekValues[q75Index] || 0,
+                        min: weekValues[0],
+                        max: weekValues[weekValues.length - 1]
+                    };
+                } else {
+                    weekQuartiles[period] = { q25: 0, q50: 0, q75: 0, min: 0, max: 0 };
+                }
+            });
+            
+            console.log('Week quartiles calculated:', weekQuartiles);
             
             let html = `
-                <table class="alert-table">
-                    <thead>
-                        <tr>
-                            <th style="position: sticky; left: 0; background: #f9fafb; z-index: 1;">District</th>
-                            <th style="text-align: right;">Population</th>
-                            ${periodHeaders.map(p => `<th style="text-align: right;">${p}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
+                ${!hasPopulation ? `
+                    <div style="padding: 1rem; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.5rem;">⚠️</span>
+                            <div>
+                                <div style="font-weight: 600; color: #92400e;">Population data not available</div>
+                                <div style="font-size: 0.85rem; color: #a16207;">Showing raw case counts instead of incidence rates. Contact system admin to configure UBOS/W01 population data.</div>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- Color Legend -->
+                <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem; padding: 0.75rem; background: #f8fafc; border: 1px solid #1f2937; border-radius: 8px;">
+                    <span style="font-weight: 600; color: #1f2937;">Weekly Quartile Ranking:</span>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <div style="width: 18px; height: 18px; background: #dc2626; border: 1px solid #333; border-radius: 3px;"></div>
+                        <span style="font-size: 0.85rem;">Q4 (Top 25%)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <div style="width: 18px; height: 18px; background: #f97316; border: 1px solid #333; border-radius: 3px;"></div>
+                        <span style="font-size: 0.85rem;">Q3 (50-75%)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <div style="width: 18px; height: 18px; background: #eab308; border: 1px solid #333; border-radius: 3px;"></div>
+                        <span style="font-size: 0.85rem;">Q2 (25-50%)</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.25rem;">
+                        <div style="width: 18px; height: 18px; background: #22c55e; border: 1px solid #333; border-radius: 3px;"></div>
+                        <span style="font-size: 0.85rem;">Q1 (Bottom 25%)</span>
+                    </div>
+                </div>
+                
+                <div style="border: 2px solid #1f2937; border-radius: 8px; overflow: hidden;">
+                    <div style="max-height: 700px; overflow: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                            <thead>
+                                <tr style="background: #1f2937; color: white; position: sticky; top: 0; z-index: 10;">
+                                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; width: 50px; border-right: 2px solid #374151; background: #1f2937;">Rank</th>
+                                    <th style="padding: 12px 8px; text-align: left; font-weight: 600; width: 160px; border-right: 2px solid #374151; background: #1f2937;">District</th>
+                                    <th style="padding: 12px 8px; text-align: center; font-weight: 600; width: 70px; border-right: 1px solid #374151; background: #dc2626;" title="Average incidence per 1,000 population across all weeks">Avg Inc.</th>
+                                    <th style="padding: 12px 8px; text-align: right; font-weight: 600; width: 80px; border-right: 1px solid #374151; background: #1f2937;">Total</th>
+                                    ${hasPopulation ? '<th style="padding: 12px 8px; text-align: right; font-weight: 600; width: 100px; border-right: 1px solid #374151; background: #1f2937;">Population</th>' : ''}
+                                    ${periodHeaders.map((p, i) => `<th style="padding: 12px 8px; text-align: center; font-weight: 600; width: 65px; ${i < periodHeaders.length - 1 ? 'border-right: 1px solid #374151;' : ''} background: #1f2937;">${p}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
             `;
             
-            data.orgunits.forEach(ou => {
-                const weekCells = periodsToShow.map(period => {
+            data.orgunits.forEach((ou, index) => {
+                const rowBg = index % 2 === 0 ? '#ffffff' : '#f9fafb';
+                
+                const weekCells = periodsToShow.map((period, pIdx) => {
                     const weekData = ou.weeks.find(w => w.period === period);
-                    const incidence = weekData ? weekData.incidence : null;
+                    const wq = weekQuartiles[period] || { q25: 0, q50: 0, q75: 0 };
                     
-                    let color = '';
-                    if (incidence !== null) {
-                        if (incidence >= 15) color = 'background: #fee2e2;';
-                        else if (incidence >= 10) color = 'background: #fed7aa;';
-                        else if (incidence >= 5) color = 'background: #fef3c7;';
+                    // Use incidence if available, otherwise use cases
+                    let value = null;
+                    let displayValue = '--';
+                    
+                    if (weekData) {
+                        if (hasPopulation && weekData.incidence !== null) {
+                            value = weekData.incidence;
+                            displayValue = value.toFixed(1);
+                        } else if (weekData.cases !== undefined && weekData.cases !== null) {
+                            value = weekData.cases;
+                            displayValue = Math.round(value).toLocaleString();
+                        }
                     }
                     
-                    return `<td style="text-align: right; ${color}">${incidence !== null ? incidence.toFixed(1) : '--'}</td>`;
+                    // Color coding based on THIS WEEK's quartiles (proper ranking)
+                    let bgColor = rowBg;
+                    let textColor = '#1f2937';
+                    
+                    if (value !== null && value > 0) {
+                        if (value >= wq.q75) {
+                            bgColor = '#dc2626';  // Q4 - Red (High) - top 25%
+                            textColor = '#ffffff';
+                        } else if (value >= wq.q50) {
+                            bgColor = '#f97316';  // Q3 - Orange (Elevated) - 50-75%
+                            textColor = '#ffffff';
+                        } else if (value >= wq.q25) {
+                            bgColor = '#eab308';  // Q2 - Yellow (Moderate) - 25-50%
+                            textColor = '#1f2937';
+                        } else {
+                            bgColor = '#22c55e';  // Q1 - Green (Low) - bottom 25%
+                            textColor = '#ffffff';
+                        }
+                    }
+                    
+                    return `<td style="padding: 10px 8px; text-align: center; background: ${bgColor}; color: ${textColor}; font-weight: ${value >= wq.q50 ? '600' : '500'}; width: 65px; border: 1px solid #d1d5db; ${pIdx < periodsToShow.length - 1 ? 'border-right: 1px solid #9ca3af;' : ''}">${displayValue}</td>`;
                 }).join('');
                 
+                // Color for average incidence (red gradient based on rank)
+                const avgIncColor = index < 5 ? '#7f1d1d' : index < 10 ? '#991b1b' : index < 15 ? '#b91c1c' : '#dc2626';
+                
                 html += `
-                    <tr>
-                        <td style="position: sticky; left: 0; background: white; font-weight: 500;">${ou.orgunit_name}</td>
-                        <td style="text-align: right;">${ou.population ? ou.population.toLocaleString() : '--'}</td>
+                    <tr style="background: ${rowBg}; border-bottom: 1px solid #d1d5db;">
+                        <td style="padding: 10px 8px; text-align: center; font-weight: 700; color: #6b7280; width: 50px; border-right: 2px solid #d1d5db;">${index + 1}</td>
+                        <td style="padding: 10px 8px; font-weight: 600; width: 160px; border-right: 2px solid #d1d5db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${ou.orgunit_name}">${ou.orgunit_name}</td>
+                        <td style="padding: 10px 8px; text-align: center; font-weight: 700; color: white; background: ${avgIncColor}; width: 70px; border-right: 1px solid #d1d5db;" title="Average weekly incidence">${ou.avg_incidence ? ou.avg_incidence.toFixed(1) : '--'}</td>
+                        <td style="padding: 10px 8px; text-align: right; font-weight: 600; color: #1f2937; width: 80px; border-right: 1px solid #d1d5db;">${ou.total_cases ? ou.total_cases.toLocaleString() : '--'}</td>
+                        ${hasPopulation ? `<td style="padding: 10px 8px; text-align: right; color: #6b7280; width: 100px; border-right: 1px solid #d1d5db;">${ou.population ? ou.population.toLocaleString() : '--'}</td>` : ''}
                         ${weekCells}
                     </tr>
                 `;
             });
             
-            html += '</tbody></table>';
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; margin-top: 1rem; background: #f8fafc; border: 1px solid #1f2937; border-radius: 8px;">
+                    <div style="font-size: 0.85rem; color: #4b5563;">
+                        📊 Showing <strong>${data.orgunits.length}</strong> districts ranked by <strong>average incidence</strong> (worst hit first)
+                    </div>
+                    <div style="font-size: 0.85rem; color: #6b7280;">
+                        📈 Values: Incidence per 1,000 population • Colors: Weekly quartile ranking
+                    </div>
+                </div>
+            `;
+            
             container.innerHTML = html;
         }
 
