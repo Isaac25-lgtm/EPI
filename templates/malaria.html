@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malaria Endemic Channel - Uganda HMIS</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦟</text></svg>">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #dc2626;
+            --secondary-color: #ea580c;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Summary Cards Grid */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            flex-shrink: 0;
+        }
+
+        .card-content {
+            flex: 1;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .card-sublabel {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-input,
+        .filter-select {
+            width: 100%;
+            padding: 0.65rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 500px;
+        }
+
+        /* Alert Table */
+        .alert-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .alert-table thead {
+            background: #f9fafb;
+        }
+
+        .alert-table th,
+        .alert-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .alert-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .alert-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .deviation-cell {
+            font-weight: 600;
+            color: var(--danger-color);
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-alert {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-epidemic {
+            background: #fecaca;
+            color: #7f1d1d;
+        }
+
+        .status-normal {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading malaria surveillance data...</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <span style="font-size: 2rem;">🦟</span>
+                <div>
+                    <h1>Malaria Endemic Channel</h1>
+                    <div class="header-subtitle">WHO-Recommended Epidemic Detection System</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">
+                    🏠 Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Filters -->
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">🎯 Filters & Settings</div>
+                    <div class="card-subtitle">Select organization unit and analysis parameters</div>
+                </div>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label class="filter-label">Organization Unit</label>
+                    <input type="text" 
+                           class="filter-input" 
+                           id="orgunitSearch" 
+                           placeholder="Search district or facility..."
+                           autocomplete="off">
+                    <div id="orgunitResults" style="display: none;"></div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Monitoring Year</label>
+                    <select class="filter-select" id="yearSelect">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Epidemic Threshold</label>
+                    <select class="filter-select" id="thresholdSelect">
+                        <option value="q3" selected>75th Percentile (WHO Standard)</option>
+                        <option value="q85">85th Percentile (Reduced False Alarms)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group" style="display: flex; align-items: flex-end;">
+                    <button class="btn" onclick="loadChannelData()" style="background: var(--primary-color); color: white; width: 100%;">
+                        📊 Load Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div id="summarySection" style="display: none;">
+            <div class="summary-cards" id="summaryCards">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Main Endemic Channel Chart -->
+        <div id="chartSection" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">📈 Endemic Channel Visualization</div>
+                        <div class="card-subtitle">Current year malaria cases vs 5-year baseline thresholds</div>
+                    </div>
+                    <div class="export-buttons">
+                        <button class="btn btn-secondary" onclick="downloadChart('png')">📷 PNG</button>
+                        <button class="btn btn-secondary" onclick="downloadChart('svg')">📄 SVG</button>
+                        <button class="btn btn-secondary" onclick="exportData()">📊 CSV</button>
+                    </div>
+                </div>
+                <div class="chart-container" id="channelChart"></div>
+            </div>
+        </div>
+
+        <!-- Alert Weeks Table -->
+        <div id="alertSection" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">⚠️ Epidemic Alert Weeks</div>
+                        <div class="card-subtitle">Weeks where cases exceeded the epidemic threshold</div>
+                    </div>
+                </div>
+                <div id="alertTableContainer">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparative Analysis -->
+        <div id="comparisonSection" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">📊 Year-over-Year Comparison</div>
+                        <div class="card-subtitle">Compare current year to baseline years</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="comparisonChart"></div>
+            </div>
+        </div>
+
+        <!-- Zone Distribution -->
+        <div id="zoneSection" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">🎯 Alert Zone Distribution</div>
+                        <div class="card-subtitle">Proportion of weeks in each alert zone</div>
+                    </div>
+                </div>
+                <div class="chart-container" id="zoneChart" style="min-height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedOrgUnit = null;
+        let channelData = null;
+        let currentYear = new Date().getFullYear();
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeYearSelect();
+            hideLoading();
+            
+            // Setup orgunit search
+            const searchInput = document.getElementById('orgunitSearch');
+            let searchTimeout;
+            
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value;
+                
+                if (query.length < 3) {
+                    document.getElementById('orgunitResults').style.display = 'none';
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => searchOrgunits(query), 300);
+            });
+        });
+
+        function initializeYearSelect() {
+            const yearSelect = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+            
+            for (let year = currentYear; year >= currentYear - 5; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function showLoading(text = 'Loading...') {
+            const overlay = document.getElementById('loadingOverlay');
+            const textEl = overlay.querySelector('.loading-text');
+            textEl.textContent = text;
+            overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        async function searchOrgunits(query) {
+            try {
+                const response = await fetch(`/malaria/api/orgunit-search?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Search error:', data.error);
+                    return;
+                }
+                
+                displayOrgunitResults(data.orgunits);
+            } catch (error) {
+                console.error('Search failed:', error);
+            }
+        }
+
+        function displayOrgunitResults(orgunits) {
+            const resultsDiv = document.getElementById('orgunitResults');
+            
+            if (orgunits.length === 0) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            let html = '<div style="position: absolute; z-index: 1000; background: white; border: 1px solid var(--border-color); border-radius: 8px; width: 100%; max-height: 300px; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">';
+            
+            orgunits.forEach(org => {
+                html += `
+                    <div onclick="selectOrgunit('${org.id}', '${org.name.replace(/'/g, "\\'")}', ${org.level})" 
+                         style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid var(--border-color);" 
+                         onmouseover="this.style.background='#f9fafb'" 
+                         onmouseout="this.style.background='white'">
+                        <div style="font-weight: 500;">${org.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Level ${org.level}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function selectOrgunit(id, name, level) {
+            selectedOrgUnit = { id, name, level };
+            document.getElementById('orgunitSearch').value = name;
+            document.getElementById('orgunitResults').style.display = 'none';
+        }
+
+        async function loadChannelData() {
+            if (!selectedOrgUnit) {
+                alert('Please select an organization unit first');
+                return;
+            }
+            
+            const year = document.getElementById('yearSelect').value;
+            const threshold = document.getElementById('thresholdSelect').value;
+            
+            showLoading('Fetching malaria surveillance data...');
+            
+            try {
+                const url = `/malaria/api/channel-data?orgunit=${selectedOrgUnit.id}&year=${year}&threshold=${threshold}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    hideLoading();
+                    return;
+                }
+                
+                channelData = data;
+                renderDashboard(data);
+                hideLoading();
+            } catch (error) {
+                console.error('Load failed:', error);
+                alert('Failed to load data: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        function renderDashboard(data) {
+            // Show all sections
+            document.getElementById('summarySection').style.display = 'block';
+            document.getElementById('chartSection').style.display = 'block';
+            document.getElementById('alertSection').style.display = 'block';
+            document.getElementById('comparisonSection').style.display = 'block';
+            document.getElementById('zoneSection').style.display = 'block';
+            
+            // Render components
+            renderSummaryCards(data);
+            renderChannelChart(data);
+            renderAlertTable(data);
+            renderComparisonChart(data);
+            renderZoneChart(data);
+        }
+
+        function renderSummaryCards(data) {
+            const alert = data.alert_summary;
+            const meta = data.metadata;
+            const trend = data.trend;
+            
+            // Calculate current week cases
+            const currentData = data.current_data;
+            const latestWeek = currentData[currentData.length - 1];
+            
+            // Calculate total cases YTD
+            const totalCases = currentData.reduce((sum, w) => sum + w.confirmed_cases, 0);
+            
+            // Get expected (median) total
+            const expectedTotal = data.channel.slice(0, currentData.length).reduce((sum, w) => sum + w.median, 0);
+            const deviation = ((totalCases - expectedTotal) / expectedTotal * 100).toFixed(1);
+            
+            // Determine status emoji and color
+            let statusEmoji = '✅';
+            let statusText = 'NORMAL';
+            if (alert.total_alert_weeks > 0) {
+                statusEmoji = '⚠️';
+                statusText = 'ALERTS DETECTED';
+            }
+            
+            const html = `
+                <div class="summary-card" style="border-left: 4px solid #3b82f6;">
+                    <div class="card-icon">📅</div>
+                    <div class="card-content">
+                        <div class="card-value">Week ${latestWeek.epi_week}</div>
+                        <div class="card-label">Current Week</div>
+                        <div class="card-sublabel">${latestWeek.confirmed_cases} cases</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card" style="border-left: 4px solid #ef4444;">
+                    <div class="card-icon">⚠️</div>
+                    <div class="card-content">
+                        <div class="card-value">${alert.total_alert_weeks}</div>
+                        <div class="card-label">Alert Weeks YTD</div>
+                        <div class="card-sublabel">${((alert.total_alert_weeks / currentData.length) * 100).toFixed(1)}% of weeks</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card" style="border-left: 4px solid #8b5cf6;">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <div class="card-value">${totalCases.toLocaleString()}</div>
+                        <div class="card-label">Total Cases YTD</div>
+                        <div class="card-sublabel">vs ${Math.round(expectedTotal).toLocaleString()} expected</div>
+                    </div>
+                </div>
+                
+                <div class="summary-card" style="border-left: 4px solid ${deviation >= 0 ? '#ef4444' : '#10b981'};">
+                    <div class="card-icon">${deviation >= 0 ? '📈' : '📉'}</div>
+                    <div class="card-content">
+                        <div class="card-value">${deviation > 0 ? '+' : ''}${deviation}%</div>
+                        <div class="card-label">vs Baseline</div>
+                        <div class="card-sublabel">Trend: ${trend.toUpperCase()}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('summaryCards').innerHTML = html;
+        }
+
+        function renderChannelChart(data) {
+            const channel = data.channel;
+            const current = data.current_data;
+            const analysis = data.analysis;
+            const threshold = data.metadata.threshold;
+            
+            // Alert weeks
+            const alertWeeks = analysis.filter(w => w.is_alert);
+            
+            const traces = [
+                // Q3 (75th percentile) line
+                {
+                    x: channel.map(w => w.epi_week),
+                    y: channel.map(w => w[threshold]),
+                    mode: 'lines',
+                    name: threshold === 'q3' ? '75th Percentile (Threshold)' : '85th Percentile (Threshold)',
+                    line: { color: '#ea580c', width: 2, dash: 'dash' }
+                },
+                // Q1 (25th percentile) with fill
+                {
+                    x: channel.map(w => w.epi_week),
+                    y: channel.map(w => w.q1),
+                    mode: 'lines',
+                    name: '25th Percentile',
+                    line: { color: '#94a3b8', width: 1, dash: 'dot' },
+                    fill: 'tonexty',
+                    fillcolor: 'rgba(52, 152, 219, 0.1)'
+                },
+                // Median line
+                {
+                    x: channel.map(w => w.epi_week),
+                    y: channel.map(w => w.median),
+                    mode: 'lines',
+                    name: 'Median (Expected)',
+                    line: { color: '#3b82f6', width: 2 }
+                },
+                // Current year cases
+                {
+                    x: current.map(w => w.epi_week),
+                    y: current.map(w => w.confirmed_cases),
+                    mode: 'lines+markers',
+                    name: `${data.metadata.current_year} Cases`,
+                    line: { color: '#1f2937', width: 3 },
+                    marker: { size: 6 }
+                }
+            ];
+            
+            // Add alert markers
+            if (alertWeeks.length > 0) {
+                traces.push({
+                    x: alertWeeks.map(w => w.epi_week),
+                    y: alertWeeks.map(w => w.confirmed_cases),
+                    mode: 'markers',
+                    name: 'Alert Weeks',
+                    marker: {
+                        size: 12,
+                        color: '#dc2626',
+                        symbol: 'circle-open',
+                        line: { width: 3 }
+                    }
+                });
+            }
+            
+            const layout = {
+                title: {
+                    text: `Malaria Endemic Channel - ${selectedOrgUnit.name}<br><sub>Year ${data.metadata.current_year}</sub>`,
+                    font: { size: 18 }
+                },
+                xaxis: {
+                    title: 'Epidemiological Week',
+                    tickmode: 'linear',
+                    tick0: 1,
+                    dtick: 4,
+                    gridcolor: '#e5e7eb'
+                },
+                yaxis: {
+                    title: 'Confirmed Malaria Cases',
+                    gridcolor: '#e5e7eb'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    orientation: 'h',
+                    y: -0.2,
+                    x: 0.5,
+                    xanchor: 'center'
+                },
+                height: 550,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('channelChart', traces, layout, { responsive: true });
+        }
+
+        function renderAlertTable(data) {
+            const alertWeeks = data.analysis.filter(w => w.is_alert);
+            
+            if (alertWeeks.length === 0) {
+                document.getElementById('alertTableContainer').innerHTML = '<div class="alert alert-success">✅ No epidemic alerts detected. Malaria transmission is within expected levels.</div>';
+                return;
+            }
+            
+            let html = `
+                <div class="alert alert-warning">
+                    ⚠️ <strong>${alertWeeks.length} alert week(s) detected</strong> - Cases exceeded the epidemic threshold
+                </div>
+                <table class="alert-table">
+                    <thead>
+                        <tr>
+                            <th>Week</th>
+                            <th>Cases</th>
+                            <th>Threshold</th>
+                            <th>Deviation</th>
+                            <th>Z-Score</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            alertWeeks.forEach(week => {
+                html += `
+                    <tr>
+                        <td><strong>Week ${week.epi_week}</strong></td>
+                        <td>${Math.round(week.confirmed_cases)}</td>
+                        <td>${Math.round(week[data.metadata.threshold])}</td>
+                        <td class="deviation-cell">${week.deviation_percent > 0 ? '+' : ''}${week.deviation_percent}%</td>
+                        <td>${week.z_score}</td>
+                        <td><span class="status-badge ${week.alert_zone === 'epidemic' ? 'status-epidemic' : 'status-alert'}">${week.alert_status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('alertTableContainer').innerHTML = html;
+        }
+
+        function renderComparisonChart(data) {
+            const comparisons = data.year_comparisons;
+            const years = [];
+            const cases = [];
+            const colors = [];
+            
+            // Get baseline years
+            Object.keys(comparisons).forEach(key => {
+                if (key === 'baseline_avg' || key === 'current') return;
+                years.push(key);
+                cases.push(comparisons[key].total_cases);
+                colors.push('#94a3b8');
+            });
+            
+            // Add baseline average
+            years.push('Baseline Avg');
+            cases.push(comparisons.baseline_avg.total_cases);
+            colors.push('#3b82f6');
+            
+            // Add current year
+            years.push(`${data.metadata.current_year} (Current)`);
+            cases.push(comparisons.current.total_cases);
+            colors.push('#dc2626');
+            
+            const trace = {
+                x: years,
+                y: cases,
+                type: 'bar',
+                marker: { color: colors },
+                text: cases.map(c => c.toLocaleString()),
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                title: `Total Cases Comparison: ${data.metadata.current_year} vs Baseline Years`,
+                xaxis: { title: 'Year' },
+                yaxis: { title: 'Total Confirmed Cases' },
+                height: 450,
+                showlegend: false,
+                plot_bgcolor: 'white',
+                paper_bgcolor: 'white'
+            };
+            
+            Plotly.newPlot('comparisonChart', [trace], layout, { responsive: true });
+        }
+
+        function renderZoneChart(data) {
+            const zones = data.zone_distribution;
+            const labels = ['Epidemic Alert', 'Alert Zone', 'Safety Zone', 'Success Zone'];
+            const values = [
+                zones.epidemic.count,
+                zones.alert.count,
+                zones.safety.count,
+                zones.success.count
+            ];
+            const colors = ['#dc2626', '#f59e0b', '#10b981', '#6ee7b7'];
+            
+            const trace = {
+                labels: labels,
+                values: values,
+                type: 'pie',
+                marker: { colors: colors },
+                hole: 0.4,
+                textinfo: 'label+percent',
+                textposition: 'outside'
+            };
+            
+            const layout = {
+                title: 'Alert Zone Distribution',
+                height: 450,
+                showlegend: true,
+                annotations: [{
+                    text: `${values.reduce((a, b) => a + b, 0)}<br>Weeks`,
+                    x: 0.5,
+                    y: 0.5,
+                    font: { size: 16 },
+                    showarrow: false
+                }]
+            };
+            
+            Plotly.newPlot('zoneChart', [trace], layout, { responsive: true });
+        }
+
+        function downloadChart(format) {
+            if (!channelData) {
+                alert('No data loaded');
+                return;
+            }
+            
+            Plotly.downloadImage('channelChart', {
+                format: format,
+                width: 1200,
+                height: 600,
+                filename: `malaria_channel_${selectedOrgUnit.name}_${new Date().toISOString().split('T')[0]}`
+            });
+        }
+
+        async function exportData() {
+            if (!selectedOrgUnit) {
+                alert('No organization unit selected');
+                return;
+            }
+            
+            const year = document.getElementById('yearSelect').value;
+            const threshold = document.getElementById('thresholdSelect').value;
+            
+            window.location.href = `/malaria/api/export-data?orgunit=${selectedOrgUnit.id}&year=${year}&threshold=${threshold}`;
+        }
+    </script>
+</body>
+</html>
